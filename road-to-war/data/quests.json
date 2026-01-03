@@ -1,0 +1,29 @@
+{
+  "active_quests": {
+    "kill_goblins": {
+      "id": "kill_goblins",
+      "name": "Goblin Menace",
+      "description": "Defeat 10 Goblins.",
+      "type": "kill",
+      "target_id": "goblin",
+      "target_count": 10,
+      "rewards": {
+        "gold": 100,
+        "experience": 500
+      }
+    },
+    "reach_mile_10": {
+      "id": "reach_mile_10",
+      "name": "First Milestone",
+      "description": "Reach Mile 10.",
+      "type": "reach_mile",
+      "target_mile": 10,
+      "rewards": {
+        "gold": 250,
+        "talent_points": 1
+      }
+    }
+  }
+}
+
+

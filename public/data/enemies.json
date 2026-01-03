@@ -1,0 +1,473 @@
+{
+  "slime": {
+    "id": "slime",
+    "name": "Slime",
+    "level": 1,
+    "type": "basic",
+    "stats": {
+      "health": 30,
+      "maxHealth": 30,
+      "attack": 3,
+      "defense": 1,
+      "speed": 20
+    },
+    "abilities": [
+      {
+        "name": "Acid Spit",
+        "type": "debuff",
+        "effect": "debuff_defense",
+        "duration": 3,
+        "chance": 0.3,
+        "cooldown": 4,
+        "description": "Spits acid, reducing target defense."
+      }
+    ],
+    "aiStrategy": "defensive",
+    "aiPersonality": {
+      "targetPriority": ["tank", "dps", "healer"],
+      "abilityFrequency": "low",
+      "adaptiveness": "low"
+    },
+    "rewards": {
+      "experience": 10,
+      "gold": 5
+    },
+    "drops": [
+      {
+        "item": "rusty_sword",
+        "chance": 0.1
+      },
+      {
+        "item": "leather_armor",
+        "chance": 0.15
+      }
+    ],
+    "appearance": {
+      "color": "#00ff00",
+      "size": "small",
+      "shape": "circle",
+      "bodyType": "blob"
+    },
+    "description": "A weak but numerous monster."
+  },
+  "goblin": {
+    "id": "goblin",
+    "name": "Goblin",
+    "level": 2,
+    "type": "basic",
+    "stats": {
+      "health": 50,
+      "maxHealth": 50,
+      "attack": 8,
+      "defense": 3,
+      "speed": 30
+    },
+    "abilities": [
+      {
+        "name": "Quick Jab",
+        "type": "attack",
+        "damageMultiplier": 0.8,
+        "chance": 0.5,
+        "cooldown": 2,
+        "description": "A fast, weak attack."
+      },
+      {
+        "name": "Dirty Kick",
+        "type": "debuff",
+        "effect": "stun",
+        "duration": 1,
+        "chance": 0.2,
+        "cooldown": 6,
+        "description": "A low blow that stuns the target."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["low_health", "dps", "healer", "tank"],
+      "abilityFrequency": "high",
+      "adaptiveness": "medium"
+    },
+    "rewards": {
+      "experience": 25,
+      "gold": 15
+    },
+    "drops": [
+      {
+        "item": "rusty_sword",
+        "chance": 0.2
+      },
+      {
+        "item": "iron_sword",
+        "chance": 0.05
+      },
+      {
+        "item": "leather_armor",
+        "chance": 0.1
+      }
+    ],
+    "appearance": {
+      "color": "#008800",
+      "size": "medium",
+      "shape": "rectangle",
+      "bodyType": "humanoid"
+    },
+    "description": "A cunning and dangerous creature."
+  },
+  "orc": {
+    "id": "orc",
+    "name": "Orc",
+    "level": 4,
+    "type": "elite",
+    "stats": {
+      "health": 120,
+      "maxHealth": 120,
+      "attack": 15,
+      "defense": 8,
+      "speed": 25
+    },
+    "abilities": [
+      {
+        "name": "Brutal Strike",
+        "type": "attack",
+        "damageMultiplier": 1.5,
+        "chance": 0.4,
+        "cooldown": 3,
+        "description": "A heavy blow dealing massive damage."
+      },
+      {
+        "name": "Enraging Shout",
+        "type": "buff",
+        "effect": "buff_attack",
+        "duration": 3,
+        "chance": 0.2,
+        "cooldown": 8,
+        "description": "Increases own attack power."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["low_health", "dps", "tank", "healer"],
+      "abilityFrequency": "medium",
+      "adaptiveness": "medium"
+    },
+    "rewards": {
+      "experience": 75,
+      "gold": 40
+    },
+    "drops": [
+      {
+        "item": "iron_sword",
+        "chance": 0.3
+      },
+      {
+        "item": "iron_plate",
+        "chance": 0.2
+      },
+      {
+        "item": "health_ring",
+        "chance": 0.1
+      }
+    ],
+    "appearance": {
+      "color": "#880000",
+      "size": "large",
+      "shape": "rectangle",
+      "bodyType": "humanoid"
+    },
+    "description": "A formidable warrior of the orc tribes."
+  },
+  "dark_knight": {
+    "id": "dark_knight",
+    "name": "Dark Knight",
+    "level": 8,
+    "type": "boss",
+    "stats": {
+      "health": 500,
+      "maxHealth": 500,
+      "attack": 35,
+      "defense": 20,
+      "speed": 20
+    },
+    "abilities": [
+      {
+        "name": "Shadow Strike",
+        "type": "attack",
+        "damageMultiplier": 1.2,
+        "effect": "bleed",
+        "duration": 3,
+        "chance": 0.3,
+        "cooldown": 4,
+        "description": "A dark blow that causes bleeding."
+      },
+      {
+        "name": "Soul Siphon",
+        "type": "heal",
+        "healMultiplier": 0.1,
+        "castTime": 1,
+        "chance": 0.2,
+        "cooldown": 6,
+        "description": "Drains life from the target to heal itself."
+      }
+    ],
+    "aiStrategy": "boss",
+    "aiPersonality": {
+      "targetPriority": ["tank", "healer", "dps", "low_health"],
+      "abilityFrequency": "high",
+      "adaptiveness": "high"
+    },
+    "bossMechanics": {
+      "phases": true,
+      "enrage": {
+        "healthThreshold": 0.25,
+        "roundThreshold": 20,
+        "attackSpeedMultiplier": 1.5,
+        "damageMultiplier": 1.25
+      },
+      "specialAbilities": ["aoe_attack", "summon_adds"]
+    },
+    "rewards": {
+      "experience": 300,
+      "gold": 200
+    },
+    "drops": [
+      {
+        "item": "legendary_blade",
+        "chance": 0.4
+      },
+      {
+        "item": "power_amulet",
+        "chance": 0.3
+      }
+    ],
+    "appearance": {
+      "color": "#333333",
+      "size": "extra_large",
+      "shape": "rectangle",
+      "bodyType": "humanoid"
+    },
+    "description": "A fearsome champion of darkness."
+  },
+  "dragon": {
+    "id": "dragon",
+    "name": "Ancient Dragon",
+    "level": 15,
+    "type": "boss",
+    "stats": {
+      "health": 2000,
+      "maxHealth": 2000,
+      "attack": 80,
+      "defense": 40,
+      "speed": 40
+    },
+    "abilities": [
+      {
+        "name": "Flame Breath",
+        "type": "attack",
+        "damageMultiplier": 0.8,
+        "isAoE": true,
+        "castTime": 2,
+        "effect": "burn",
+        "duration": 3,
+        "chance": 0.2,
+        "cooldown": 5,
+        "description": "Breathes fire on the entire party."
+      },
+      {
+        "name": "Tail Swipe",
+        "type": "attack",
+        "damageMultiplier": 1.5,
+        "effect": "stun",
+        "duration": 1,
+        "chance": 0.15,
+        "cooldown": 8,
+        "description": "A powerful tail attack that stuns."
+      }
+    ],
+    "aiStrategy": "boss",
+    "aiPersonality": {
+      "targetPriority": ["tank", "healer", "dps", "low_health"],
+      "abilityFrequency": "very_high",
+      "adaptiveness": "very_high"
+    },
+    "bossMechanics": {
+      "phases": true,
+      "enrage": {
+        "healthThreshold": 0.25,
+        "roundThreshold": 25,
+        "attackSpeedMultiplier": 1.5,
+        "damageMultiplier": 1.5
+      },
+      "specialAbilities": ["aoe_breath", "summon_adds", "environmental_hazards"]
+    },
+    "rewards": {
+      "experience": 1000,
+      "gold": 1000
+    },
+    "drops": [
+      {
+        "item": "legendary_blade",
+        "chance": 0.8
+      },
+      {
+        "item": "power_amulet",
+        "chance": 0.6
+      }
+    ],
+    "appearance": {
+      "color": "#ff0000",
+      "size": "gigantic",
+      "shape": "custom",
+      "bodyType": "dragon"
+    },
+    "description": "A legendary dragon of immense power."
+  },
+  "elite_orc_champion": {
+    "id": "elite_orc_champion",
+    "name": "Elite Orc Champion",
+    "level": 80,
+    "type": "elite",
+    "stats": {
+      "health": 800,
+      "maxHealth": 800,
+      "attack": 60,
+      "defense": 35,
+      "speed": 30
+    },
+    "abilities": [
+      {
+        "name": "Cleave",
+        "type": "attack",
+        "damageMultiplier": 0.7,
+        "isAoE": true,
+        "chance": 0.3,
+        "cooldown": 4,
+        "description": "Hits all nearby heroes."
+      },
+      {
+        "name": "Mortal Strike",
+        "type": "attack",
+        "damageMultiplier": 2.0,
+        "effect": "debuff_healing",
+        "duration": 5,
+        "chance": 0.2,
+        "cooldown": 10,
+        "description": "A deadly strike that reduces healing received."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["tank", "dps", "healer"],
+      "abilityFrequency": "high",
+      "adaptiveness": "high"
+    },
+    "rewards": {
+      "experience": 500,
+      "gold": 300
+    },
+    "lootQuality": "epic",
+    "drops": [
+      {
+        "item": "legendary_blade",
+        "chance": 0.3
+      },
+      {
+        "item": "power_amulet",
+        "chance": 0.25
+      }
+    ],
+    "appearance": {
+      "color": "#cc0000",
+      "size": "extra_large",
+      "shape": "rectangle",
+      "bodyType": "humanoid"
+    },
+    "description": "A champion warrior of the orc tribes, wielding immense power."
+  },
+  "war_lord": {
+    "id": "war_lord",
+    "name": "War Lord",
+    "level": 100,
+    "type": "boss",
+    "stats": {
+      "health": 5000,
+      "maxHealth": 5000,
+      "attack": 150,
+      "defense": 60,
+      "speed": 50
+    },
+    "abilities": [
+      {
+        "name": "Warlord's Cleave",
+        "type": "attack",
+        "damageMultiplier": 1.2,
+        "isAoE": true,
+        "chance": 0.2,
+        "cooldown": 4,
+        "description": "A massive cleave hitting the entire party."
+      },
+      {
+        "name": "Intimidating Shout",
+        "type": "debuff",
+        "effect": "debuff_attack",
+        "duration": 4,
+        "chance": 0.15,
+        "cooldown": 12,
+        "description": "Weakens the party's resolve, reducing attack power."
+      }
+    ],
+    "aiStrategy": "boss",
+    "aiPersonality": {
+      "targetPriority": ["tank", "healer", "dps", "low_health"],
+      "abilityFrequency": "very_high",
+      "adaptiveness": "very_high"
+    },
+    "bossMechanics": {
+      "phases": [
+        {
+          "healthThreshold": 0.75,
+          "name": "Phase 1: Warlord's Rage",
+          "specialAbilities": ["cleave", "intimidating_shout"]
+        },
+        {
+          "healthThreshold": 0.50,
+          "name": "Phase 2: Battle Frenzy",
+          "specialAbilities": ["whirlwind", "summon_guards", "enrage"]
+        },
+        {
+          "healthThreshold": 0.25,
+          "name": "Phase 3: Last Stand",
+          "specialAbilities": ["berserker_rage", "massive_cleave", "final_stand"]
+        }
+      ],
+      "enrage": {
+        "healthThreshold": 0.25,
+        "roundThreshold": 30,
+        "attackSpeedMultiplier": 2.0,
+        "damageMultiplier": 1.75
+      },
+      "specialAbilities": ["aoe_attack", "summon_adds", "phase_transitions", "environmental_hazards"]
+    },
+    "rewards": {
+      "experience": 5000,
+      "gold": 5000
+    },
+    "lootQuality": "legendary",
+    "drops": [
+      {
+        "item": "legendary_blade",
+        "chance": 1.0
+      },
+      {
+        "item": "power_amulet",
+        "chance": 0.8
+      }
+    ],
+    "appearance": {
+      "color": "#8b0000",
+      "size": "gigantic",
+      "shape": "custom",
+      "bodyType": "humanoid"
+    },
+    "description": "The ultimate challenge. The War Lord commands armies and wields power beyond mortal comprehension."
+  }
+}

@@ -1,0 +1,145 @@
+[gd_scene load_steps=2 format=3 uid="uid://character_creation_001"]
+
+[ext_resource type="Script" path="res://scripts/CharacterCreation.gd" id="1_charcreate"]
+
+[node name="CharacterCreation" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_charcreate")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.06, 0.15, 1)
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -400.0
+offset_right = 200.0
+offset_bottom = -350.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 48
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "CHARACTER CREATION"
+horizontal_alignment = 1
+
+[node name="Instructions" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -320.0
+offset_right = 300.0
+offset_bottom = -290.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.88, 0.88, 0.88, 1)
+text = "Select a class and specialization for each party role"
+horizontal_alignment = 1
+
+[node name="RolePanels" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -600.0
+offset_top = -150.0
+offset_right = 600.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BloodlinePanel" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -600.0
+offset_top = 180.0
+offset_right = 600.0
+offset_bottom = 260.0
+grow_horizontal = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="BloodlinePanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.843137, 0, 1)
+theme_override_font_sizes/font_size = 20
+text = "CHOOSE YOUR BLOODLINE"
+horizontal_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="BloodlinePanel"]
+layout_mode = 2
+theme_override_constants/separation = 15
+alignment = 1
+
+[node name="TankPanel" type="VBoxContainer" parent="RolePanels"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HealerPanel" type="VBoxContainer" parent="RolePanels"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DPS1Panel" type="VBoxContainer" parent="RolePanels"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DPS2Panel" type="VBoxContainer" parent="RolePanels"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DPS3Panel" type="VBoxContainer" parent="RolePanels"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ButtonContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -100.0
+offset_right = 400.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="BackButton" type="Button" parent="ButtonContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "BACK"
+
+[node name="AutoGenerateButton" type="Button" parent="ButtonContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "AUTO-GENERATE"
+
+[node name="ConfirmButton" type="Button" parent="ButtonContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "CONFIRM PARTY"
+

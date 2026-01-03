@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragumagu-Style Hero Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #b4d0ff;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 0 0 10px rgba(65, 105, 225, 0.5);
+        }
+        .subtitle {
+            text-align: center;
+            color: #999;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .hero-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .hero-card {
+            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+            border: 2px solid #4169e1;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .hero-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(65, 105, 225, 0.4);
+        }
+        .hero-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #b4d0ff;
+        }
+        .hero-class {
+            font-size: 0.9em;
+            color: #999;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .sprite-container {
+            background: #1a1a2e;
+            border: 3px solid #4169e1;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            display: inline-block;
+        }
+        canvas {
+            border: 2px solid #fff;
+            background: #2c3e50;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            display: block;
+            margin: 0 auto;
+        }
+        .equipment-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(65, 105, 225, 0.1);
+            border-radius: 6px;
+            font-size: 0.9em;
+            text-align: left;
+        }
+        .equipment-info h4 {
+            color: #b4d0ff;
+            margin-bottom: 8px;
+        }
+        .equipment-info ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .equipment-info li {
+            margin: 5px 0;
+            color: #ccc;
+        }
+        .style-info {
+            background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+            border: 2px solid #4169e1;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 40px;
+        }
+        .style-info h2 {
+            color: #b4d0ff;
+            margin-bottom: 15px;
+        }
+        .style-info h3 {
+            color: #b4d0ff;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .style-info ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .style-info li {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .style-info li:before {
+            content: "▶";
+            position: absolute;
+            left: 0;
+            color: #4169e1;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        button {
+            background: linear-gradient(135deg, #4169e1 0%, #2E4DB8 100%);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            font-size: 1em;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(65, 105, 225, 0.3);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(65, 105, 225, 0.5);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Dragumagu-Style Hero Preview</h1>
+        <p class="subtitle">High-detail WoW pixel art with 5-level shading, bold outlines, and equipment layers</p>
+        
+        <div class="controls">
+            <button onclick="generateHeroes()">Generate Heroes</button>
+            <button onclick="generateWithEquipment()">Generate with Equipment</button>
+            <button onclick="clearCanvas()">Clear</button>
+        </div>
+
+        <div class="hero-grid" id="heroGrid">
+            <!-- Heroes will be generated here -->
+        </div>
+
+        <div class="style-info">
+            <h2>✨ Dragumagu Style Features</h2>
+            
+            <h3>Visual Characteristics</h3>
+            <ul>
+                <li><strong>Bold Outlines:</strong> 2-3px black outlines on main forms, 1px for details</li>
+                <li><strong>5-Level Cel-Shading:</strong> light2, light1, base, dark1, dark2 for all materials</li>
+                <li><strong>Material-Based Shading:</strong> Different rules for metal (40% contrast), cloth (20-30%), leather (15-25%), skin (20-25%)</li>
+                <li><strong>Top-Left Light Source:</strong> Consistent directional lighting across all elements</li>
+                <li><strong>Chibi Proportions:</strong> 33% head, 25% torso, 20% limbs for WoW aesthetic</li>
+            </ul>
+
+            <h3>Equipment Detail System</h3>
+            <ul>
+                <li><strong>Helmet:</strong> T-shaped visor, glowing class-colored eyes, plume for epic/legendary</li>
+                <li><strong>Chest Armor:</strong> Vertical segmentation, gold belt buckle, metal highlights</li>
+                <li><strong>Shoulder Pads:</strong> Large rounded pads with class emblems</li>
+                <li><strong>Leg Armor:</strong> Knee guards, segmentation lines</li>
+                <li><strong>Boots:</strong> Toe cap reinforcement, straps, thick sole</li>
+                <li><strong>Gloves:</strong> Finger separations, wrist guards</li>
+                <li><strong>Weapons:</strong> Detailed hilts, glowing blades, class-specific effects</li>
+            </ul>
+
+            <h3>WoW Class Palettes</h3>
+            <ul>
+                <li><strong>Paladin:</strong> Silver plate, royal blue cloth, holy yellow glow</li>
+                <li><strong>Warrior:</strong> Brown plate, dark red cloth, steel metal</li>
+                <li><strong>Mage:</strong> Arcane blue cloth, gold trim, cyan glow</li>
+                <li><strong>Rogue:</strong> Dark leather, gold daggers, purple shadow</li>
+                <li><strong>Hunter:</strong> Brown leather, forest green, silver metal</li>
+                <li><strong>Warlock:</strong> Dark purple cloth, red trim, fel purple glow</li>
+                <li><strong>Shaman:</strong> Teal mail, dark slate cloth, gold totems</li>
+                <li><strong>Priest:</strong> White/light cloth, gold trim, holy white-gold glow</li>
+                <li><strong>Death Knight:</strong> Dark plate, frost blue runes, blood red glow</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import Phaser and generator
+        import Phaser from 'https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.esm.js';
+
+        let scene = null;
+        let game = null;
+
+        const classes = ['paladin', 'warrior', 'mage', 'rogue', 'hunter', 'warlock', 'shaman', 'priest', 'deathKnight'];
+        const classColors = {
+            paladin: 0x4169E1,
+            warrior: 0xC41E3A,
+            mage: 0x69CCF0,
+            rogue: 0xFFF569,
+            hunter: 0xABD473,
+            warlock: 0x9482C9,
+            shaman: 0x0070DE,
+            priest: 0xFFFFFF,
+            deathKnight: 0xC41F3B
+        };
+
+        function initPhaser() {
+            if (game) {
+                game.destroy(true);
+            }
+
+            const config = {
+                type: Phaser.AUTO,
+                width: 192,
+                height: 192,
+                parent: 'temp-container',
+                scene: {
+                    create: function() {
+                        scene = this;
+                        generateHeroes();
+                    }
+                },
+                transparent: true
+            };
+
+            // Create temporary container
+            const tempDiv = document.createElement('div');
+            tempDiv.id = 'temp-container';
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            document.body.appendChild(tempDiv);
+
+            game = new Phaser.Game(config);
+        }
+
+        async function generateHeroes() {
+            if (!scene) {
+                initPhaser();
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            const heroGrid = document.getElementById('heroGrid');
+            heroGrid.innerHTML = '';
+
+            // Load generator module
+            const { RuntimePaladinGenerator } = await import('../src/generators/runtime-paladin-generator.js');
+
+            for (const className of classes) {
+                const heroCard = document.createElement('div');
+                heroCard.className = 'hero-card';
+                
+                const title = document.createElement('div');
+                title.className = 'hero-title';
+                title.textContent = className.charAt(0).toUpperCase() + className.slice(1);
+                
+                const classLabel = document.createElement('div');
+                classLabel.className = 'hero-class';
+                classLabel.textContent = className;
+                
+                const spriteContainer = document.createElement('div');
+                spriteContainer.className = 'sprite-container';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 192;
+                canvas.height = 192;
+                canvas.id = `hero-${className}`;
+                
+                spriteContainer.appendChild(canvas);
+                
+                heroCard.appendChild(title);
+                heroCard.appendChild(classLabel);
+                heroCard.appendChild(spriteContainer);
+                
+                // Generate sprite
+                const generator = new RuntimePaladinGenerator(scene);
+                const textureKey = `preview-${className}`;
+                const classColor = classColors[className] || 0xFFFFFF;
+                
+                generator.generate({}, {}, classColor, className, textureKey);
+                
+                // Wait for texture and draw to canvas
+                setTimeout(() => {
+                    if (scene.textures.exists(textureKey)) {
+                        const texture = scene.textures.get(textureKey);
+                        const ctx = canvas.getContext('2d');
+                        const img = texture.getSourceImage();
+                        ctx.clearRect(0, 0, 192, 192);
+                        ctx.drawImage(img, 0, 0);
+                    }
+                }, 100);
+                
+                heroGrid.appendChild(heroCard);
+            }
+        }
+
+        async function generateWithEquipment() {
+            if (!scene) {
+                initPhaser();
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            // Mock equipment data
+            const mockEquipment = {
+                head: 'helmet_epic',
+                chest: 'chest_plate_rare',
+                legs: 'leg_armor_rare',
+                boots: 'boots_rare',
+                hands: 'gloves_rare',
+                shoulder: 'shoulder_epic',
+                mainHand: 'sword_epic'
+            };
+
+            const mockItemsData = {
+                helmet_epic: { id: 'helmet_epic', quality: 'epic', type: 'head' },
+                chest_plate_rare: { id: 'chest_plate_rare', quality: 'rare', type: 'chest' },
+                leg_armor_rare: { id: 'leg_armor_rare', quality: 'rare', type: 'legs' },
+                boots_rare: { id: 'boots_rare', quality: 'rare', type: 'boots' },
+                gloves_rare: { id: 'gloves_rare', quality: 'rare', type: 'hands' },
+                shoulder_epic: { id: 'shoulder_epic', quality: 'epic', type: 'shoulder' },
+                sword_epic: { id: 'sword_epic', quality: 'epic', type: 'sword' }
+            };
+
+            const heroGrid = document.getElementById('heroGrid');
+            heroGrid.innerHTML = '';
+
+            const { RuntimePaladinGenerator } = await import('../src/generators/runtime-paladin-generator.js');
+
+            for (const className of classes) {
+                const heroCard = document.createElement('div');
+                heroCard.className = 'hero-card';
+                
+                const title = document.createElement('div');
+                title.className = 'hero-title';
+                title.textContent = className.charAt(0).toUpperCase() + className.slice(1) + ' (Equipped)';
+                
+                const classLabel = document.createElement('div');
+                classLabel.className = 'hero-class';
+                classLabel.textContent = className;
+                
+                const spriteContainer = document.createElement('div');
+                spriteContainer.className = 'sprite-container';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 192;
+                canvas.height = 192;
+                canvas.id = `hero-equipped-${className}`;
+                
+                spriteContainer.appendChild(canvas);
+                
+                const equipmentInfo = document.createElement('div');
+                equipmentInfo.className = 'equipment-info';
+                equipmentInfo.innerHTML = `
+                    <h4>Equipment</h4>
+                    <ul>
+                        <li>Helmet: Epic</li>
+                        <li>Chest: Rare Plate</li>
+                        <li>Legs: Rare Armor</li>
+                        <li>Boots: Rare</li>
+                        <li>Gloves: Rare</li>
+                        <li>Shoulder: Epic</li>
+                        <li>Weapon: Epic Sword</li>
+                    </ul>
+                `;
+                
+                heroCard.appendChild(title);
+                heroCard.appendChild(classLabel);
+                heroCard.appendChild(spriteContainer);
+                heroCard.appendChild(equipmentInfo);
+                
+                const generator = new RuntimePaladinGenerator(scene);
+                const textureKey = `preview-equipped-${className}`;
+                const classColor = classColors[className] || 0xFFFFFF;
+                
+                generator.generate(mockEquipment, mockItemsData, classColor, className, textureKey);
+                
+                setTimeout(() => {
+                    if (scene.textures.exists(textureKey)) {
+                        const texture = scene.textures.get(textureKey);
+                        const ctx = canvas.getContext('2d');
+                        const img = texture.getSourceImage();
+                        ctx.clearRect(0, 0, 192, 192);
+                        ctx.drawImage(img, 0, 0);
+                    }
+                }, 200);
+                
+                heroGrid.appendChild(heroCard);
+            }
+        }
+
+        function clearCanvas() {
+            const heroGrid = document.getElementById('heroGrid');
+            heroGrid.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">Click "Generate Heroes" to see the Dragumagu-style sprites</p>';
+        }
+
+        // Make functions global
+        window.generateHeroes = generateHeroes;
+        window.generateWithEquipment = generateWithEquipment;
+        window.clearCanvas = clearCanvas;
+
+        // Initialize
+        initPhaser();
+    </script>
+</body>
+</html>
+

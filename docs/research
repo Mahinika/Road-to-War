@@ -1,0 +1,606 @@
+---
+name: 5-Man Team Implementation
+overview: Comprehensive implementation plan for transitioning from single-hero to 5-man dungeon group system with WoW TBC/WotLK-inspired classes, specializations, talents, and stats.
+todos: []
+---
+
+# Impl
+
+ementation Plan: 5-Man Dungeon Group System
+
+This plan details the complete implementation of transitioning from a single-hero game to a 5-man dungeon group system, incorporating World of Warcraft TBC/WotLK-inspired mechanics for classes, specializations, talents, and comprehensive stat systems.
+
+## Architecture Overview
+
+The core architectural change involves moving from a single `hero` object to a `PartyManager` that manages an array of 5 hero objects. Each hero will have their own class, specialization, talents, equipment, and stats. The existing manager pattern will be extended to support multi-hero operations.
+
+```mermaid
+graph TD
+    NewGameUI[New Game Creation UI] --> HeroFactory[HeroFactory]
+    HeroFactory --> PartyManager[PartyManager]
+    
+    PartyManager --> CombatManager[CombatManager Updates]
+    PartyManager --> EquipmentManager[EquipmentManager Updates]
+    PartyManager --> WorldManager[WorldManager Updates]
+    PartyManager --> TalentManager[TalentManager New]
+    PartyManager --> StatCalculator[StatCalculator New]
+    
+    subgraph DataLayer
+        ClassesJSON[classes.json]
+        SpecsJSON[specializations.json]
+        TalentsJSON[talents.json]
+        StatsJSON[stats-config.json]
+    end
+    
+    HeroFactory --> ClassesJSON
+    TalentManager --> TalentsJSON
+    StatCalculator --> StatsJSON
+    
+    CombatManager --> PartyManager
+    EquipmentManager --> PartyManager
+    WorldManager --> PartyManager
+```
+
+
+
+## Phase 1: Core Data Structures and Party Management
+
+### Task 1.1: Create Class, Specialization, and Talent Data Definitions
+
+**Files to Create:**
+
+- `src/data/classes.json` - Define all classes with core abilities
+
+- `src/data/specializations.json` - Define specializations with role-specific abilities
+
+- `src/data/talents.json` - Define TBC/WotLK-style talent trees
+
+- `src/data/stats-config.json` - Define stat conversion rates and caps
+
+**Implementation Details:**
+
+- Each class entry should include: `id`, `name`, `coreAbilities` (array of ability IDs), `availableSpecs` (array of spec IDs)
+
+- Each specialization should include: `id`, `name`, `classId`, `role` (tank/healer/dps), `specAbilities` (array), `passiveEffects` (object)
+
+- Talent trees should follow TBC/WotLK structure: 3 trees per class, prerequisites, point costs, stat bonuses, ability unlocks
+
+- Stats config should define: rating-to-percentage conversions, Defense Cap thresholds, stat interactions
+
+**Reference:** Design document: `memory-bank/5-Man_Team_Design_Brainstorm.md`
+
+### Task 1.2: Create PartyManager
+
+**File to Create:** `src/managers/party-manager.js`**Responsibilities:**
+
+- Maintain array of 5 active heroes: `this.heroes = []`
+
+- Provide utility methods: `getTank()`, `getHealer()`, `getDPS()`, `getHeroById(id)`, `getHeroByIndex(index)`
+
+- Handle party events: hero swap, hero level up, party composition changes
+
+- Integrate with GameScene to coordinate with other managers
+
+- Manage hero roles (ensure 1 tank, 1 healer, 3 DPS constraint)
+
+**Dependencies:** None (foundational)
+
+### Task 1.3: Create HeroFactory
+
+**File to Create:** `src/utils/hero-factory.js`
+
+**Responsibilities:**
+
+- Create new hero objects with: `classId`, `specId`, `level` (default 1), `baseStats`, `equipmentSlots`, `talentTree` (empty structure)
+
+- Initialize hero with class core abilities and spec-specific abilities
+
+- Set up initial equipment slots (18 slots matching current system)
+
+- Initialize empty talent tree structure based on class
+
+**Dependencies:** Task 1.1 (needs classes.json and specializations.json)
+
+### Task 1.4: Refactor WorldManager for Multiple Heroes
+
+**File to Modify:** `src/managers/world-manager.js`**Changes Required:**
+
+- Replace `this.hero = null;` with integration to `PartyManager` (inject via constructor)
+
+- Update movement logic to handle party positioning (heroes follow tank or maintain formation)
+- Modify encounter spawning to account for party level (use average or highest level)
+
+- Implement "Road to War" mile system: track current mile (0-100), scale enemy difficulty by mile
+
+- Add method to allow player to select and revisit specific miles for leveling
+
+**Key Methods to Update:**
+
+- `update()` - Handle party movement instead of single hero
+
+- `generateSegment()` - Account for party level in difficulty
+
+- `spawnEncounter()` - Scale based on current mile
+
+**Dependencies:** Task 1.2 (needs PartyManager)
+
+## Phase 2: Stat System and Calculations
+
+### Task 2.1: Create StatCalculator
+
+**File to Create:** `src/utils/stat-calculator.js`**Responsibilities:**
+
+- Calculate final stats for a hero: `calculateFinalStats(hero)`
+
+- Input sources: base stats (from class/level), equipment stats, talent bonuses
+
+- Convert ratings to percentages: Hit Rating → Hit %, Crit Rating → Crit %, etc.
+
+- Implement Defense Cap logic: check if Defense Rating reaches cap, grant crit immunity
+- Handle all TBC/WotLK stats:
+
+- Primary: Strength, Agility, Stamina, Intellect, Spirit
+
+- Secondary: Attack Power, Spell Power, Hit Rating, Crit Rating, Haste Rating, Expertise Rating, Defense Rating, Resilience Rating
+
+**Key Methods:**
+
+- `convertRatingToPercentage(rating, statType)` - Rating conversion logic
+
+- `checkDefenseCap(hero)` - Returns true if hero has reached defense cap
+
+- `calculateDerivedStats(baseStats, equipmentStats, talentBonuses)` - Combine all stat sources
+
+**Dependencies:** Task 1.1 (needs stats-config.json)
+
+### Task 2.2: Refactor EquipmentManager for Multi-Hero
+
+**File to Modify:** `src/managers/equipment-manager.js`**Changes Required:**
+
+- Change from single hero instance to managing equipment per hero
+
+- Update `init(hero)` to accept hero ID or hero object, store equipment per hero
+
+- Modify `equipItem(itemId, slot, heroId)` to equip to specific hero
+
+- Update stat calculation to use StatCalculator instead of internal logic
+
+- Maintain equipment display per hero (UI will need hero selector)
+
+**Key Changes:**
+
+- `this.equipmentSlots` becomes `this.heroEquipment = new Map()` (heroId → equipmentSlots)
+- All equipment methods need `heroId` parameter
+
+- Stat display updates to show stats for selected hero
+
+**Dependencies:** Task 1.2 (PartyManager), Task 2.1 (StatCalculator)
+
+## Phase 3: Talent System
+
+### Task 3.1: Create TalentManager
+
+**File to Create:** `src/managers/talent-manager.js`**Responsibilities:**
+
+- Manage talent point allocation per hero
+
+- Validate talent choices against prerequisites
+
+- Track available talent points (earned per level after level 10)
+
+- Calculate talent bonuses (stat increases, ability enhancements)
+
+- Handle talent respec (reset for gold cost)
+
+- Provide talent tree data structure per hero
+
+**Key Methods:**
+
+- `allocateTalentPoint(heroId, treeId, talentId)` - Allocate point with validation
+
+- `canAllocateTalent(heroId, treeId, talentId)` - Check prerequisites and available points
+
+- `getTalentBonuses(heroId)` - Return calculated bonuses from allocated talents
+
+- `respecTalents(heroId, cost)` - Reset all talent points for a hero
+
+**Dependencies:** Task 1.1 (needs talents.json), Task 1.2 (PartyManager)
+
+### Task 3.2: Integrate Talents with StatCalculator
+
+**File to Modify:** `src/utils/stat-calculator.js`**Changes Required:**
+
+- Accept talent bonuses from TalentManager in `calculateFinalStats()`
+- Apply talent bonuses to final stat calculations
+
+- Handle talent-granted ability unlocks/enhancements
+
+**Dependencies:** Task 3.1 (TalentManager)
+
+## Phase 4: Combat AI System
+
+### Task 4.1: Refactor CombatManager for Party Combat
+
+**File to Modify:** `src/managers/combat-manager.js`**Changes Required:**
+
+- Replace `this.hero` with `this.party` (reference to PartyManager)
+
+- Update `init()` to accept PartyManager instead of single hero
+
+- Modify combat loop to handle 5 heroes vs enemies
+
+- Implement threat/aggro system: track threat per enemy per hero
+- Add role-based AI decision making
+
+**Tank AI Implementation:**
+
+- Threat generation: prioritize enemies attacking non-tanks
+
+- Damage mitigation: use defensive cooldowns at health thresholds
+
+- Target prioritization: focus primary target, pick up loose adds
+
+**Healer AI Implementation:**
+
+- Target prioritization: lowest health % first, tank bias
+
+- Spell selection: emergency (fast), sustained (efficient), AoE (multi-target)
+
+- Mana management: use efficient spells, regen abilities when low
+
+- Dispel: remove harmful debuffs from party members
+
+**DPS AI Implementation:**
+
+- Target prioritization: attack tank's target, switch to high-priority adds
+
+- Ability rotation: execute optimal rotation respecting cooldowns/resources
+
+- Offensive cooldowns: use on bosses/strong enemies
+
+- Threat awareness: reduce damage if threat too high relative to tank
+
+**Key Methods to Add/Modify:**
+
+- `processCombatTurn()` - Handle all heroes' actions in combat
+
+- `calculateThreat(hero, enemy, ability)` - Threat generation logic
+
+- `getTankTarget()` - Get current primary target
+
+- `selectHealTarget()` - Healer target selection logic
+
+- `selectDPSTarget()` - DPS target selection logic
+
+**Dependencies:** Task 1.2 (PartyManager), Task 2.1 (StatCalculator for combat stats)
+
+### Task 4.2: Enhance AbilityManager for Multi-Hero
+
+**File to Modify:** `src/managers/ability-manager.js`**Changes Required:**
+
+- Support ability tracking per hero (cooldowns, resources per hero)
+
+- Handle class-specific and spec-specific abilities
+
+- Integrate talent-enhanced abilities
+- Manage resource pools (mana, energy, rage) per hero
+
+**Dependencies:** Task 4.1 (CombatManager updates)
+
+## Phase 5: Game Flow and Progression
+
+### Task 5.1: Create New Game Creation UI
+
+**File to Create:** `src/scenes/character-creation.js`
+
+**Responsibilities:**
+
+- Present UI for selecting 5 classes (one for each role: tank, healer, 3x DPS)
+- Show available classes for each role
+
+- Allow specialization selection per hero
+
+- Use HeroFactory to create initial heroes
+
+- Initialize PartyManager with created heroes
+
+- Transition to GameScene with party
+
+**UI Elements:**
+
+- 5 hero selection panels (one per role)
+
+- Class dropdown/buttons per role
+
+- Specialization selection per class
+
+- Confirm/Start button
+
+**Dependencies:** Task 1.3 (HeroFactory), Task 1.2 (PartyManager)
+
+### Task 5.2: Modify MainScene for New Game Flow
+
+**File to Modify:** `src/scenes/main-menu.js`**Changes Required:**
+
+- Update "New Game" button to transition to CharacterCreationScene instead of directly to GameScene
+
+- Ensure proper scene flow: MainMenu → CharacterCreation → GameScene
+
+**Dependencies:** Task 5.1 (CharacterCreationScene)
+
+### Task 5.3: Implement Hero Swapping System
+
+**File to Create:** `src/scenes/hero-roster.js` (or integrate into existing UI)
+
+**Responsibilities:**
+
+- Display current party composition
+
+- Allow player to swap out a hero for a new class
+- New hero starts at Level 1
+
+- Show swap confirmation (warn about level reset)
+
+- Update PartyManager with new composition
+
+**Dependencies:** Task 1.2 (PartyManager), Task 1.3 (HeroFactory)
+
+### Task 5.4: Update XP Distribution and Leveling
+
+**Files to Modify:**
+
+- `src/managers/combat-manager.js` (XP distribution)
+
+- `src/managers/world-manager.js` (mile-based progression)
+
+**Changes Required:**
+
+- Distribute XP from combat to all active heroes
+
+- Implement catch-up XP scaling for lower-level heroes
+
+- Track hero levels and experience per hero
+
+- Update level-up logic to grant talent points (1 per level after level 10)
+
+- Implement mile selection UI for revisiting earlier content
+
+**Dependencies:** Task 4.1 (CombatManager), Task 1.4 (WorldManager)
+
+### Task 5.5: Update SaveManager for Multi-Hero
+
+**File to Modify:** `src/utils/save-manager.js`
+
+**Changes Required:**
+
+- Save party data: array of 5 heroes, each with class, spec, level, XP, talents, equipment
+
+- Save current mile progress
+
+- Load party composition on game load
+
+- Maintain save compatibility (migration from single-hero saves if needed)
+
+**Key Data Structure:**
+
+```javascript
+{
+  party: [
+    {
+      id: "hero_0",
+      classId: "paladin",
+      specId: "protection",
+      level: 50,
+      experience: 125000,
+      talents: { /* talent tree state */ },
+      equipment: { /* equipment slots */ }
+    },
+    // ... 4 more heroes
+  ],
+  currentMile: 50,
+  // ... other save data
+}
+```
+
+
+
+**Dependencies:** Task 1.2 (PartyManager structure)
+
+## Phase 6: UI Updates
+
+### Task 6.1: Create Party Display UI
+
+**File to Modify:** `src/scenes/game-world.js`
+
+**Changes Required:**
+
+- Add persistent party display showing all 5 heroes
+
+- Show per-hero: health bar, mana/resource bar, key status effects
+
+- Update health/mana bars in real-time during combat
+
+- Position party display appropriately (side panel or bottom bar)
+
+**Dependencies:** Task 1.2 (PartyManager), Task 4.1 (CombatManager)
+
+### Task 6.2: Update Equipment UI for Multi-Hero
+
+**File to Modify:** `src/scenes/game-world.js` (equipment panel)
+
+**Changes Required:**
+
+- Add hero selector (dropdown or tabs) to switch between heroes
+
+- Display equipment for selected hero
+
+- Update stat display to show selected hero's stats
+
+- Maintain current equipment panel functionality per hero
+
+**Dependencies:** Task 2.2 (EquipmentManager updates)
+
+### Task 6.3: Create Talent Management UI
+
+**File to Create:** `src/scenes/talent-menu.js` (or integrate into game-world.js)**Responsibilities:**
+
+- Display talent tree for selected hero
+
+- Show available talent points
+- Allow point allocation with visual feedback
+
+- Show prerequisites and tooltips
+
+- Display respec option with cost
+
+- Visualize talent tree structure (3 trees, prerequisites)
+
+**Dependencies:** Task 3.1 (TalentManager)
+
+### Task 6.4: Update GameScene Initialization
+
+**File to Modify:** `src/scenes/game-world.js`
+
+**Changes Required:**
+
+- Initialize PartyManager instead of single hero
+
+- Pass PartyManager to all managers (CombatManager, EquipmentManager, etc.)
+
+- Update manager initialization calls to use party structure
+
+- Ensure all UI elements work with party system
+
+**Dependencies:** All previous tasks
+
+## Phase 7: Testing and Integration
+
+### Task 7.1: Update PreloadScene for New Data Files
+
+**File to Modify:** `src/scenes/preload.js`
+
+**Changes Required:**
+
+- Load new JSON files: classes.json, specializations.json, talents.json, stats-config.json
+
+- Ensure all data files are cached before GameScene starts
+
+**Dependencies:** Task 1.1 (data files)
+
+### Task 7.2: Integration Testing
+
+**Testing Checklist:**
+
+- Party creation and initialization
+
+- Combat with 5 heroes (tank holds aggro, healer heals, DPS damage)
+- Equipment management per hero
+
+- Talent allocation and stat calculation
+
+- Hero swapping and leveling
+
+- Mile-based progression and revisiting
+
+- Save/load with party data
+
+- UI updates and interactions
+
+## Implementation Order and Dependencies
+
+```mermaid
+graph TD
+    T1_1[Task 1.1: Data Files] --> T1_3[Task 1.3: HeroFactory]
+    T1_1 --> T1_2[Task 1.2: PartyManager]
+    T1_1 --> T2_1[Task 2.1: StatCalculator]
+    T1_1 --> T3_1[Task 3.1: TalentManager]
+    
+    T1_2 --> T1_4[Task 1.4: WorldManager Refactor]
+    T1_2 --> T2_2[Task 2.2: EquipmentManager Refactor]
+    T1_2 --> T4_1[Task 4.1: CombatManager Refactor]
+    T1_2 --> T5_5[Task 5.5: SaveManager Update]
+    
+    T1_3 --> T5_1[Task 5.1: Character Creation UI]
+    T1_3 --> T5_3[Task 5.3: Hero Swapping]
+    
+    T2_1 --> T2_2
+    T2_1 --> T4_1
+    
+    T3_1 --> T3_2[Task 3.2: Talent Integration]
+    T3_2 --> T2_1
+    
+    T4_1 --> T4_2[Task 4.2: AbilityManager Update]
+    T4_1 --> T5_4[Task 5.4: XP Distribution]
+    
+    T5_1 --> T5_2[Task 5.2: MainScene Update]
+    T5_2 --> T6_4[Task 6.4: GameScene Update]
+    
+    T2_2 --> T6_2[Task 6.2: Equipment UI]
+    T3_1 --> T6_3[Task 6.3: Talent UI]
+    T4_1 --> T6_1[Task 6.1: Party Display UI]
+    
+    T1_4 --> T5_4
+    T5_4 --> T6_4
+    
+    T6_1 --> T7_2[Task 7.2: Integration Testing]
+    T6_2 --> T7_2
+    T6_3 --> T7_2
+    T6_4 --> T7_2
+    
+    T7_1[Task 7.1: PreloadScene] --> T7_2
+```
+
+
+
+## Key Files Reference
+
+**New Files to Create:**
+
+- `src/managers/party-manager.js`
+
+- `src/utils/hero-factory.js`
+
+- `src/utils/stat-calculator.js`
+
+- `src/managers/talent-manager.js`
+
+- `src/scenes/character-creation.js`
+
+- `src/scenes/talent-menu.js` (or integrate)
+
+- `src/data/classes.json`
+
+- `src/data/specializations.json`
+
+- `src/data/talents.json`
+
+- `src/data/stats-config.json`
+
+**Files to Modify:**
+
+- `src/managers/world-manager.js`
+
+- `src/managers/combat-manager.js`
+
+- `src/managers/equipment-manager.js`
+
+- `src/managers/ability-manager.js`
+
+- `src/scenes/game-world.js`
+
+- `src/scenes/main-menu.js`
+
+- `src/scenes/preload.js`
+- `src/utils/save-manager.js`
+
+## Research Notes
+
+During implementation, consider researching:
+
+- State machine patterns for complex AI decision-making
+
+- Talent tree balance mathematics
+
+- Efficient UI rendering for multiple dynamic entities in Phaser
+
+- Performance optimization for multi-hero combat (object pooling, efficient collision detection)

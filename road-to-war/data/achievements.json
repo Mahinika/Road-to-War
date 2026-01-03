@@ -1,0 +1,328 @@
+{
+  "achievements": [
+    {
+      "id": "defeat_10_enemies",
+      "name": "First Blood",
+      "description": "Defeat 10 enemies",
+      "category": "combat",
+      "requirement": 10,
+      "reward": {
+        "gold": 50
+      }
+    },
+    {
+      "id": "defeat_100_enemies",
+      "name": "Warrior",
+      "description": "Defeat 100 enemies",
+      "category": "combat",
+      "requirement": 100,
+      "reward": {
+        "gold": 500
+      }
+    },
+    {
+      "id": "defeat_1000_enemies",
+      "name": "Slayer",
+      "description": "Defeat 1000 enemies",
+      "category": "combat",
+      "requirement": 1000,
+      "reward": {
+        "gold": 5000
+      }
+    },
+    {
+      "id": "win_10_combats",
+      "name": "Victorious",
+      "description": "Win 10 combats",
+      "category": "combat",
+      "requirement": 10,
+      "reward": {
+        "gold": 100
+      }
+    },
+    {
+      "id": "win_100_combats",
+      "name": "Champion",
+      "description": "Win 100 combats",
+      "category": "combat",
+      "requirement": 100,
+      "reward": {
+        "gold": 1000
+      }
+    },
+    {
+      "id": "critical_hit_10",
+      "name": "Critical Strike",
+      "description": "Land 10 critical hits",
+      "category": "combat",
+      "requirement": 10,
+      "reward": {
+        "gold": 75
+      }
+    },
+    {
+      "id": "critical_hit_100",
+      "name": "Master Critic",
+      "description": "Land 100 critical hits",
+      "category": "combat",
+      "requirement": 100,
+      "reward": {
+        "gold": 750
+      }
+    },
+    {
+      "id": "reach_level_5",
+      "name": "Growing Strong",
+      "description": "Reach level 5",
+      "category": "progression",
+      "requirement": 5,
+      "reward": {
+        "gold": 100
+      }
+    },
+    {
+      "id": "reach_level_10",
+      "name": "Experienced",
+      "description": "Reach level 10",
+      "category": "progression",
+      "requirement": 10,
+      "reward": {
+        "gold": 250,
+        "experience": 500
+      }
+    },
+    {
+      "id": "reach_level_20",
+      "name": "Veteran",
+      "description": "Reach level 20",
+      "category": "progression",
+      "requirement": 20,
+      "reward": {
+        "gold": 1000,
+        "experience": 2000
+      }
+    },
+    {
+      "id": "reach_level_50",
+      "name": "Master",
+      "description": "Reach level 50",
+      "category": "progression",
+      "requirement": 50,
+      "reward": {
+        "gold": 5000,
+        "experience": 10000
+      }
+    },
+    {
+      "id": "visit_10_segments",
+      "name": "Explorer",
+      "description": "Visit 10 world segments",
+      "category": "progression",
+      "requirement": 10,
+      "reward": {
+        "gold": 50
+      }
+    },
+    {
+      "id": "visit_100_segments",
+      "name": "World Traveler",
+      "description": "Visit 100 world segments",
+      "category": "progression",
+      "requirement": 100,
+      "reward": {
+        "gold": 1000
+      }
+    },
+    {
+      "id": "collect_10_items",
+      "name": "Collector",
+      "description": "Collect 10 items",
+      "category": "collection",
+      "requirement": 10,
+      "reward": {
+        "gold": 50
+      }
+    },
+    {
+      "id": "collect_50_items",
+      "name": "Hoarder",
+      "description": "Collect 50 items",
+      "category": "collection",
+      "requirement": 50,
+      "reward": {
+        "gold": 250
+      }
+    },
+    {
+      "id": "collect_100_items",
+      "name": "Treasure Hunter",
+      "description": "Collect 100 items",
+      "category": "collection",
+      "requirement": 100,
+      "reward": {
+        "gold": 1000
+      }
+    },
+    {
+      "id": "earn_1000_gold",
+      "name": "Wealthy",
+      "description": "Earn 1000 gold",
+      "category": "collection",
+      "requirement": 1000,
+      "reward": {
+        "gold": 100
+      }
+    },
+    {
+      "id": "earn_10000_gold",
+      "name": "Rich",
+      "description": "Earn 10000 gold",
+      "category": "collection",
+      "requirement": 10000,
+      "reward": {
+        "gold": 1000
+      }
+    },
+    {
+      "id": "equip_10_items",
+      "name": "Equipped",
+      "description": "Equip 10 items",
+      "category": "collection",
+      "requirement": 10,
+      "reward": {
+        "gold": 50
+      }
+    },
+    {
+      "id": "equip_50_items",
+      "name": "Fully Equipped",
+      "description": "Equip 50 items",
+      "category": "collection",
+      "requirement": 50,
+      "reward": {
+        "gold": 250
+      }
+    },
+    {
+      "id": "find_legendary_item",
+      "name": "Legendary Find",
+      "description": "Find a legendary item",
+      "category": "collection",
+      "requirement": 1,
+      "reward": {
+        "gold": 500
+      }
+    },
+    {
+      "id": "visit_10_shops",
+      "name": "Shopper",
+      "description": "Visit 10 shops",
+      "category": "world",
+      "requirement": 10,
+      "reward": {
+        "gold": 100
+      }
+    },
+    {
+      "id": "find_10_treasures",
+      "name": "Treasure Seeker",
+      "description": "Find 10 treasures",
+      "category": "world",
+      "requirement": 10,
+      "reward": {
+        "gold": 500
+      }
+    },
+    {
+      "id": "complete_10_quests",
+      "name": "Quest Master",
+      "description": "Complete 10 quests",
+      "category": "world",
+      "requirement": 10,
+      "reward": {
+        "gold": 1000
+      }
+    },
+    {
+      "id": "reach_mile_100",
+      "name": "Mile 100 Champion",
+      "description": "Reach mile 100",
+      "category": "endgame",
+      "requirement": 100,
+      "reward": {
+        "gold": 10000,
+        "talentPoints": 5,
+        "prestigePoints": 10
+      }
+    },
+    {
+      "id": "reach_level_100",
+      "name": "Max Level",
+      "description": "Reach level 100",
+      "category": "endgame",
+      "requirement": 100,
+      "reward": {
+        "gold": 5000,
+        "talentPoints": 3,
+        "experience": 50000
+      }
+    },
+    {
+      "id": "fully_epic_gear",
+      "name": "Fully Equipped",
+      "description": "Equip all slots with epic+ items",
+      "category": "endgame",
+      "requirement": 18,
+      "reward": {
+        "gold": 10000,
+        "talentPoints": 2
+      }
+    },
+    {
+      "id": "maxed_talent_tree",
+      "name": "Talent Master",
+      "description": "Max out a talent tree (51 points)",
+      "category": "endgame",
+      "requirement": 51,
+      "reward": {
+        "gold": 5000,
+        "talentPoints": 1
+      }
+    },
+    {
+      "id": "complete_3_sets",
+      "name": "Set Collector",
+      "description": "Complete 3 item sets",
+      "category": "endgame",
+      "requirement": 3,
+      "reward": {
+        "gold": 7500,
+        "talentPoints": 2
+      }
+    },
+    {
+      "id": "defeat_war_lord",
+      "name": "War Lord Slayer",
+      "description": "Defeat the War Lord at mile 100",
+      "category": "endgame",
+      "requirement": 1,
+      "reward": {
+        "gold": 20000,
+        "talentPoints": 5,
+        "prestigePoints": 20
+      }
+    },
+    {
+      "id": "defeat_milestone_bosses",
+      "name": "Boss Hunter",
+      "description": "Defeat all milestone bosses (miles 25, 50, 75, 100)",
+      "category": "endgame",
+      "requirement": 4,
+      "reward": {
+        "gold": 15000,
+        "talentPoints": 3
+      }
+    }
+  ]
+}
+

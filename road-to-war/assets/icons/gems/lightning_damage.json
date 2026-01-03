@@ -1,0 +1,12 @@
+{
+  "id": "lightning_damage",
+  "name": "Lightning Damage Gem",
+  "type": "damage",
+  "element": "lightning",
+  "description": "Increases lightning damage by 10-50%",
+  "minValue": 10,
+  "maxValue": 50,
+  "rarity": "common",
+  "seed": 17347,
+  "generatedAt": "2025-12-30T01:14:44.492Z"
+}

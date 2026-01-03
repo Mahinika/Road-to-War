@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameScene UI Layout - Road of War</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .game-viewport {
+            width: 1024px;
+            height: 768px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%);
+            position: relative;
+            border: 3px solid #c9aa71;
+            box-shadow: 0 0 30px rgba(201, 170, 113, 0.3);
+        }
+        
+        /* HUD Bar - Top */
+        .hud-bar {
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            right: 12px;
+            height: 38px;
+            background: rgba(26, 26, 46, 0.98);
+            border: 3px solid #c9aa71;
+            border-radius: 2px;
+            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.6);
+        }
+        
+        .hud-gold {
+            position: absolute;
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #FFD700;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px #000;
+        }
+        
+        .hud-mile {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: #FFD700;
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px #000;
+        }
+        
+        .hud-progress {
+            position: absolute;
+            left: 50%;
+            top: 60%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 8px;
+            background: #333;
+            border: 2px solid rgba(201, 170, 113, 0.6);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .hud-progress-fill {
+            width: 45%;
+            height: 100%;
+            background: #FFD700;
+        }
+        
+        .hud-mana {
+            position: absolute;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4169E1;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px #000;
+        }
+        
+        /* Minimap - Top Right */
+        .minimap {
+            position: absolute;
+            top: 55px;
+            right: 18px;
+            width: 110px;
+            height: 110px;
+            background: rgba(10, 10, 10, 0.96);
+            border: 3px solid #8b6914;
+            border-radius: 50%;
+            box-shadow: 3px 3px 4px rgba(0, 0, 0, 0.65);
+        }
+        
+        .minimap-label {
+            position: absolute;
+            top: 40px;
+            right: 18px;
+            color: #c9aa71;
+            font-size: 13px;
+            text-align: center;
+            width: 110px;
+            text-shadow: 1px 1px 2px #000;
+        }
+        
+        /* Party Frames - Left Side */
+        .party-frames {
+            position: absolute;
+            left: 16px;
+            top: 100px;
+        }
+        
+        .party-frame {
+            width: 220px;
+            height: 64px;
+            background: rgba(26, 31, 46, 0.96);
+            border: 2px solid;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .party-frame.tank { border-color: #8B4513; }
+        .party-frame.healer { border-color: #FFFFFF; }
+        .party-frame.dps1 { border-color: #FFD700; }
+        .party-frame.dps2 { border-color: #00FF00; }
+        .party-frame.dps3 { border-color: #4169E1; }
+        
+        .party-portrait {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 52px;
+            height: 52px;
+            background: #333;
+            border: 2px solid #666;
+            border-radius: 2px;
+        }
+        
+        .party-name {
+            position: absolute;
+            left: 66px;
+            top: 8px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: bold;
+            text-shadow: 2px 2px 2px #000;
+        }
+        
+        .party-level {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            color: #FFD700;
+            font-size: 12px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000;
+        }
+        
+        .party-health-bar {
+            position: absolute;
+            left: 66px;
+            top: 26px;
+            width: 130px;
+            height: 16px;
+            background: #333;
+            border: 1px solid #666;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .party-health-fill {
+            width: 75%;
+            height: 100%;
+            background: linear-gradient(to right, #00ff00, #90ee90);
+        }
+        
+        .party-mana-bar {
+            position: absolute;
+            left: 66px;
+            top: 44px;
+            width: 130px;
+            height: 14px;
+            background: #333;
+            border: 1px solid #666;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .party-mana-fill {
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(to right, #4169E1, #87CEEB);
+        }
+        
+        /* Player Frame - Bottom Left */
+        .player-frame {
+            position: absolute;
+            left: 15px;
+            bottom: 140px;
+            width: 220px;
+            height: 80px;
+            background: rgba(26, 31, 46, 0.98);
+            border: 4px solid #c9aa71;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+        }
+        
+        .player-portrait {
+            position: absolute;
+            left: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 64px;
+            height: 64px;
+            background: #333;
+            border: 4px solid #c9aa71;
+            border-radius: 2px;
+        }
+        
+        .player-name {
+            position: absolute;
+            left: 100px;
+            top: 14px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 3px #000;
+        }
+        
+        .player-level {
+            position: absolute;
+            right: 14px;
+            top: 14px;
+            color: #FFD700;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000;
+        }
+        
+        .player-health-bar {
+            position: absolute;
+            left: 100px;
+            top: 18px;
+            width: 140px;
+            height: 18px;
+            background: #333;
+            border: 2px solid #666;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .player-health-fill {
+            width: 85%;
+            height: 100%;
+            background: linear-gradient(to right, #00ff00, #90ee90);
+        }
+        
+        .player-mana-bar {
+            position: absolute;
+            left: 100px;
+            top: 42px;
+            width: 140px;
+            height: 15px;
+            background: #333;
+            border: 2px solid #666;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .player-mana-fill {
+            width: 70%;
+            height: 100%;
+            background: linear-gradient(to right, #4169E1, #87CEEB);
+        }
+        
+        /* Target Frame - Top Center (appears during combat) */
+        .target-frame {
+            position: absolute;
+            left: 50%;
+            top: 50px;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 65px;
+            background: rgba(26, 31, 46, 0.95);
+            border: 3px solid #ff0000;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(255, 0, 0, 0.4);
+        }
+        
+        .target-name {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 2px 2px 2px #000;
+        }
+        
+        .target-health-bar {
+            position: absolute;
+            left: 10px;
+            top: 30px;
+            width: 180px;
+            height: 20px;
+            background: #333;
+            border: 2px solid #ff0000;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .target-health-fill {
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(to right, #ff0000, #ff6666);
+        }
+        
+        /* Action Bar - Bottom Center */
+        .action-bar {
+            position: absolute;
+            left: 50%;
+            bottom: 18px;
+            transform: translateX(-50%);
+            width: 320px;
+            height: 60px;
+            background: rgba(26, 26, 46, 0.96);
+            border: 4px solid #c9aa71;
+            border-radius: 4px;
+            padding: 12px 16px;
+            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .action-button {
+            width: 44px;
+            height: 44px;
+            background: rgba(10, 10, 10, 0.9);
+            border: 2px solid #c9aa71;
+            border-radius: 4px;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .action-button:hover {
+            border-color: #FFD700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        .action-button-icon {
+            width: 32px;
+            height: 32px;
+            background: #333;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 2px;
+        }
+        
+        /* Combat Log - Bottom Center, Above Action Bar */
+        .combat-log {
+            position: absolute;
+            left: 50%;
+            bottom: 80px;
+            transform: translateX(-50%);
+            width: 420px;
+            height: 160px;
+            background: rgba(10, 10, 10, 0.96);
+            border: 4px solid #c9aa71;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+        }
+        
+        .combat-log-title {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #c9aa71;
+            font-size: 12px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000;
+        }
+        
+        .combat-log-content {
+            position: absolute;
+            top: 30px;
+            left: 12px;
+            right: 20px;
+            bottom: 12px;
+            color: #cccccc;
+            font-size: 12px;
+            line-height: 1.4;
+            overflow-y: auto;
+        }
+        
+        .combat-log-entry {
+            margin-bottom: 5px;
+        }
+        
+        .combat-log-entry.damage { color: #ff6666; }
+        .combat-log-entry.heal { color: #66ff66; }
+        .combat-log-entry.info { color: #cccccc; }
+        
+        /* Labels */
+        .label {
+            position: absolute;
+            color: #c9aa71;
+            font-size: 11px;
+            text-shadow: 1px 1px 2px #000;
+            pointer-events: none;
+        }
+        
+        .label-hud { top: 50px; left: 20px; }
+        .label-minimap { top: 170px; right: 20px; }
+        .label-party { top: 450px; left: 20px; }
+        .label-player { bottom: 230px; left: 20px; }
+        .label-target { top: 120px; left: 50%; transform: translateX(-50%); }
+        .label-action { bottom: 85px; left: 50%; transform: translateX(-50%); }
+        .label-combat { bottom: 250px; left: 50%; transform: translateX(-50%); }
+    </style>
+</head>
+<body>
+    <div class="game-viewport">
+        <!-- HUD Bar -->
+        <div class="hud-bar">
+            <div class="hud-gold">Gold: 1,234</div>
+            <div class="hud-mile">Mile 45</div>
+            <div class="hud-progress">
+                <div class="hud-progress-fill"></div>
+            </div>
+            <div class="hud-mana">Mana: 250/350</div>
+        </div>
+        
+        <!-- Minimap -->
+        <div class="minimap"></div>
+        <div class="minimap-label">Minimap</div>
+        
+        <!-- Party Frames -->
+        <div class="party-frames">
+            <div class="party-frame tank">
+                <div class="party-portrait"></div>
+                <div class="party-name">Tank Hero</div>
+                <div class="party-level">Lv. 42</div>
+                <div class="party-health-bar">
+                    <div class="party-health-fill"></div>
+                </div>
+                <div class="party-mana-bar">
+                    <div class="party-mana-fill"></div>
+                </div>
+            </div>
+            <div class="party-frame healer">
+                <div class="party-portrait"></div>
+                <div class="party-name">Healer Hero</div>
+                <div class="party-level">Lv. 40</div>
+                <div class="party-health-bar">
+                    <div class="party-health-fill" style="width: 90%;"></div>
+                </div>
+                <div class="party-mana-bar">
+                    <div class="party-mana-fill" style="width: 45%;"></div>
+                </div>
+            </div>
+            <div class="party-frame dps1">
+                <div class="party-portrait"></div>
+                <div class="party-name">DPS Hero 1</div>
+                <div class="party-level">Lv. 38</div>
+                <div class="party-health-bar">
+                    <div class="party-health-fill" style="width: 60%;"></div>
+                </div>
+                <div class="party-mana-bar">
+                    <div class="party-mana-fill" style="width: 80%;"></div>
+                </div>
+            </div>
+            <div class="party-frame dps2">
+                <div class="party-portrait"></div>
+                <div class="party-name">DPS Hero 2</div>
+                <div class="party-level">Lv. 39</div>
+                <div class="party-health-bar">
+                    <div class="party-health-fill" style="width: 85%;"></div>
+                </div>
+                <div class="party-mana-bar">
+                    <div class="party-mana-fill" style="width: 70%;"></div>
+                </div>
+            </div>
+            <div class="party-frame dps3">
+                <div class="party-portrait"></div>
+                <div class="party-name">DPS Hero 3</div>
+                <div class="party-level">Lv. 37</div>
+                <div class="party-health-bar">
+                    <div class="party-health-fill" style="width: 95%;"></div>
+                </div>
+                <div class="party-mana-bar">
+                    <div class="party-mana-fill" style="width: 90%;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Player Frame -->
+        <div class="player-frame">
+            <div class="player-portrait"></div>
+            <div class="player-name">Player Hero</div>
+            <div class="player-level">Lv. 45</div>
+            <div class="player-health-bar">
+                <div class="player-health-fill"></div>
+            </div>
+            <div class="player-mana-bar">
+                <div class="player-mana-fill"></div>
+            </div>
+        </div>
+        
+        <!-- Target Frame (appears during combat) -->
+        <div class="target-frame">
+            <div class="target-name">Enemy Orc</div>
+            <div class="target-health-bar">
+                <div class="target-health-fill"></div>
+            </div>
+        </div>
+        
+        <!-- Combat Log -->
+        <div class="combat-log">
+            <div class="combat-log-title">Combat Log</div>
+            <div class="combat-log-content">
+                <div class="combat-log-entry damage">Tank Hero hits Enemy Orc for 125 damage</div>
+                <div class="combat-log-entry damage">Enemy Orc hits Tank Hero for 89 damage</div>
+                <div class="combat-log-entry heal">Healer Hero heals Tank Hero for 150 health</div>
+                <div class="combat-log-entry damage">DPS Hero 1 hits Enemy Orc for 98 damage</div>
+                <div class="combat-log-entry info">Combat started</div>
+            </div>
+        </div>
+        
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <div class="action-button">
+                <div class="action-button-icon"></div>
+            </div>
+            <div class="action-button">
+                <div class="action-button-icon"></div>
+            </div>
+            <div class="action-button">
+                <div class="action-button-icon"></div>
+            </div>
+            <div class="action-button">
+                <div class="action-button-icon"></div>
+            </div>
+            <div class="action-button">
+                <div class="action-button-icon"></div>
+            </div>
+            <div class="action-button">
+                <div class="action-button-icon"></div>
+            </div>
+        </div>
+        
+        <!-- Labels -->
+        <div class="label label-hud">HUD Bar</div>
+        <div class="label label-minimap">Minimap</div>
+        <div class="label label-party">Party Frames (5)</div>
+        <div class="label label-player">Player Frame</div>
+        <div class="label label-target">Target Frame</div>
+        <div class="label label-combat">Combat Log</div>
+        <div class="label label-action">Action Bar</div>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+

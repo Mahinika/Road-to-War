@@ -1,0 +1,115 @@
+[gd_scene load_steps=2 format=3 uid="uid://dmap100mile"]
+
+[ext_resource type="Script" path="res://scripts/WorldMap.gd" id="1_script"]
+
+[node name="WorldMap" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="MapPanel" type="Panel" parent="."]
+custom_minimum_size = Vector2(800, 400)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -200.0
+offset_right = 400.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="MapPanel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_top = 20.0
+offset_right = 100.0
+offset_bottom = 50.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 24
+text = "THE 100-MILE ROAD"
+horizontal_alignment = 1
+
+[node name="RoadLine" type="Line2D" parent="MapPanel"]
+position = Vector2(50, 200)
+points = PackedVector2Array(0, 0, 700, 0)
+width = 10.0
+default_color = Color(0.4, 0.3, 0.2, 1)
+
+[node name="PlayerMarker" type="Sprite2D" parent="MapPanel"]
+position = Vector2(50, 200)
+scale = Vector2(0.5, 0.5)
+
+[node name="MarkerLabel" type="Label" parent="MapPanel/PlayerMarker"]
+offset_left = -20.0
+offset_top = -40.0
+offset_right = 20.0
+offset_bottom = -17.0
+text = "PARTY"
+horizontal_alignment = 1
+
+[node name="MileLabel" type="Label" parent="MapPanel"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -100.0
+offset_top = -80.0
+offset_right = 100.0
+offset_bottom = -50.0
+grow_horizontal = 2
+text = "Current Mile: 0 / 100"
+horizontal_alignment = 1
+
+[node name="BiomeLabel" type="Label" parent="MapPanel"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -100.0
+offset_top = -50.0
+offset_right = 100.0
+offset_bottom = -20.0
+grow_horizontal = 2
+text = "Region: Plains"
+horizontal_alignment = 1
+
+[node name="CloseButton" type="Button" parent="MapPanel"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -40.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 40.0
+grow_horizontal = 0
+text = "X"
+
+[connection signal="pressed" from="MapPanel/CloseButton" to="." method="_on_close_pressed"]
+
+

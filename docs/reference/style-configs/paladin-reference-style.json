@@ -1,0 +1,74 @@
+{
+  "source": "reference-images\\e91e11e9-15b8-4754-9ded-9730f55df88e.png",
+  "analyzedAt": "2025-12-23T19:23:35.993Z",
+  "palette": {
+    "metal": [
+      15001065,
+      11777478
+    ],
+    "armor": [
+      15001065,
+      11777478
+    ],
+    "cloth": [
+      7895959,
+      10658993,
+      3816273,
+      5001584,
+      2375253,
+      9408935,
+      11642189
+    ],
+    "wood": [
+      8347466
+    ],
+    "glow": [
+      14600488
+    ],
+    "accent": [
+      1,
+      329496,
+      923715
+    ],
+    "other": [
+      1909824,
+      1782587
+    ]
+  },
+  "proportions": {
+    "headSize": 33,
+    "headY": 199,
+    "torsoWidth": 295,
+    "torsoHeight": 215,
+    "torsoY": 447,
+    "armLength": 215,
+    "armWidth": 295,
+    "legLength": 536,
+    "legWidth": 584,
+    "centerX": 504,
+    "centerY": 447,
+    "symmetryAxis": 504
+  },
+  "style": {
+    "outlineColor": 0,
+    "outlineThickness": 3,
+    "shadingMethod": "flat",
+    "dithering": false,
+    "colorCount": 55784,
+    "hasHighlights": false,
+    "highlightColor": 16777215,
+    "lightDirection": "top"
+  },
+  "equipment": {
+    "helmet": {
+      "present": true
+    },
+    "chestArmor": {
+      "present": true
+    },
+    "weapon": {
+      "present": false,
+      "type": "unknown"
+    }
+  }
+}

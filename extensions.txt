@@ -1,0 +1,10 @@
+﻿christian-kohler.path-intellisense
+coenraads.bracket-pair-colorizer-2
+dbaeumer.vscode-eslint
+eamodio.gitlens
+jock.svg
+ms-azuretools.vscode-containers
+ms-vscode.powershell
+saoudrizwan.claude-dev
+tomoyukim.vscode-mermaid-editor
+usernamehw.errorlens

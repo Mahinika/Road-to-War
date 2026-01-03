@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hero Debug Panel - Inject into Game</title>
+    <style>
+        body {
+            background: #1e293b;
+            color: white;
+            font-family: system-ui, sans-serif;
+            padding: 20px;
+        }
+        .instructions {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        code {
+            background: #020617;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        pre {
+            background: #020617;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+    <h1>Hero Debug Panel - Injection Script</h1>
+    
+    <div class="instructions">
+        <h2>How to Use:</h2>
+        <ol>
+            <li>Start the game and wait for it to fully load</li>
+            <li>Open browser console (F12) in the game tab</li>
+            <li>Copy and paste the script below into the console</li>
+            <li>A debug panel will appear in the top-right of the game</li>
+        </ol>
+    </div>
+    
+    <h2>Injection Script:</h2>
+    <p style="color:#fbbf24;">⚠️ Use the enhanced version: Load <code>/inject-now.js</code> instead!</p>
+    <p>Or use this simplified version:</p>
+    <pre id="injection-script">(function() {
+    if (!window.gameScene) {
+        alert('Game scene not found! Make sure the game is loaded.');
+        return;
+    }
+    
+    // Remove existing panel if present
+    const existing = document.getElementById('hero-debugger-panel');
+    if (existing) {
+        existing.remove();
+        return;
+    }
+    
+    // Create debug panel
+    const panel = document.createElement('div');
+    panel.id = 'hero-debugger-panel';
+    panel.style.cssText = `
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: #1e293b;
+        color: white;
+        padding: 20px;
+        border: 2px solid #3b82f6;
+        border-radius: 8px;
+        z-index: 10000;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        font-family: system-ui, sans-serif;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    `;
+    
+    const scene = window.gameScene;
+    
+    // Create header
+    const header = document.createElement('h3');
+    header.textContent = '🎮 Hero Visibility Debugger';
+    header.style.marginTop = '0';
+    panel.appendChild(header);
+    
+    // Create close button
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕ Close';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:10px;background:#ef4444;padding:5px 10px;';
+    closeBtn.onclick = () => panel.remove();
+    panel.appendChild(closeBtn);
+    
+    // Results area
+    const results = document.createElement('div');
+    results.id = 'debug-results';
+    results.style.cssText = 'margin:10px 0;padding:10px;background:#0f172a;border-radius:5px;min-height:100px;';
+    panel.appendChild(results);
+    
+    function updateResults(html) {
+        results.innerHTML = html;
+    }
+    
+    // Run diagnostic button
+    const diagnosticBtn = document.createElement('button');
+    diagnosticBtn.textContent = '🔍 Run Diagnostic';
+    diagnosticBtn.onclick = () => {
+        const scene = window.gameScene;
+        if (!scene) {
+            updateResults('<p style="color:#ef4444;">Game scene not found!</p>');
+            return;
+        }
+        
+        const checks = [];
+        
+        // Check 1: Hero count
+        const heroCount = scene.partyMemberSprites?.length || 0;
+        checks.push({
+            name: 'Hero Count',
+            status: heroCount === 5 ? 'pass' : 'fail',
+            message: `Found ${heroCount} heroes (expected 5)`
+        });
+        
+        // Check 2: Visibility
+        let visibleCount = 0;
+        scene.partyMemberSprites?.forEach((pm) => {
+            if (pm.sprite && pm.sprite.visible && pm.sprite.active) {
+                visibleCount++;
+            }
+        });
+        checks.push({
+            name: 'Visibility',
+            status: visibleCount === 5 ? 'pass' : 'fail',
+            message: `${visibleCount}/5 heroes visible and active`
+        });
+        
+        // Check 3: Camera
+        const camera = scene.cameras?.main;
+        if (camera) {
+            checks.push({
+                name: 'Camera',
+                status: 'pass',
+                message: `At (${camera.scrollX.toFixed(0)}, ${camera.scrollY.toFixed(0)})`
+            });
+        } else {
+            checks.push({
+                name: 'Camera',
+                status: 'fail',
+                message: 'Camera not found'
+            });
+        }
+        
+        // Check 4: Texture
+        const textureExists = scene.textures?.exists('hero-sprite');
+        checks.push({
+            name: 'Texture',
+            status: textureExists ? 'pass' : 'fail',
+            message: textureExists ? 'Hero texture exists' : 'Hero texture missing!'
+        });
+        
+        // Display results
+        let html = '<h4>Diagnostic Results:</h4>';
+        checks.forEach(check => {
+            const color = check.status === 'pass' ? '#10b981' : '#ef4444';
+            const icon = check.status === 'pass' ? '✅' : '❌';
+            html += `<p style="color:${color};">${icon} <strong>${check.name}:</strong> ${check.message}</p>`;
+        });
+        
+        // Hero details
+        html += '<h4>Hero Details:</h4><pre style="font-size:11px;max-height:200px;overflow-y:auto;">';
+        scene.partyMemberSprites?.forEach((pm, i) => {
+            const sprite = pm.sprite;
+            if (!sprite) {
+                html += `Hero ${i}: NO SPRITE\\n`;
+                return;
+            }
+            const tint = sprite.tintTopLeft || sprite.tint || 0;
+            const tintHex = '0x' + tint.toString(16).padStart(6, '0').toUpperCase();
+            html += `Hero ${i} (${pm.hero?.id || 'unknown'}):\\n`;
+            html += `  Position: (${sprite.x.toFixed(0)}, ${sprite.y.toFixed(0)})\\n`;
+            html += `  Visible: ${sprite.visible}, Active: ${sprite.active}\\n`;
+            html += `  Tint: ${tintHex}, Depth: ${sprite.depth}\\n\\n`;
+        });
+        html += '</pre>';
+        
+        updateResults(html);
+        
+        // Also log to console
+        console.log('=== Hero Visibility Diagnostic ===');
+        checks.forEach(c => console.log(`${c.status === 'pass' ? '✅' : '❌'} ${c.name}: ${c.message}`));
+    };
+    panel.appendChild(diagnosticBtn);
+    
+    // Force visible button
+    const forceBtn = document.createElement('button');
+    forceBtn.textContent = '👁️ Force All Visible';
+    forceBtn.onclick = () => {
+        const scene = window.gameScene;
+        if (!scene) return;
+        
+        let count = 0;
+        scene.partyMemberSprites?.forEach((pm) => {
+            if (pm.sprite) {
+                pm.sprite.setVisible(true);
+                pm.sprite.setActive(true);
+                pm.sprite.setAlpha(1.0);
+                count++;
+            }
+        });
+        
+        updateResults(`<p style="color:#10b981;">✅ Forced ${count} heroes visible!</p>`);
+        console.log(`Forced ${count} heroes visible`);
+    };
+    panel.appendChild(forceBtn);
+    
+    // Log states button
+    const logBtn = document.createElement('button');
+    logBtn.textContent = '📋 Log Hero States';
+    logBtn.onclick = () => {
+        const scene = window.gameScene;
+        if (!scene) return;
+        
+        console.log('=== Hero States ===');
+        scene.partyMemberSprites?.forEach((pm, i) => {
+            const sprite = pm.sprite;
+            if (!sprite) {
+                console.log(`Hero ${i}: NO SPRITE`);
+                return;
+            }
+            const tint = sprite.tintTopLeft || sprite.tint || 0;
+            const tintHex = '0x' + tint.toString(16).padStart(6, '0').toUpperCase();
+            
+            console.log(`Hero ${i} (${pm.hero?.id || 'unknown'}):`, {
+                position: { x: sprite.x, y: sprite.y },
+                visible: sprite.visible,
+                active: sprite.active,
+                alpha: sprite.alpha,
+                tint: tintHex,
+                depth: sprite.depth,
+                texture: sprite.texture?.key || 'N/A'
+            });
+        });
+        
+        updateResults('<p style="color:#3b82f6;">Hero states logged to console (F12)</p>');
+    };
+    panel.appendChild(logBtn);
+    
+    // Check camera bounds button
+    const cameraBtn = document.createElement('button');
+    cameraBtn.textContent = '📷 Check Camera Bounds';
+    cameraBtn.onclick = () => {
+        const scene = window.gameScene;
+        if (!scene) return;
+        
+        const camera = scene.cameras?.main;
+        if (!camera) {
+            updateResults('<p style="color:#ef4444;">Camera not found!</p>');
+            return;
+        }
+        
+        const viewport = {
+            left: camera.scrollX,
+            right: camera.scrollX + camera.width,
+            top: camera.scrollY,
+            bottom: camera.scrollY + camera.height
+        };
+        
+        let html = '<h4>Camera Viewport:</h4>';
+        html += `<p>Left: ${viewport.left.toFixed(0)}, Right: ${viewport.right.toFixed(0)}<br>`;
+        html += `Top: ${viewport.top.toFixed(0)}, Bottom: ${viewport.bottom.toFixed(0)}</p>`;
+        html += '<h4>Hero Positions:</h4><pre style="font-size:11px;">';
+        
+        scene.partyMemberSprites?.forEach((pm, i) => {
+            const sprite = pm.sprite;
+            if (!sprite) return;
+            
+            const inView = sprite.x >= viewport.left && 
+                         sprite.x <= viewport.right &&
+                         sprite.y >= viewport.top && 
+                         sprite.y <= viewport.bottom;
+            
+            html += `Hero ${i} (${pm.hero?.id || 'unknown'}): `;
+            html += `${inView ? '✓ IN VIEW' : '✗ OFF-SCREEN'}\\n`;
+            html += `  Position: (${sprite.x.toFixed(0)}, ${sprite.y.toFixed(0)})\\n\\n`;
+        });
+        html += '</pre>';
+        
+        updateResults(html);
+    };
+    panel.appendChild(cameraBtn);
+    
+    // Clear tints button
+    const clearTintBtn = document.createElement('button');
+    clearTintBtn.textContent = '🎨 Clear All Tints';
+    clearTintBtn.onclick = () => {
+        const scene = window.gameScene;
+        if (!scene) return;
+        
+        let count = 0;
+        scene.partyMemberSprites?.forEach((pm) => {
+            if (pm.sprite) {
+                pm.sprite.clearTint();
+                count++;
+            }
+        });
+        
+        updateResults(`<p style="color:#10b981;">✅ Cleared tints from ${count} heroes!</p>`);
+    };
+    panel.appendChild(clearTintBtn);
+    
+    // Add to page
+    document.body.appendChild(panel);
+    
+    // Auto-run diagnostic
+    setTimeout(() => {
+        diagnosticBtn.click();
+    }, 500);
+    
+    console.log('Hero Debug Panel injected!');
+})();</pre>
+    
+    <button onclick="copyScript()">📋 Copy Script to Clipboard</button>
+    
+    <script>
+        function copyScript() {
+            const script = document.getElementById('injection-script').textContent;
+            navigator.clipboard.writeText(script).then(() => {
+                alert('Script copied! Now paste it into the game console (F12)');
+            });
+        }
+    </script>
+</body>
+</html>
+

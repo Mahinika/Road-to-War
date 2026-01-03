@@ -1,0 +1,12 @@
+{
+  "seed": 12345,
+  "type": "paladin",
+  "palette": "paladin",
+  "equipment": {
+    "weapon": "sword",
+    "armor": "plate",
+    "helmet": true
+  },
+  "generatedAt": "2025-12-23T17:41:05.010Z",
+  "version": "1.0.0"
+}

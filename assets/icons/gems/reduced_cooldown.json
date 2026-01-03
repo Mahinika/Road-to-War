@@ -1,0 +1,12 @@
+{
+  "id": "reduced_cooldown",
+  "name": "Cooldown Reduction Gem",
+  "type": "support",
+  "effect": "cooldown",
+  "description": "Reduces ability cooldown by 10-30%",
+  "minValue": 10,
+  "maxValue": 30,
+  "rarity": "rare",
+  "seed": 17353,
+  "generatedAt": "2025-12-30T01:14:44.499Z"
+}

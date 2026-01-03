@@ -1,0 +1,68 @@
+{
+  "source": "./reference-images/paladin.jfif",
+  "analyzedAt": "2025-12-23T18:58:22.946Z",
+  "palette": {
+    "metal": [
+      13086894,
+      15127520
+    ],
+    "armor": [
+      13086894,
+      15127520
+    ],
+    "cloth": [
+      8022897,
+      5907005,
+      7035487,
+      7496547,
+      8084826,
+      10848397,
+      7562084,
+      7759203,
+      8415072,
+      7562084,
+      7627365,
+      8020073
+    ],
+    "skin": [
+      10053719,
+      12158293
+    ]
+  },
+  "proportions": {
+    "headSize": 273,
+    "headY": 103,
+    "torsoWidth": 273,
+    "torsoHeight": 161,
+    "torsoY": 103,
+    "armLength": 161,
+    "armWidth": 273,
+    "legLength": 1,
+    "legWidth": 1,
+    "centerX": 136,
+    "centerY": 103,
+    "symmetryAxis": 136
+  },
+  "style": {
+    "outlineColor": 6168128,
+    "outlineThickness": 1,
+    "shadingMethod": "flat",
+    "dithering": false,
+    "colorCount": 16507,
+    "hasHighlights": false,
+    "highlightColor": 16777215,
+    "lightDirection": "top"
+  },
+  "equipment": {
+    "helmet": {
+      "present": true
+    },
+    "chestArmor": {
+      "present": true
+    },
+    "weapon": {
+      "present": false,
+      "type": "unknown"
+    }
+  }
+}

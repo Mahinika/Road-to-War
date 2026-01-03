@@ -1,0 +1,228 @@
+{
+    "general": {
+        "auto_attack": {
+            "name": "Auto Attack",
+            "cost": 0,
+            "resourceType": "none",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 1.0
+        }
+    },
+    "paladin": {
+        "judgment": {
+            "name": "Judgment",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 8,
+            "type": "attack",
+            "damageMultiplier": 1.5,
+            "scaling": "strength"
+        },
+        "consecration": {
+            "name": "Consecration",
+            "cost": 25,
+            "resourceType": "mana",
+            "cooldown": 12,
+            "type": "aoe",
+            "damageMultiplier": 0.8,
+            "duration": 5,
+            "scaling": "strength"
+        },
+        "lay_on_hands": {
+            "name": "Lay on Hands",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 30,
+            "type": "heal",
+            "healPercent": 1.0
+        },
+        "divine_shield": {
+            "name": "Divine Shield",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 60,
+            "type": "buff",
+            "duration": 8,
+            "invulnerability": true
+        },
+        "holy_shield": {
+            "name": "Holy Shield",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "defenseBonus": 0.3,
+            "duration": 10
+        },
+        "avengers_shield": {
+            "name": "Avenger's Shield",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 15,
+            "type": "attack",
+            "damageMultiplier": 1.4,
+            "targets": 3,
+            "scaling": "strength"
+        },
+        "holy_light": {
+            "name": "Holy Light",
+            "cost": 30,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "heal",
+            "healMultiplier": 2.5,
+            "scaling": "intellect"
+        },
+        "holy_shock": {
+            "name": "Holy Shock",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 6,
+            "type": "heal_attack",
+            "healMultiplier": 1.5,
+            "damageMultiplier": 1.5,
+            "scaling": "intellect"
+        },
+        "crusader_strike": {
+            "name": "Crusader Strike",
+            "cost": 10,
+            "resourceType": "mana",
+            "cooldown": 4,
+            "type": "attack",
+            "damageMultiplier": 1.3,
+            "scaling": "strength"
+        },
+        "divine_storm": {
+            "name": "Divine Storm",
+            "cost": 25,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "aoe_heal",
+            "damageMultiplier": 1.1,
+            "healPercent": 0.25,
+            "scaling": "strength"
+        }
+    },
+    "warrior": {
+        "charge": {
+            "name": "Charge",
+            "cost": 0,
+            "resourceType": "none",
+            "cooldown": 15,
+            "type": "move",
+            "rageGain": 15,
+            "stunDuration": 1.5
+        },
+        "rend": {
+            "name": "Rend",
+            "cost": 10,
+            "resourceType": "rage",
+            "cooldown": 0,
+            "type": "dot",
+            "damageMultiplier": 0.3,
+            "duration": 15,
+            "scaling": "strength"
+        },
+        "shield_slam": {
+            "name": "Shield Slam",
+            "cost": 20,
+            "resourceType": "rage",
+            "cooldown": 6,
+            "type": "attack",
+            "damageMultiplier": 1.8,
+            "threatMultiplier": 2.0,
+            "scaling": "strength"
+        },
+        "bloodthirst": {
+            "name": "Bloodthirst",
+            "cost": 30,
+            "resourceType": "rage",
+            "cooldown": 4,
+            "type": "attack_heal",
+            "damageMultiplier": 1.5,
+            "healPercent": 0.03,
+            "scaling": "strength"
+        },
+        "mortal_strike": {
+            "name": "Mortal Strike",
+            "cost": 30,
+            "resourceType": "rage",
+            "cooldown": 6,
+            "type": "attack",
+            "damageMultiplier": 2.2,
+            "healingReduced": 0.5,
+            "scaling": "strength"
+        }
+    },
+    "rogue": {
+        "sinister_strike": {
+            "name": "Sinister Strike",
+            "cost": 45,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 1.4,
+            "comboPoints": 1,
+            "scaling": "agility"
+        },
+        "eviscerate": {
+            "name": "Eviscerate",
+            "cost": 35,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "finisher",
+            "damageMultiplier": 1.0,
+            "scaling": "agility"
+        },
+        "mutilate": {
+            "name": "Mutilate",
+            "cost": 60,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 1.8,
+            "comboPoints": 2,
+            "scaling": "agility"
+        },
+        "kick": {
+            "name": "Kick",
+            "cost": 15,
+            "resourceType": "energy",
+            "cooldown": 10,
+            "type": "interrupt",
+            "duration": 5
+        }
+    },
+    "mage": {
+        "fireball": {
+            "name": "Fireball",
+            "cost": 50,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 2.0,
+            "scaling": "intellect"
+        },
+        "frostbolt": {
+            "name": "Frostbolt",
+            "cost": 40,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 1.6,
+            "slowPercent": 0.4,
+            "scaling": "intellect"
+        },
+        "arcane_blast": {
+            "name": "Arcane Blast",
+            "cost": 60,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 1.8,
+            "stackingCost": true,
+            "scaling": "intellect"
+        }
+    }
+}

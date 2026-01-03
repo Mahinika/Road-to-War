@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation Preview - Road of War</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .header {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+            align-items: center;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        button.stop {
+            background: #f44336;
+        }
+
+        button.stop:hover {
+            background: #da190b;
+        }
+
+        select, input {
+            background: #333;
+            color: #e0e0e0;
+            border: 1px solid #555;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+
+        .sidebar {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            height: fit-content;
+        }
+
+        .sidebar h2 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .preview-area {
+            background: #2d2d2d;
+            padding: 40px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 500px;
+        }
+
+        .preview-canvas {
+            background: #1a1a1a;
+            border: 2px solid #555;
+            border-radius: 8px;
+            image-rendering: pixelated;
+            max-width: 100%;
+        }
+
+        .preview-info {
+            margin-top: 20px;
+            text-align: center;
+            color: #bbb;
+        }
+
+        .timeline {
+            margin-top: 30px;
+            width: 100%;
+        }
+
+        .timeline-track {
+            background: #333;
+            height: 60px;
+            border-radius: 4px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .timeline-scrubber {
+            position: absolute;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: #4CAF50;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .timeline-frames {
+            display: flex;
+            height: 100%;
+        }
+
+        .timeline-frame {
+            flex: 1;
+            border-right: 1px solid #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #666;
+        }
+
+        .timeline-frame.active {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .animation-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .animation-item {
+            background: #333;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .animation-item:hover {
+            background: #3a3a3a;
+        }
+
+        .animation-item.selected {
+            background: #2a4a2a;
+            border: 1px solid #4CAF50;
+        }
+
+        .animation-name {
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 5px;
+        }
+
+        .animation-meta {
+            font-size: 12px;
+            color: #bbb;
+        }
+
+        .connection-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .connection-status.connected {
+            background: #4CAF50;
+        }
+
+        .connection-status.disconnected {
+            background: #f44336;
+        }
+
+        .playback-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .speed-control label {
+            color: #bbb;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎬 Animation Preview</h1>
+        <div>
+            <span class="connection-status" id="connectionStatus"></span>
+            <span id="connectionText">Connecting to game...</span>
+        </div>
+        <div class="controls">
+            <select id="characterTypeSelect">
+                <option value="">Select Character Type...</option>
+            </select>
+            <select id="animationSelect">
+                <option value="">Select Animation...</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <h2>Available Animations</h2>
+            <div class="animation-list" id="animationList">
+                <div style="color: #666; text-align: center; padding: 20px;">
+                    Loading animations...
+                </div>
+            </div>
+        </div>
+
+        <div class="preview-area">
+            <canvas id="previewCanvas" class="preview-canvas" width="192" height="192"></canvas>
+            <div class="preview-info" id="previewInfo">
+                Select an animation to preview
+            </div>
+
+            <div class="playback-controls">
+                <button id="playBtn">▶ Play</button>
+                <button id="stopBtn" class="stop">⏹ Stop</button>
+                <button id="pauseBtn">⏸ Pause</button>
+                <div class="speed-control">
+                    <label>Speed:</label>
+                    <input type="range" id="speedSlider" min="0.25" max="2" step="0.25" value="1">
+                    <span id="speedValue">1.0x</span>
+                </div>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-track" id="timelineTrack">
+                    <div class="timeline-scrubber" id="timelineScrubber"></div>
+                    <div class="timeline-frames" id="timelineFrames"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let gameScene = null;
+        let previewSprite = null;
+        let currentAnimation = null;
+        let isPlaying = false;
+        let isPaused = false;
+        let playbackSpeed = 1.0;
+        let animationFrame = 0;
+
+        // Check connection
+        function checkConnection() {
+            // Try multiple ways to access the game
+            let scene = null;
+            
+            if (window.game && window.gameScene) {
+                scene = window.gameScene;
+            } else if (window.game && window.game.scene) {
+                scene = window.game.scene.getScene('GameScene');
+                if (scene) window.gameScene = scene;
+            } else if (window.parent && window.parent !== window) {
+                if (window.parent.game && window.parent.gameScene) {
+                    scene = window.parent.gameScene;
+                } else if (window.parent.game && window.parent.game.scene) {
+                    scene = window.parent.game.scene.getScene('GameScene');
+                }
+            }
+            
+            if (scene && scene.animationManager) {
+                gameScene = scene;
+                document.getElementById('connectionStatus').className = 'connection-status connected';
+                document.getElementById('connectionText').textContent = 'Connected to game';
+                loadCharacterTypes();
+                loadAnimations();
+                return true;
+            } else {
+                document.getElementById('connectionStatus').className = 'connection-status disconnected';
+                document.getElementById('connectionText').textContent = 'Not connected - Make sure game is running and GameScene is loaded';
+                return false;
+            }
+        }
+
+        // Load character types
+        function loadCharacterTypes() {
+            if (!gameScene || !gameScene.anims) return;
+
+            const select = document.getElementById('characterTypeSelect');
+            const types = new Set();
+
+            for (const key of Object.keys(gameScene.anims.anims.entries)) {
+                const parts = key.split('-');
+                if (parts.length >= 2) {
+                    types.add(parts[0]);
+                }
+            }
+
+            select.innerHTML = '<option value="">Select Character Type...</option>';
+            for (const type of Array.from(types).sort()) {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                select.appendChild(option);
+            }
+        }
+
+        // Load animations
+        function loadAnimations() {
+            if (!gameScene || !gameScene.anims) return;
+
+            const list = document.getElementById('animationList');
+            const characterType = document.getElementById('characterTypeSelect').value;
+            const animations = [];
+
+            for (const key of Object.keys(gameScene.anims.anims.entries)) {
+                if (!characterType || key.startsWith(`${characterType}-`)) {
+                    const anim = gameScene.anims.get(key);
+                    animations.push({
+                        key,
+                        frameCount: anim.frames ? anim.frames.length : 0,
+                        frameRate: anim.frameRate || 12
+                    });
+                }
+            }
+
+            list.innerHTML = '';
+            if (animations.length === 0) {
+                list.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">No animations found</div>';
+                return;
+            }
+
+            for (const anim of animations.sort((a, b) => a.key.localeCompare(b.key))) {
+                const item = document.createElement('div');
+                item.className = 'animation-item';
+                item.onclick = () => selectAnimation(anim.key);
+                item.innerHTML = `
+                    <div class="animation-name">${anim.key}</div>
+                    <div class="animation-meta">${anim.frameCount} frames @ ${anim.frameRate} fps</div>
+                `;
+                list.appendChild(item);
+            }
+        }
+
+        // Select animation
+        function selectAnimation(animKey) {
+            if (!gameScene || !gameScene.anims || !gameScene.anims.exists(animKey)) {
+                return;
+            }
+
+            currentAnimation = animKey;
+            stopAnimation();
+
+            // Update UI
+            document.querySelectorAll('.animation-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+
+            // Create preview sprite if needed
+            const canvas = document.getElementById('previewCanvas');
+            const ctx = canvas.getContext('2d');
+
+            if (!previewSprite) {
+                // Create a temporary scene for preview
+                previewSprite = gameScene.add.sprite(96, 96, '');
+                previewSprite.setVisible(false);
+            }
+
+            // Setup animation
+            const anim = gameScene.anims.get(animKey);
+            previewSprite.play(animKey);
+
+            // Update info
+            document.getElementById('previewInfo').textContent = 
+                `${animKey} - ${anim.frames.length} frames @ ${anim.frameRate} fps`;
+
+            // Setup timeline
+            setupTimeline(anim.frames.length);
+
+            // Start preview
+            playAnimation();
+        }
+
+        // Setup timeline
+        function setupTimeline(frameCount) {
+            const track = document.getElementById('timelineTrack');
+            const frames = document.getElementById('timelineFrames');
+            frames.innerHTML = '';
+
+            for (let i = 0; i < frameCount; i++) {
+                const frame = document.createElement('div');
+                frame.className = 'timeline-frame';
+                frame.textContent = i;
+                frames.appendChild(frame);
+            }
+
+            // Timeline click handler
+            track.onclick = (e) => {
+                const rect = track.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const percent = x / rect.width;
+                const frameIndex = Math.floor(percent * frameCount);
+                seekToFrame(frameIndex);
+            };
+        }
+
+        // Play animation
+        function playAnimation() {
+            if (!currentAnimation || !previewSprite) return;
+
+            isPlaying = true;
+            isPaused = false;
+            previewSprite.play(currentAnimation);
+            
+            // Update animation speed
+            if (previewSprite.anims && previewSprite.anims.currentAnim) {
+                const anim = previewSprite.anims.currentAnim;
+                const originalFrameRate = anim.frameRate || 12;
+                anim.frameRate = originalFrameRate * playbackSpeed;
+            }
+
+            updatePlayButton();
+            renderPreview();
+        }
+
+        // Stop animation
+        function stopAnimation() {
+            isPlaying = false;
+            isPaused = false;
+            if (previewSprite && previewSprite.anims) {
+                previewSprite.anims.stop();
+            }
+            animationFrame = 0;
+            updatePlayButton();
+            updateTimeline(0);
+        }
+
+        // Pause animation
+        function pauseAnimation() {
+            if (isPlaying) {
+                isPaused = true;
+                if (previewSprite && previewSprite.anims) {
+                    previewSprite.anims.pause();
+                }
+            } else if (isPaused) {
+                isPaused = false;
+                if (previewSprite && previewSprite.anims) {
+                    previewSprite.anims.resume();
+                }
+            }
+            updatePlayButton();
+        }
+
+        // Seek to frame
+        function seekToFrame(frameIndex) {
+            if (!previewSprite || !currentAnimation) return;
+
+            const anim = gameScene.anims.get(currentAnimation);
+            if (anim && anim.frames && frameIndex < anim.frames.length) {
+                previewSprite.anims.setCurrentFrame(frameIndex);
+                animationFrame = frameIndex;
+                updateTimeline(frameIndex);
+                renderPreview();
+            }
+        }
+
+        // Render preview
+        function renderPreview() {
+            if (!previewSprite || !currentAnimation) return;
+
+            const canvas = document.getElementById('previewCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Get current frame
+            if (previewSprite.anims && previewSprite.anims.currentAnim) {
+                const currentFrame = previewSprite.anims.currentFrame;
+                if (currentFrame) {
+                    const texture = gameScene.textures.get(currentFrame.textureKey || currentFrame.key);
+                    if (texture && texture.source && texture.source[0]) {
+                        const source = texture.source[0];
+                        const img = source.image || source.canvas;
+                        if (img) {
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        }
+                    }
+                }
+
+                // Update timeline
+                if (currentFrame) {
+                    animationFrame = currentFrame.index || 0;
+                    updateTimeline(animationFrame);
+                }
+            }
+        }
+
+        // Update timeline
+        function updateTimeline(frameIndex) {
+            const frames = document.querySelectorAll('.timeline-frame');
+            frames.forEach((frame, index) => {
+                frame.classList.toggle('active', index === frameIndex);
+            });
+
+            const anim = gameScene.anims.get(currentAnimation);
+            if (anim && anim.frames) {
+                const percent = (frameIndex / anim.frames.length) * 100;
+                document.getElementById('timelineScrubber').style.left = percent + '%';
+            }
+        }
+
+        // Update play button
+        function updatePlayButton() {
+            const playBtn = document.getElementById('playBtn');
+            if (isPaused) {
+                playBtn.textContent = '▶ Resume';
+            } else if (isPlaying) {
+                playBtn.textContent = '▶ Playing';
+                playBtn.disabled = true;
+            } else {
+                playBtn.textContent = '▶ Play';
+                playBtn.disabled = false;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('playBtn').onclick = playAnimation;
+        document.getElementById('stopBtn').onclick = stopAnimation;
+        document.getElementById('pauseBtn').onclick = pauseAnimation;
+
+        document.getElementById('characterTypeSelect').onchange = loadAnimations;
+        document.getElementById('animationSelect').onchange = (e) => {
+            if (e.target.value) {
+                selectAnimation(e.target.value);
+            }
+        };
+
+        document.getElementById('speedSlider').oninput = (e) => {
+            playbackSpeed = parseFloat(e.target.value);
+            document.getElementById('speedValue').textContent = playbackSpeed.toFixed(2) + 'x';
+            if (isPlaying && previewSprite && previewSprite.anims && previewSprite.anims.currentAnim) {
+                const anim = previewSprite.anims.currentAnim;
+                const originalFrameRate = anim.frameRate || 12;
+                anim.frameRate = originalFrameRate * playbackSpeed;
+            }
+        };
+
+        // Animation loop
+        function animationLoop() {
+            if (isPlaying && !isPaused) {
+                renderPreview();
+            }
+            requestAnimationFrame(animationLoop);
+        }
+
+        // Initialize
+        checkConnection();
+        setInterval(checkConnection, 2000);
+        animationLoop();
+    </script>
+</body>
+</html>
+

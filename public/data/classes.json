@@ -1,0 +1,209 @@
+{
+  "paladin": {
+    "id": "paladin",
+    "name": "Paladin",
+    "coreAbilities": [
+      "auto_attack",
+      "judgment",
+      "consecration",
+      "lay_on_hands",
+      "divine_shield"
+    ],
+    "availableSpecs": [
+      "protection",
+      "holy",
+      "retribution"
+    ],
+    "primaryStat": "strength",
+    "resourceType": "mana",
+    "armorProficiency": ["cloth", "leather", "mail", "plate"],
+    "armorSpecialization": "plate",
+    "attackRange": 2,
+    "movementSpeed": 150,
+    "preferredRange": 2
+  },
+  "warrior": {
+    "id": "warrior",
+    "name": "Warrior",
+    "coreAbilities": [
+      "auto_attack",
+      "charge",
+      "rend",
+      "taunt",
+      "battle_shout"
+    ],
+    "availableSpecs": [
+      "protection",
+      "arms",
+      "fury"
+    ],
+    "primaryStat": "strength",
+    "resourceType": "rage",
+    "armorProficiency": ["cloth", "leather", "mail", "plate"],
+    "armorSpecialization": "plate",
+    "attackRange": 2,
+    "movementSpeed": 150,
+    "preferredRange": 2
+  },
+  "priest": {
+    "id": "priest",
+    "name": "Priest",
+    "coreAbilities": [
+      "auto_attack",
+      "smite",
+      "dispel",
+      "power_word_shield",
+      "fade"
+    ],
+    "availableSpecs": [
+      "holy",
+      "discipline",
+      "shadow"
+    ],
+    "primaryStat": "intellect",
+    "resourceType": "mana",
+    "armorProficiency": ["cloth"],
+    "armorSpecialization": "cloth",
+    "attackRange": 20,
+    "movementSpeed": 120,
+    "preferredRange": 15
+  },
+  "mage": {
+    "id": "mage",
+    "name": "Mage",
+    "coreAbilities": [
+      "auto_attack",
+      "fireball",
+      "frostbolt",
+      "arcane_missiles",
+      "polymorph"
+    ],
+    "availableSpecs": [
+      "arcane",
+      "fire",
+      "frost"
+    ],
+    "primaryStat": "intellect",
+    "resourceType": "mana",
+    "armorProficiency": ["cloth"],
+    "armorSpecialization": "cloth",
+    "attackRange": 20,
+    "movementSpeed": 120,
+    "preferredRange": 18
+  },
+  "rogue": {
+    "id": "rogue",
+    "name": "Rogue",
+    "coreAbilities": [
+      "auto_attack",
+      "sinister_strike",
+      "evasion",
+      "stealth",
+      "kick"
+    ],
+    "availableSpecs": [
+      "assassination",
+      "combat",
+      "subtlety"
+    ],
+    "primaryStat": "agility",
+    "resourceType": "energy",
+    "armorProficiency": ["cloth", "leather"],
+    "armorSpecialization": "leather",
+    "attackRange": 2,
+    "movementSpeed": 180,
+    "preferredRange": 2
+  },
+  "warlock": {
+    "id": "warlock",
+    "name": "Warlock",
+    "coreAbilities": [
+      "auto_attack",
+      "shadow_bolt",
+      "drain_life",
+      "fear",
+      "summon_pet"
+    ],
+    "availableSpecs": [
+      "affliction",
+      "demonology",
+      "destruction"
+    ],
+    "primaryStat": "intellect",
+    "resourceType": "mana",
+    "armorProficiency": ["cloth"],
+    "armorSpecialization": "cloth",
+    "attackRange": 20,
+    "movementSpeed": 120,
+    "preferredRange": 18
+  },
+  "hunter": {
+    "id": "hunter",
+    "name": "Hunter",
+    "coreAbilities": [
+      "auto_attack",
+      "aimed_shot",
+      "tracking",
+      "trap",
+      "aspect_of_the_hawk"
+    ],
+    "availableSpecs": [
+      "beast_mastery",
+      "marksmanship",
+      "survival"
+    ],
+    "primaryStat": "agility",
+    "resourceType": "mana",
+    "armorProficiency": ["cloth", "leather", "mail"],
+    "armorSpecialization": "mail",
+    "attackRange": 25,
+    "movementSpeed": 150,
+    "preferredRange": 22
+  },
+  "shaman": {
+    "id": "shaman",
+    "name": "Shaman",
+    "coreAbilities": [
+      "auto_attack",
+      "lightning_bolt",
+      "earth_shock",
+      "totem",
+      "chain_heal"
+    ],
+    "availableSpecs": [
+      "elemental",
+      "enhancement",
+      "restoration"
+    ],
+    "primaryStat": "intellect",
+    "resourceType": "mana",
+    "armorProficiency": ["cloth", "leather", "mail"],
+    "armorSpecialization": "mail",
+    "attackRange": 2,
+    "movementSpeed": 150,
+    "preferredRange": 2
+  },
+  "druid": {
+    "id": "druid",
+    "name": "Druid",
+    "coreAbilities": [
+      "auto_attack",
+      "wrath",
+      "moonfire",
+      "shapeshift",
+      "rejuvenation"
+    ],
+    "availableSpecs": [
+      "balance",
+      "feral",
+      "restoration"
+    ],
+    "primaryStat": "intellect",
+    "resourceType": "mana",
+    "armorProficiency": ["cloth", "leather"],
+    "armorSpecialization": "leather",
+    "attackRange": 2,
+    "movementSpeed": 150,
+    "preferredRange": 2
+  }
+}

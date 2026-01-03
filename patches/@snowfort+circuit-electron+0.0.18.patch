@@ -1,0 +1,459 @@
+diff --git a/node_modules/@snowfort/circuit-electron/dist/cjs/electron-driver.js b/node_modules/@snowfort/circuit-electron/dist/cjs/electron-driver.js
+index 8dda0ec..8333142 100644
+--- a/node_modules/@snowfort/circuit-electron/dist/cjs/electron-driver.js
++++ b/node_modules/@snowfort/circuit-electron/dist/cjs/electron-driver.js
+@@ -110,8 +110,9 @@ class ElectronDriver {
+                     // Window might be closed or not ready
+                 }
+                 console.error(`[ELECTRON-DRIVER] Window: type=${windowType}, title="${title}", url="${url}"`);
+-                if (windowType === 'main') {
+-                    console.error(`[ELECTRON-DRIVER] ✓ Found main window`);
++                // Accept main window or any non-devtools window if it has a valid URL
++                if (windowType === 'main' || (windowType !== 'devtools' && (url.includes('localhost') || url.includes('file://')))) {
++                    console.error(`[ELECTRON-DRIVER] ✓ Found main window (type: ${windowType})`);
+                     return window;
+                 }
+             }
+@@ -214,11 +215,37 @@ class ElectronDriver {
+             });
+         });
+     }
++    wrapElectronInstance(electronInstance) {
++        const originalLaunch = electronInstance.launch.bind(electronInstance);
++        return {
++            ...electronInstance,
++            launch: async (options) => {
++                const fixedOptions = options ? { ...options } : {};
++                // Force args to be an array
++                if (!fixedOptions.args) {
++                    fixedOptions.args = [];
++                }
++                // Aggressively filter out ALL port=0 flags
++                fixedOptions.args = fixedOptions.args.filter(arg => {
++                    const argStr = String(arg);
++                    return !argStr.includes('--remote-debugging-port=0') && 
++                           !argStr.includes('--inspect=0') &&
++                           argStr !== '--remote-debugging-port=0' &&
++                           argStr !== '--inspect=0';
++                });
++                // Remove any existing remote-debugging-port flags (app sets it programmatically)
++                fixedOptions.args = fixedOptions.args.filter(arg => !String(arg).startsWith('--remote-debugging-port='));
++                // Remove any existing inspect flags
++                fixedOptions.args = fixedOptions.args.filter(arg => !String(arg).startsWith('--inspect='));
++                return originalLaunch(fixedOptions);
++            }
++        };
++    }
+     async getElectronInstance(projectPath) {
+         const debugInfo = [];
+         if (!projectPath) {
+             debugInfo.push(`[PLAYWRIGHT-DEBUG] No project path provided, using NPX default`);
+-            return { electron: playwright_core_1._electron, debugInfo };
++            return { electron: this.wrapElectronInstance(playwright_core_1._electron), debugInfo };
+         }
+         try {
+             const projectPlaywrightDir = path.join(projectPath, 'node_modules', 'playwright-core');
+@@ -271,7 +298,7 @@ class ElectronDriver {
+             }
+             if (electronInstance) {
+                 debugInfo.push(`[PLAYWRIGHT-DEBUG] ✓ Successfully using project's Playwright!`);
+-                return { electron: electronInstance, debugInfo };
++                return { electron: this.wrapElectronInstance(electronInstance), debugInfo };
+             }
+         }
+         catch (error) {
+@@ -345,6 +372,18 @@ class ElectronDriver {
+         if (isForgeProject) {
+             return await this.launchElectronForgeProject(opts, projectPath, packageJsonContent);
+         }
++        // Start dev server if startScript is provided (for non-Forge projects too)
++        let devServerProcess;
++        if (opts.startScript) {
++            try {
++                devServerProcess = await this.startDevServer(projectPath, opts.startScript);
++                this.devServerProcesses.set(projectPath, devServerProcess);
++            }
++            catch (devServerError) {
++                const errorMessage = devServerError instanceof Error ? devServerError.message : String(devServerError);
++                throw new Error(`Failed to start dev server with '${opts.startScript}': ${errorMessage}`);
++            }
++        }
+         // Find Electron executable
+         let electronPath;
+         let execDebugInfo = [];
+@@ -365,27 +404,52 @@ class ElectronDriver {
+             throw new Error(`Electron executable not accessible: ${electronPath}. Error: ${error}`);
+         }
+         // Prepare launch configuration
+-        // IMPORTANT: Do NOT pass env parameter unless absolutely necessary
+-        // Playwright's electron.launch replaces the entire environment when env is provided
++        // Always pass full environment to ensure Electron uses its bundled Node.js
++        const mainJsPath = path.join(projectPath, 'electron', 'main.js');
+         const launchConfig = {
+             executablePath: electronPath,
+-            args: ['.'],
++            args: [mainJsPath],
+             cwd: projectPath,
+-            timeout: opts.timeout || 30000,
++            timeout: opts.timeout || (opts.startScript ? 120000 : 30000),
++            // Always include full environment to prevent Node.js version issues
++            env: {
++                ...process.env,
++                ...(opts.env || {}),
++                NODE_ENV: 'development',
++                // Ensure Electron uses its own Node.js, not system one
++                ELECTRON_RUN_AS_NODE: undefined
++            }
+         };
+         // Add DevTools control if requested
+         if (opts.disableDevtools) {
+             launchConfig.args = [...(launchConfig.args || []), '--disable-dev-tools'];
+         }
+-        // Only add env if user explicitly provided environment variables
+-        if (opts.env && Object.keys(opts.env).length > 0) {
+-            // Must include process.env to avoid breaking Electron
+-            launchConfig.env = { ...process.env, ...opts.env, NODE_ENV: 'development' };
++        // Filter out invalid port=0 flags that Playwright adds
++        if (launchConfig.args) {
++            launchConfig.args = launchConfig.args.filter(arg => {
++                const argStr = String(arg);
++                return !argStr.includes('--remote-debugging-port=0') && !argStr.includes('--inspect=0');
++            });
++            // Remove any existing remote-debugging-port (app sets it programmatically)
++            launchConfig.args = launchConfig.args.filter(arg => !String(arg).startsWith('--remote-debugging-port='));
+         }
+         // Launch Electron application
+         const electronApp = await electron.launch(launchConfig);
+-        // Wait for main window
+-        const mainWindow = await this.getMainWindow(electronApp, opts.windowTimeout || 60000);
++        // Wait a moment for Electron to start up
++        await new Promise(resolve => setTimeout(resolve, 2000));
++        // Try to get window immediately, then fall back to detection if needed
++        let mainWindow;
++        try {
++            // Try firstWindow with longer timeout when using startScript
++            const firstWindowTimeout = opts.startScript ? 30000 : 10000;
++            mainWindow = await electronApp.firstWindow({ timeout: firstWindowTimeout });
++            console.error(`[ELECTRON-DRIVER] ✓ Got first window immediately`);
++        } catch (e) {
++            // If that fails, use the detection logic
++            console.error(`[ELECTRON-DRIVER] firstWindow() failed, using detection: ${e}`);
++            const windowTimeout = opts.windowTimeout || (opts.startScript ? 120000 : 60000);
++            mainWindow = await this.getMainWindow(electronApp, windowTimeout);
++        }
+         const windows = new Map();
+         if (mainWindow) {
+             windows.set("main", mainWindow);
+@@ -397,6 +461,7 @@ class ElectronDriver {
+             mainWindow,
+             windows,
+             options: { ...opts, compressScreenshots: opts.compressScreenshots ?? true },
++            devServerProcess,
+             networkRequests: [],
+             consoleMessages: [],
+         };
+@@ -414,6 +479,12 @@ class ElectronDriver {
+             args: opts.args || [],
+             cwd: opts.cwd,
+             timeout: opts.timeout || 30000,
++            // Always include full environment to prevent Node.js version issues
++            env: {
++                ...process.env,
++                ...(opts.env || {}),
++                ELECTRON_RUN_AS_NODE: undefined
++            }
+         };
+         // Add DevTools control if requested
+         if (opts.disableDevtools) {
+@@ -423,6 +494,15 @@ class ElectronDriver {
+         if (opts.env && Object.keys(opts.env).length > 0) {
+             launchConfig.env = { ...process.env, ...opts.env };
+         }
++        // Filter out invalid port=0 flags that Playwright adds
++        if (launchConfig.args) {
++            launchConfig.args = launchConfig.args.filter(arg => {
++                const argStr = String(arg);
++                return !argStr.includes('--remote-debugging-port=0') && !argStr.includes('--inspect=0');
++            });
++            launchConfig.args = launchConfig.args.filter(arg => !String(arg).startsWith('--remote-debugging-port='));
++            launchConfig.args.push('--remote-debugging-port=9222');
++        }
+         const electronApp = await electron.launch(launchConfig);
+         const mainWindow = await this.getMainWindow(electronApp, opts.windowTimeout || 60000);
+         const windows = new Map();
+@@ -622,6 +702,14 @@ class ElectronDriver {
+             catch (testError) {
+                 allDebugInfo.push(`[FORGE-DEBUG] ✗ Basic Playwright test failed: ${testError}`);
+             }
++            // Filter out invalid port=0 flags that Playwright adds
++            if (launchConfig.args) {
++                launchConfig.args = launchConfig.args.filter(arg => {
++                    const argStr = String(arg);
++                    return !argStr.includes('--remote-debugging-port=0') && !argStr.includes('--inspect=0');
++                });
++                launchConfig.args = launchConfig.args.filter(arg => !String(arg).startsWith('--remote-debugging-port='));
++            }
+             // Launch the Forge application
+             allDebugInfo.push(`[FORGE-DEBUG] Attempting electron.launch...`);
+             try {
+@@ -761,7 +849,21 @@ class ElectronDriver {
+     async findElectronExecutable(projectPath) {
+         const debugInfo = [];
+         debugInfo.push(`[EXEC-DEBUG] Finding Electron executable for project: ${projectPath}`);
+-        // Try relative path first (matches working manual test: './node_modules/.bin/electron')
++        const platform = os.platform();
++        // On Windows, prefer direct electron.exe over .bin wrapper to avoid Node.js issues
++        if (platform === 'win32') {
++            const electronBinary = path.join(projectPath, 'node_modules', 'electron', 'dist', 'electron.exe');
++            debugInfo.push(`[EXEC-DEBUG] Checking Windows binary first: ${electronBinary}`);
++            try {
++                await fs_1.promises.access(electronBinary);
++                debugInfo.push(`[EXEC-DEBUG] ✓ Found Windows electron.exe: ${electronBinary}`);
++                return { path: electronBinary, debugInfo };
++            }
++            catch (e) {
++                debugInfo.push(`[EXEC-DEBUG] ✗ Windows binary not found: ${e}`);
++            }
++        }
++        // Try relative path (works on Unix, but Windows should use .exe directly)
+         const relativeElectron = './node_modules/.bin/electron';
+         debugInfo.push(`[EXEC-DEBUG] Checking relative path: ${relativeElectron}`);
+         try {
+@@ -783,8 +885,7 @@ class ElectronDriver {
+         catch (e) {
+             debugInfo.push(`[EXEC-DEBUG] ✗ Local bin not found: ${e}`);
+         }
+-        // Check platform-specific paths
+-        const platform = os.platform();
++        // Check platform-specific paths (fallback)
+         let electronBinary;
+         if (platform === 'win32') {
+             electronBinary = path.join(projectPath, 'node_modules', 'electron', 'dist', 'electron.exe');
+diff --git a/node_modules/@snowfort/circuit-electron/dist/esm/electron-driver.js b/node_modules/@snowfort/circuit-electron/dist/esm/electron-driver.js
+index 374c779..a763292 100644
+--- a/node_modules/@snowfort/circuit-electron/dist/esm/electron-driver.js
++++ b/node_modules/@snowfort/circuit-electron/dist/esm/electron-driver.js
+@@ -74,8 +74,9 @@ export class ElectronDriver {
+                     // Window might be closed or not ready
+                 }
+                 console.error(`[ELECTRON-DRIVER] Window: type=${windowType}, title="${title}", url="${url}"`);
+-                if (windowType === 'main') {
+-                    console.error(`[ELECTRON-DRIVER] ✓ Found main window`);
++                // Accept main window or any non-devtools window if it has a valid URL
++                if (windowType === 'main' || (windowType !== 'devtools' && (url.includes('localhost') || url.includes('file://')))) {
++                    console.error(`[ELECTRON-DRIVER] ✓ Found main window (type: ${windowType})`);
+                     return window;
+                 }
+             }
+@@ -178,11 +179,37 @@ export class ElectronDriver {
+             });
+         });
+     }
++    wrapElectronInstance(electronInstance) {
++        const originalLaunch = electronInstance.launch.bind(electronInstance);
++        return {
++            ...electronInstance,
++            launch: async (options) => {
++                const fixedOptions = options ? { ...options } : {};
++                // Force args to be an array
++                if (!fixedOptions.args) {
++                    fixedOptions.args = [];
++                }
++                // Aggressively filter out ALL port=0 flags
++                fixedOptions.args = fixedOptions.args.filter(arg => {
++                    const argStr = String(arg);
++                    return !argStr.includes('--remote-debugging-port=0') && 
++                           !argStr.includes('--inspect=0') &&
++                           argStr !== '--remote-debugging-port=0' &&
++                           argStr !== '--inspect=0';
++                });
++                // Remove any existing remote-debugging-port flags (app sets it programmatically)
++                fixedOptions.args = fixedOptions.args.filter(arg => !String(arg).startsWith('--remote-debugging-port='));
++                // Remove any existing inspect flags
++                fixedOptions.args = fixedOptions.args.filter(arg => !String(arg).startsWith('--inspect='));
++                return originalLaunch(fixedOptions);
++            }
++        };
++    }
+     async getElectronInstance(projectPath) {
+         const debugInfo = [];
+         if (!projectPath) {
+             debugInfo.push(`[PLAYWRIGHT-DEBUG] No project path provided, using NPX default`);
+-            return { electron: electronDefault, debugInfo };
++            return { electron: this.wrapElectronInstance(electronDefault), debugInfo };
+         }
+         try {
+             const projectPlaywrightDir = path.join(projectPath, 'node_modules', 'playwright-core');
+@@ -235,7 +262,7 @@ export class ElectronDriver {
+             }
+             if (electronInstance) {
+                 debugInfo.push(`[PLAYWRIGHT-DEBUG] ✓ Successfully using project's Playwright!`);
+-                return { electron: electronInstance, debugInfo };
++                return { electron: this.wrapElectronInstance(electronInstance), debugInfo };
+             }
+         }
+         catch (error) {
+@@ -247,7 +274,7 @@ export class ElectronDriver {
+             }
+         }
+         debugInfo.push(`[PLAYWRIGHT-DEBUG] Using bundled Playwright from MCP`);
+-        return { electron: electronDefault, debugInfo };
++        return { electron: this.wrapElectronInstance(electronDefault), debugInfo };
+     }
+     async launch(opts) {
+         if (!opts.app) {
+@@ -309,6 +336,18 @@ export class ElectronDriver {
+         if (isForgeProject) {
+             return await this.launchElectronForgeProject(opts, projectPath, packageJsonContent);
+         }
++        // Start dev server if startScript is provided (for non-Forge projects too)
++        let devServerProcess;
++        if (opts.startScript) {
++            try {
++                devServerProcess = await this.startDevServer(projectPath, opts.startScript);
++                this.devServerProcesses.set(projectPath, devServerProcess);
++            }
++            catch (devServerError) {
++                const errorMessage = devServerError instanceof Error ? devServerError.message : String(devServerError);
++                throw new Error(`Failed to start dev server with '${opts.startScript}': ${errorMessage}`);
++            }
++        }
+         // Find Electron executable
+         let electronPath;
+         let execDebugInfo = [];
+@@ -329,27 +368,52 @@ export class ElectronDriver {
+             throw new Error(`Electron executable not accessible: ${electronPath}. Error: ${error}`);
+         }
+         // Prepare launch configuration
+-        // IMPORTANT: Do NOT pass env parameter unless absolutely necessary
+-        // Playwright's electron.launch replaces the entire environment when env is provided
++        // Always pass full environment to ensure Electron uses its bundled Node.js
++        const mainJsPath = path.join(projectPath, 'electron', 'main.js');
+         const launchConfig = {
+             executablePath: electronPath,
+-            args: ['.'],
++            args: [mainJsPath],
+             cwd: projectPath,
+-            timeout: opts.timeout || 30000,
++            timeout: opts.timeout || (opts.startScript ? 120000 : 30000),
++            // Always include full environment to prevent Node.js version issues
++            env: {
++                ...process.env,
++                ...(opts.env || {}),
++                NODE_ENV: 'development',
++                // Ensure Electron uses its own Node.js, not system one
++                ELECTRON_RUN_AS_NODE: undefined
++            }
+         };
+         // Add DevTools control if requested
+         if (opts.disableDevtools) {
+             launchConfig.args = [...(launchConfig.args || []), '--disable-dev-tools'];
+         }
+-        // Only add env if user explicitly provided environment variables
+-        if (opts.env && Object.keys(opts.env).length > 0) {
+-            // Must include process.env to avoid breaking Electron
+-            launchConfig.env = { ...process.env, ...opts.env, NODE_ENV: 'development' };
++        // Filter out invalid port=0 flags that Playwright adds
++        if (launchConfig.args) {
++            launchConfig.args = launchConfig.args.filter(arg => {
++                const argStr = String(arg);
++                return !argStr.includes('--remote-debugging-port=0') && !argStr.includes('--inspect=0');
++            });
++            launchConfig.args = launchConfig.args.filter(arg => !String(arg).startsWith('--remote-debugging-port='));
++            // Port set programmatically in electron/main.js
+         }
+         // Launch Electron application
+         const electronApp = await electron.launch(launchConfig);
+-        // Wait for main window
+-        const mainWindow = await this.getMainWindow(electronApp, opts.windowTimeout || 60000);
++        // Wait a moment for Electron to start up
++        await new Promise(resolve => setTimeout(resolve, 2000));
++        // Try to get window immediately, then fall back to detection if needed
++        let mainWindow;
++        try {
++            // Try firstWindow with longer timeout when using startScript
++            const firstWindowTimeout = opts.startScript ? 30000 : 10000;
++            mainWindow = await electronApp.firstWindow({ timeout: firstWindowTimeout });
++            console.error(`[ELECTRON-DRIVER] ✓ Got first window immediately`);
++        } catch (e) {
++            // If that fails, use the detection logic
++            console.error(`[ELECTRON-DRIVER] firstWindow() failed, using detection: ${e}`);
++            const windowTimeout = opts.windowTimeout || (opts.startScript ? 120000 : 60000);
++            mainWindow = await this.getMainWindow(electronApp, windowTimeout);
++        }
+         const windows = new Map();
+         if (mainWindow) {
+             windows.set("main", mainWindow);
+@@ -361,6 +425,7 @@ export class ElectronDriver {
+             mainWindow,
+             windows,
+             options: { ...opts, compressScreenshots: opts.compressScreenshots ?? true },
++            devServerProcess,
+             networkRequests: [],
+             consoleMessages: [],
+         };
+@@ -387,6 +452,15 @@ export class ElectronDriver {
+         if (opts.env && Object.keys(opts.env).length > 0) {
+             launchConfig.env = { ...process.env, ...opts.env };
+         }
++        // Filter out invalid port=0 flags that Playwright adds
++        if (launchConfig.args) {
++            launchConfig.args = launchConfig.args.filter(arg => {
++                const argStr = String(arg);
++                return !argStr.includes('--remote-debugging-port=0') && !argStr.includes('--inspect=0');
++            });
++            launchConfig.args = launchConfig.args.filter(arg => !String(arg).startsWith('--remote-debugging-port='));
++            // Port set programmatically in electron/main.js
++        }
+         const electronApp = await electron.launch(launchConfig);
+         const mainWindow = await this.getMainWindow(electronApp, opts.windowTimeout || 60000);
+         const windows = new Map();
+@@ -586,6 +660,15 @@ export class ElectronDriver {
+             catch (testError) {
+                 allDebugInfo.push(`[FORGE-DEBUG] ✗ Basic Playwright test failed: ${testError}`);
+             }
++            // Filter out invalid port=0 flags that Playwright adds
++            if (launchConfig.args) {
++                launchConfig.args = launchConfig.args.filter(arg => {
++                    const argStr = String(arg);
++                    return !argStr.includes('--remote-debugging-port=0') && !argStr.includes('--inspect=0');
++                });
++                launchConfig.args = launchConfig.args.filter(arg => !String(arg).startsWith('--remote-debugging-port='));
++                // Port set programmatically in electron/main.js
++            }
+             // Launch the Forge application
+             allDebugInfo.push(`[FORGE-DEBUG] Attempting electron.launch...`);
+             try {
+@@ -725,7 +808,21 @@ export class ElectronDriver {
+     async findElectronExecutable(projectPath) {
+         const debugInfo = [];
+         debugInfo.push(`[EXEC-DEBUG] Finding Electron executable for project: ${projectPath}`);
+-        // Try relative path first (matches working manual test: './node_modules/.bin/electron')
++        const platform = os.platform();
++        // On Windows, prefer direct electron.exe over .bin wrapper to avoid Node.js issues
++        if (platform === 'win32') {
++            const electronBinary = path.join(projectPath, 'node_modules', 'electron', 'dist', 'electron.exe');
++            debugInfo.push(`[EXEC-DEBUG] Checking Windows binary first: ${electronBinary}`);
++            try {
++                await fs.access(electronBinary);
++                debugInfo.push(`[EXEC-DEBUG] ✓ Found Windows electron.exe: ${electronBinary}`);
++                return { path: electronBinary, debugInfo };
++            }
++            catch (e) {
++                debugInfo.push(`[EXEC-DEBUG] ✗ Windows binary not found: ${e}`);
++            }
++        }
++        // Try relative path (works on Unix, but Windows should use .exe directly)
+         const relativeElectron = './node_modules/.bin/electron';
+         debugInfo.push(`[EXEC-DEBUG] Checking relative path: ${relativeElectron}`);
+         try {
+@@ -747,8 +844,7 @@ export class ElectronDriver {
+         catch (e) {
+             debugInfo.push(`[EXEC-DEBUG] ✗ Local bin not found: ${e}`);
+         }
+-        // Check platform-specific paths
+-        const platform = os.platform();
++        // Check platform-specific paths (fallback)
+         let electronBinary;
+         if (platform === 'win32') {
+             electronBinary = path.join(projectPath, 'node_modules', 'electron', 'dist', 'electron.exe');

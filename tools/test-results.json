@@ -1,0 +1,312 @@
+{
+  "passed": [
+    {
+      "test": "Integration - World → Combat",
+      "duration": 1767058957574,
+      "details": {
+        "enemiesArray": true,
+        "hasEnemyGenerator": true
+      }
+    },
+    {
+      "test": "Event System - GameEvents Constants",
+      "duration": 1767058965506
+    },
+    {
+      "test": "Negative - Invalid Party Composition",
+      "duration": 1767058974981,
+      "details": {
+        "isValid": true,
+        "partySize": 5,
+        "maxSize": 5
+      }
+    },
+    {
+      "test": "Negative - Invalid Equipment Operations",
+      "duration": 1767058985109,
+      "details": {
+        "handlesInvalidIds": true
+      }
+    },
+    {
+      "test": "Negative - Error Handling",
+      "duration": 1767058996817,
+      "details": {
+        "totalErrors": 0,
+        "criticalErrors": 0
+      }
+    },
+    {
+      "test": "Main Menu Buttons",
+      "duration": 1767059043922
+    },
+    {
+      "test": "Page Load Time",
+      "duration": 3466,
+      "metric": 3466
+    },
+    {
+      "test": "Memory Usage",
+      "duration": 1767059106489,
+      "metric": {
+        "used": 553000000,
+        "total": 588000000,
+        "limit": 3760000000
+      }
+    },
+    {
+      "test": "SceneResourceManager",
+      "duration": 1767059110442,
+      "details": {
+        "hasResourceManager": true,
+        "hasCleanup": true,
+        "hasAddEventListener": true
+      }
+    },
+    {
+      "test": "Scene Configuration Constants",
+      "duration": 1767059118924,
+      "details": {
+        "usesConfig": true,
+        "note": "SCENE_CONFIG is imported and used by UIBuilder and scenes"
+      }
+    },
+    {
+      "test": "PerformanceMonitor",
+      "duration": 1767059194214,
+      "details": {
+        "hasPerformanceMonitor": true,
+        "initialized": true,
+        "note": "PerformanceMonitor initialized in create() method"
+      }
+    },
+    {
+      "test": "GameUIController",
+      "duration": 1767059203836,
+      "details": {
+        "hasUIController": true,
+        "hasUpdate": true,
+        "hasDestroy": true,
+        "hasInitialize": true,
+        "note": "GameUIController separates UI logic from game logic"
+      }
+    },
+    {
+      "test": "Error Handling Utilities",
+      "duration": 1767059204726,
+      "details": {
+        "usesSafeExecutor": true,
+        "usesGlobalErrorHandler": true,
+        "note": "SafeExecutor and globalErrorHandler integrated throughout codebase"
+      }
+    },
+    {
+      "test": "Scene Initialization Pattern",
+      "duration": 1767059209888,
+      "details": {
+        "usesDeferredInitialization": true,
+        "hasUIBuilder": true,
+        "hasResourceManager": true,
+        "note": "Scenes use deferred initialization pattern for utilities"
+      }
+    },
+    {
+      "test": "Input Validation System",
+      "duration": 1767059218819,
+      "details": {
+        "usesValidation": true,
+        "partyManagerValid": true,
+        "note": "SceneParameterValidator validates scene transitions"
+      }
+    }
+  ],
+  "failed": [
+    {
+      "test": "Party Creation",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "Combat System",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "Equipment System",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "Talent System",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "PartyManager - Detailed",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "EquipmentManager - Detailed",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "WorldManager - Detailed",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "CombatManager - Detailed",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "LootManager - Detailed",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "StatisticsManager - Detailed",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "PrestigeManager - Detailed",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "Item Level Scaling",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "Milestone Rewards",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "Prestige Integration",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "Gear Sets System",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "Level Cap System",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "Full Game Flow",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "Save/Load System",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "Integration - Party → Combat",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "Integration - Equipment → Combat",
+      "error": "Game not initialized: {\"hasWindow\":true,\"hasGame\":false,\"hasScene\":false,\"gameKeys\":[],\"sceneKeys\":[]}"
+    },
+    {
+      "test": "Event System - Emission",
+      "error": "CharacterCreationScene not found"
+    },
+    {
+      "test": "GameScene Keyboard Shortcuts",
+      "error": "Failed shortcuts: Progression Panel (page.evaluate: Execution context was destroyed, most likely because of a navigation)"
+    },
+    {
+      "test": "GameScene UI Buttons",
+      "error": "Failed buttons: Consumables Button (page.evaluate: Execution context was destroyed, most likely because of a navigation), Regen Button (GameScene not found), Log Button (GameScene not found), Action Bar Buttons (Action bar not found)"
+    },
+    {
+      "test": "Panel Toggles",
+      "error": "Failed panels: Equipment (page.evaluate: Execution context was destroyed, most likely because of a navigation), Inventory (Panel display does not exist), Shop (Panel display does not exist)"
+    },
+    {
+      "test": "UIBuilder System",
+      "error": "page.evaluate: TypeError: Cannot read properties of null (reading 'createText')\n    at eval (eval at evaluate (:290:30), <anonymous>:13:54)\n    at UtilityScript.evaluate (<anonymous>:292:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+    },
+    {
+      "test": "Object Pool System",
+      "error": "Scene not found"
+    },
+    {
+      "test": "Event Constants Standardization",
+      "error": "page.waitForFunction: Timeout 60000ms exceeded."
+    }
+  ],
+  "skipped": [],
+  "startTime": 1767057680610,
+  "endTime": 1767059219558,
+  "totalTests": 42,
+  "errors": [
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  ],
+  "config": {
+    "headless": true,
+    "browser": "chromium",
+    "baseUrl": "http://localhost:3000",
+    "timeout": 60000,
+    "testTimeout": 120000
+  }
+}

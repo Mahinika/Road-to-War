@@ -1,0 +1,144 @@
+[gd_scene load_steps=2 format=3 uid="uid://b2b6ynmqqmoa"]
+
+[ext_resource type="Script" uid="uid://blat0h6r26tsu" path="res://scripts/HUD.gd" id="1_script"]
+
+[node name="HUD" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="TopBar" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 60.0
+grow_horizontal = 2
+
+[node name="MileLabel" type="Label" parent="TopBar"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -20.0
+offset_right = 100.0
+offset_bottom = 3.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.843137, 0, 1)
+theme_override_font_sizes/font_size = 24
+text = "Mile 0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CurrencyContainer" type="HBoxContainer" parent="TopBar"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -15.0
+offset_right = -20.0
+offset_bottom = 15.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_constants/separation = 20
+alignment = 2
+
+[node name="GoldLabel" type="Label" parent="TopBar/CurrencyContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.843137, 0, 1)
+text = "Gold: 0"
+
+[node name="PrestigeLabel" type="Label" parent="TopBar/CurrencyContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 1, 1, 1)
+text = "PP: 0"
+
+[node name="WorldProgressBar" type="ProgressBar" parent="TopBar"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = 10.0
+offset_right = 150.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+value = 50.0
+show_percentage = false
+
+[node name="PartyContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 80.0
+offset_right = 220.0
+offset_bottom = 460.0
+theme_override_constants/separation = 10
+
+[node name="CombatLog" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -170.0
+offset_right = 320.0
+offset_bottom = -20.0
+grow_vertical = 0
+
+[node name="BottomMenu" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -60.0
+offset_right = 300.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="CharacterButton" type="Button" parent="BottomMenu"]
+layout_mode = 2
+text = "Character"
+
+[node name="InventoryButton" type="Button" parent="BottomMenu"]
+layout_mode = 2
+text = "Inventory"
+
+[node name="StatsButton" type="Button" parent="BottomMenu"]
+layout_mode = 2
+text = "Statistics"
+
+[node name="TalentsButton" type="Button" parent="BottomMenu"]
+layout_mode = 2
+text = "Talents"
+
+[node name="AchievementsButton" type="Button" parent="BottomMenu"]
+layout_mode = 2
+text = "Achievements"
+
+[node name="MapButton" type="Button" parent="BottomMenu"]
+layout_mode = 2
+text = "Map"
+
+[node name="OptionsButton" type="Button" parent="BottomMenu"]
+layout_mode = 2
+text = "Options"

@@ -1,0 +1,92 @@
+{
+  "idle": {
+    "type": "breathing",
+    "description": "Subtle breathing animation",
+    "parameters": {
+      "yOffsetAmplitude": 1,
+      "rotation": 0,
+      "scale": { "x": 1, "y": 1 }
+    },
+    "formula": {
+      "y": "Math.sin(t * Math.PI * 2) * amplitude",
+      "x": "0",
+      "rotation": "0"
+    }
+  },
+  "walk": {
+    "type": "walkCycle",
+    "description": "Walking cycle with leg movement and arm swing",
+    "parameters": {
+      "yOffsetAmplitude": 2,
+      "xOffsetAmplitude": 1,
+      "pelvisRotationAmplitude": 0.1,
+      "torsoRotationFactor": 0.3,
+      "kneeBendAmplitude": 0.5,
+      "hipFlexionAmplitude": 0.2,
+      "ankleLiftAmplitude": 0.3,
+      "armSwingAmplitude": 0.3,
+      "elbowBendFactor": 0.4
+    },
+    "formula": {
+      "y": "Math.sin(t * Math.PI * 2) * yAmplitude",
+      "x": "Math.sin(t * Math.PI * 2) * xAmplitude",
+      "pelvisRotation": "Math.sin(t * Math.PI * 2) * pelvisAmplitude",
+      "torsoRotation": "-pelvisRotation * torsoFactor",
+      "leftKneeBend": "t < 0.5 ? Math.sin(t * Math.PI * 4) * kneeAmplitude : 0",
+      "rightKneeBend": "t >= 0.5 ? Math.sin((t - 0.5) * Math.PI * 4) * kneeAmplitude : 0",
+      "leftHipFlexion": "t < 0.5 ? Math.sin(t * Math.PI * 4) * hipAmplitude : 0",
+      "rightHipFlexion": "t >= 0.5 ? Math.sin((t - 0.5) * Math.PI * 4) * hipAmplitude : 0",
+      "leftAnkleLift": "t < 0.5 ? Math.sin(t * Math.PI * 4) * ankleAmplitude : 0",
+      "rightAnkleLift": "t >= 0.5 ? Math.sin((t - 0.5) * Math.PI * 4) * ankleAmplitude : 0",
+      "leftArmSwing": "t < 0.5 ? -Math.sin(t * Math.PI * 4) * armAmplitude : Math.sin((t - 0.5) * Math.PI * 4) * armAmplitude",
+      "rightArmSwing": "t < 0.5 ? Math.sin(t * Math.PI * 4) * armAmplitude : -Math.sin((t - 0.5) * Math.PI * 4) * armAmplitude"
+    }
+  },
+  "attack": {
+    "type": "phased",
+    "description": "Attack animation with wind-up, strike, and recovery phases",
+    "phases": {
+      "windUp": { "start": 0, "end": 0.3, "description": "Wind-up phase" },
+      "strike": { "start": 0.3, "end": 0.7, "description": "Strike phase" },
+      "recovery": { "start": 0.7, "end": 1.0, "description": "Recovery phase" }
+    },
+    "parameters": {
+      "forwardLean": 3,
+      "rotationAmplitude": 0.1
+    },
+    "formula": {
+      "forward": "t < 0.3 ? t / 0.3 : (t < 0.7 ? 1 : (1 - (t - 0.7) / 0.3))",
+      "x": "forward * forwardLean",
+      "rotation": "forward * rotationAmplitude",
+      "y": "0"
+    }
+  },
+  "defend": {
+    "type": "defensive",
+    "description": "Defensive stance with backward lean",
+    "parameters": {
+      "backwardLean": 2
+    },
+    "formula": {
+      "defend": "Math.sin(t * Math.PI) * 0.5 + 0.5",
+      "x": "-defend * backwardLean",
+      "y": "0",
+      "rotation": "0"
+    }
+  },
+  "death": {
+    "type": "fall",
+    "description": "Death animation with fall and fade",
+    "parameters": {
+      "fallDistance": 10,
+      "rotationAmount": 90,
+      "scaleReduction": 0.3
+    },
+    "formula": {
+      "y": "t * fallDistance",
+      "rotation": "t * rotationAmount",
+      "scale": "1 - t * scaleReduction"
+    }
+  }
+}
+

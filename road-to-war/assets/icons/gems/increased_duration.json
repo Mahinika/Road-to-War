@@ -1,0 +1,12 @@
+{
+  "id": "increased_duration",
+  "name": "Duration Gem",
+  "type": "support",
+  "effect": "duration",
+  "description": "Increases ability duration by 20-50%",
+  "minValue": 20,
+  "maxValue": 50,
+  "rarity": "rare",
+  "seed": 17354,
+  "generatedAt": "2025-12-30T01:14:44.500Z"
+}

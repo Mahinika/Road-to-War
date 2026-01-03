@@ -1,0 +1,331 @@
+{
+  "weapons": {
+    "rusty_sword": {
+      "id": "rusty_sword",
+      "name": "Rusty Sword",
+      "type": "weapon",
+      "slot": "weapon",
+      "rarity": "common",
+      "level": 1,
+      "stats": {
+        "attack": 5,
+        "defense": 0,
+        "health": 0
+      },
+      "description": "An old rusty sword. Better than nothing.",
+      "sellValue": 10,
+      "dropChance": 0.3
+    },
+    "iron_sword": {
+      "id": "iron_sword",
+      "name": "Iron Sword",
+      "type": "weapon",
+      "slot": "weapon",
+      "rarity": "uncommon",
+      "level": 3,
+      "stats": {
+        "attack": 12,
+        "defense": 2,
+        "health": 0
+      },
+      "description": "A well-crafted iron sword.",
+      "sellValue": 50,
+      "dropChance": 0.15
+    },
+    "legendary_blade": {
+      "id": "legendary_blade",
+      "name": "Legendary Blade",
+      "type": "weapon",
+      "slot": "weapon",
+      "rarity": "legendary",
+      "level": 10,
+      "stats": {
+        "attack": 50,
+        "defense": 10,
+        "health": 20
+      },
+      "description": "A blade of immense power, forged in ancient times.",
+      "sellValue": 1000,
+      "dropChance": 0.01
+    }
+  },
+  "armor": {
+    "leather_armor": {
+      "id": "leather_armor",
+      "name": "Leather Armor",
+      "type": "armor",
+      "slot": "chest",
+      "rarity": "common",
+      "level": 1,
+      "stats": {
+        "attack": 0,
+        "defense": 8,
+        "health": 10
+      },
+      "description": "Basic leather protection.",
+      "sellValue": 15,
+      "dropChance": 0.25
+    },
+    "iron_plate": {
+      "id": "iron_plate",
+      "name": "Iron Plate",
+      "type": "armor",
+      "slot": "chest",
+      "rarity": "uncommon",
+      "level": 4,
+      "stats": {
+        "attack": 0,
+        "defense": 20,
+        "health": 15
+      },
+      "description": "Heavy iron plate armor.",
+      "sellValue": 80,
+      "dropChance": 0.1
+    }
+  },
+  "accessories": {
+    "health_ring": {
+      "id": "health_ring",
+      "name": "Ring of Health",
+      "type": "accessory",
+      "slot": "ring",
+      "rarity": "uncommon",
+      "level": 2,
+      "stats": {
+        "attack": 0,
+        "defense": 0,
+        "health": 25
+      },
+      "description": "A ring that boosts vitality.",
+      "sellValue": 60,
+      "dropChance": 0.12
+    },
+    "power_amulet": {
+      "id": "power_amulet",
+      "name": "Amulet of Power",
+      "type": "accessory",
+      "slot": "amulet",
+      "rarity": "rare",
+      "level": 5,
+      "stats": {
+        "attack": 15,
+        "defense": 5,
+        "health": 0
+      },
+      "description": "Increases the wearer's combat prowess.",
+      "sellValue": 200,
+      "dropChance": 0.05
+    }
+  },
+  "consumables": {
+    "minor_mana_potion": {
+      "id": "minor_mana_potion",
+      "name": "Minor Mana Potion",
+      "type": "consumable",
+      "rarity": "common",
+      "effects": {
+        "restoreMana": 50
+      },
+      "description": "Restores 50 mana instantly.",
+      "sellValue": 25,
+      "buyValue": 50,
+      "dropChance": 0.2,
+      "icon": "🧪"
+    },
+    "mana_potion": {
+      "id": "mana_potion",
+      "name": "Mana Potion",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "effects": {
+        "restoreMana": 150
+      },
+      "description": "Restores 150 mana instantly.",
+      "sellValue": 75,
+      "buyValue": 150,
+      "dropChance": 0.1,
+      "icon": "🧪"
+    },
+    "major_mana_potion": {
+      "id": "major_mana_potion",
+      "name": "Major Mana Potion",
+      "type": "consumable",
+      "rarity": "rare",
+      "effects": {
+        "restoreMana": 300
+      },
+      "description": "Restores 300 mana instantly.",
+      "sellValue": 150,
+      "buyValue": 300,
+      "dropChance": 0.05,
+      "icon": "🧪"
+    },
+    "mana_regeneration_potion": {
+      "id": "mana_regeneration_potion",
+      "name": "Mana Regeneration Potion",
+      "type": "consumable",
+      "rarity": "rare",
+      "effects": {
+        "manaRegenBoost": 3.0
+      },
+      "duration": 60,
+      "description": "Increases mana regeneration by 300% for 60 seconds.",
+      "sellValue": 200,
+      "buyValue": 400,
+      "dropChance": 0.03,
+      "icon": "💧"
+    },
+    "energy_drink": {
+      "id": "energy_drink",
+      "name": "Energy Drink",
+      "type": "consumable",
+      "rarity": "common",
+      "effects": {
+        "restoreEnergy": 75
+      },
+      "description": "Restores 75 energy instantly.",
+      "sellValue": 30,
+      "buyValue": 60,
+      "dropChance": 0.15,
+      "icon": "⚡"
+    },
+    "health_potion": {
+      "id": "health_potion",
+      "name": "Health Potion",
+      "type": "consumable",
+      "rarity": "common",
+      "effects": {
+        "restoreHealth": 100
+      },
+      "description": "Restores 100 health instantly.",
+      "sellValue": 40,
+      "buyValue": 80,
+      "dropChance": 0.18,
+      "icon": "❤️"
+    },
+    "superior_health_potion": {
+      "id": "superior_health_potion",
+      "name": "Superior Health Potion",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "effects": {
+        "restoreHealth": 250
+      },
+      "description": "Restores 250 health instantly.",
+      "sellValue": 100,
+      "buyValue": 200,
+      "dropChance": 0.08,
+      "icon": "❤️"
+    }
+  },
+  "sets": {
+    "warrior_tier1": {
+      "name": "Warrior's Basic Set",
+      "pieces": ["rusty_sword", "leather_armor"],
+      "bonuses": {
+        "2": {
+          "attack": 10,
+          "defense": 5
+        }
+      },
+      "tier": 1,
+      "description": "Basic warrior equipment set."
+    },
+    "warrior_tier2": {
+      "name": "Warrior's Improved Set",
+      "pieces": ["iron_sword", "iron_plate"],
+      "bonuses": {
+        "2": {
+          "attack": 25,
+          "defense": 15,
+          "health": 50
+        }
+      },
+      "tier": 2,
+      "description": "Improved warrior equipment set."
+    },
+    "warrior_tier3": {
+      "name": "Warrior's Advanced Set",
+      "pieces": ["iron_sword", "iron_plate", "health_ring"],
+      "bonuses": {
+        "2": {
+          "attack": 40,
+          "defense": 25
+        },
+        "3": {
+          "attack": 60,
+          "defense": 40,
+          "health": 100
+        }
+      },
+      "tier": 3,
+      "description": "Advanced warrior equipment set."
+    },
+    "warrior_tier4": {
+      "name": "Warrior's Elite Set",
+      "pieces": ["legendary_blade", "power_amulet"],
+      "bonuses": {
+        "2": {
+          "attack": 100,
+          "defense": 50,
+          "health": 200,
+          "criticalChance": 0.05
+        }
+      },
+      "tier": 4,
+      "description": "Elite warrior equipment set."
+    },
+    "warrior_tier5": {
+      "name": "Warrior's Legendary Set",
+      "pieces": ["legendary_blade", "power_amulet", "health_ring"],
+      "bonuses": {
+        "2": {
+          "attack": 150,
+          "defense": 75,
+          "health": 300
+        },
+        "3": {
+          "attack": 250,
+          "defense": 125,
+          "health": 500,
+          "criticalChance": 0.10,
+          "criticalDamage": 0.20
+        }
+      },
+      "tier": 5,
+      "description": "Legendary warrior equipment set."
+    }
+  },
+  "tiers": {
+    "1": {
+      "name": "Basic",
+      "minMile": 0,
+      "maxMile": 20,
+      "color": "#ffffff"
+    },
+    "2": {
+      "name": "Improved",
+      "minMile": 21,
+      "maxMile": 40,
+      "color": "#1eff00"
+    },
+    "3": {
+      "name": "Advanced",
+      "minMile": 41,
+      "maxMile": 60,
+      "color": "#0070dd"
+    },
+    "4": {
+      "name": "Elite",
+      "minMile": 61,
+      "maxMile": 80,
+      "color": "#a335ee"
+    },
+    "5": {
+      "name": "Legendary",
+      "minMile": 81,
+      "maxMile": 100,
+      "color": "#ff8000"
+    }
+  }
+}

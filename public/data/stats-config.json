@@ -1,0 +1,114 @@
+{
+  "ratingConversions": {
+    "hitRating": {
+      "perPercentage": 15.77,
+      "maxPercentage": 17.0,
+      "description": "Hit Rating increases chance to hit (reduces miss chance)"
+    },
+    "critRating": {
+      "perPercentage": 22.08,
+      "maxPercentage": 100.0,
+      "description": "Critical Strike Rating increases critical strike chance"
+    },
+    "hasteRating": {
+      "perPercentage": 15.77,
+      "maxPercentage": 100.0,
+      "description": "Haste Rating increases attack speed and cast speed"
+    },
+    "expertiseRating": {
+      "perPercentage": 3.94,
+      "maxPercentage": 26.0,
+      "description": "Expertise Rating reduces enemy dodge and parry chance"
+    },
+    "defenseRating": {
+      "perPercentage": 4.92,
+      "maxPercentage": 100.0,
+      "description": "Defense Rating increases defense skill and reduces chance to be crit"
+    },
+    "resilienceRating": {
+      "perPercentage": 39.4,
+      "maxPercentage": 100.0,
+      "description": "Resilience Rating reduces damage taken from players and chance to be crit"
+    },
+    "spellHitRating": {
+      "perPercentage": 12.62,
+      "maxPercentage": 17.0,
+      "description": "Spell Hit Rating increases spell hit chance (reduces spell miss chance)"
+    },
+    "spellCritRating": {
+      "perPercentage": 22.08,
+      "maxPercentage": 100.0,
+      "description": "Spell Critical Strike Rating increases spell critical strike chance"
+    },
+    "spellHasteRating": {
+      "perPercentage": 15.77,
+      "maxPercentage": 100.0,
+      "description": "Spell Haste Rating increases cast speed"
+    }
+  },
+  "defenseCap": {
+    "level80": {
+      "baseDefense": 400,
+      "defenseCap": 540,
+      "ratingNeeded": 689,
+      "description": "Defense cap for level 80 (5.6% crit reduction, requires 689 Defense Rating above base)"
+    },
+    "level70": {
+      "baseDefense": 350,
+      "defenseCap": 490,
+      "ratingNeeded": 689,
+      "description": "Defense cap for level 70 (5.6% crit reduction, requires 689 Defense Rating above base)"
+    },
+    "perLevel": {
+      "baseDefensePerLevel": 5,
+      "defenseCapPerLevel": 5,
+      "critReductionPerDefense": 0.04
+    }
+  },
+  "primaryStatConversions": {
+    "strength": {
+      "attackPower": 2.0,
+      "blockValue": 2.0,
+      "description": "1 Strength = 2 Attack Power (melee), 2 Block Value"
+    },
+    "agility": {
+      "attackPower": 1.0,
+      "armor": 2.0,
+      "critChance": 0.025,
+      "dodgeChance": 0.025,
+      "description": "1 Agility = 1 Attack Power (ranged), 2 Armor, 0.025% Crit/Dodge"
+    },
+    "intellect": {
+      "mana": 15.0,
+      "spellCritChance": 0.0083,
+      "description": "1 Intellect = 15 Mana, 0.0083% Spell Crit Chance"
+    },
+    "spirit": {
+      "manaRegen": 0.1,
+      "healthRegen": 0.05,
+      "description": "1 Spirit = 0.1 Mana Regen/sec (while not casting), 0.05 Health Regen/sec"
+    },
+    "stamina": {
+      "health": 10.0,
+      "description": "1 Stamina = 10 Health"
+    }
+  },
+  "secondaryStatConversions": {
+    "attackPower": {
+      "meleeDamage": 1.0,
+      "description": "1 Attack Power = 1 DPS (normalized weapon speed)"
+    },
+    "spellPower": {
+      "spellDamage": 1.0,
+      "spellHealing": 1.0,
+      "description": "1 Spell Power = 1 Spell Damage/Healing"
+    }
+  },
+  "statCaps": {
+    "hitCap": 17.0,
+    "spellHitCap": 17.0,
+    "expertiseCap": 26.0,
+    "defenseCapLevel70": 689,
+    "defenseCapLevel80": 689
+  }
+}

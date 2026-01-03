@@ -1,0 +1,12 @@
+{
+  "id": "cold_damage",
+  "name": "Cold Damage Gem",
+  "type": "damage",
+  "element": "cold",
+  "description": "Increases cold damage by 10-50%",
+  "minValue": 10,
+  "maxValue": 50,
+  "rarity": "common",
+  "seed": 17346,
+  "generatedAt": "2025-12-30T01:14:44.490Z"
+}

@@ -1,0 +1,27 @@
+{
+  "passed": [
+    "items.json exists and is valid",
+    "items.json has sets defined",
+    "world-config.json exists and has endgame config",
+    "enemies.json has endgame enemies",
+    "talents.json has endgame talents",
+    "prestige-config.json has gear/talent upgrades",
+    "achievements.json has endgame achievements",
+    "ProceduralItemGenerator exists",
+    "EquipmentManager exists",
+    "TalentManager exists",
+    "PrestigeManager exists",
+    "WorldManager exists",
+    "LevelUpHandler exists",
+    "ProceduralItemGenerator has generateItemForMile method",
+    "EquipmentManager has set bonus methods",
+    "TalentManager has milestone methods",
+    "PrestigeManager has gear/talent integration methods",
+    "WorldManager has milestone reward methods",
+    "TooltipManager has item level/tier methods"
+  ],
+  "failed": [],
+  "total": 19,
+  "duration": 8,
+  "timestamp": "2025-12-30T01:21:16.932Z"
+}

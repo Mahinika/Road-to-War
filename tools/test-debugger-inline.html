@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hero Visibility Debugger - Inline Test</title>
+    <style>
+        body {
+            background: #1e293b;
+            color: white;
+            font-family: system-ui, sans-serif;
+            padding: 20px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .pass { background: #065f46; }
+        .fail { background: #7f1d1d; }
+        .info { background: #1e3a8a; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover { background: #2563eb; }
+        pre {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hero Visibility Debugger - Inline Test</h1>
+    <p>This page tests the debugger functionality directly in the game window context.</p>
+    
+    <div id="test-results"></div>
+    
+    <div>
+        <button onclick="testGameScene()">Test window.gameScene</button>
+        <button onclick="testHeroSprites()">Test Hero Sprites</button>
+        <button onclick="runFullDiagnostic()">Run Full Diagnostic</button>
+        <button onclick="forceAllVisible()">Force All Visible</button>
+    </div>
+    
+    <div id="output"></div>
+
+    <script>
+        const output = document.getElementById('output');
+        const results = document.getElementById('test-results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+            console.log(message);
+        }
+        
+        function testGameScene() {
+            results.innerHTML = '';
+            log('Testing window.gameScene access...', 'info');
+            
+            if (typeof window.gameScene !== 'undefined') {
+                log('✅ window.gameScene exists!', 'pass');
+                log(`Scene type: ${window.gameScene.constructor.name}`, 'info');
+                return window.gameScene;
+            } else {
+                log('❌ window.gameScene not found!', 'fail');
+                log('Make sure the game has loaded and GameScene is active.', 'info');
+                return null;
+            }
+        }
+        
+        function testHeroSprites() {
+            results.innerHTML = '';
+            const scene = testGameScene();
+            if (!scene) return;
+            
+            log('Testing hero sprites...', 'info');
+            
+            if (scene.partyMemberSprites && scene.partyMemberSprites.length > 0) {
+                log(`✅ Found ${scene.partyMemberSprites.length} hero sprites!`, 'pass');
+                
+                scene.partyMemberSprites.forEach((pm, i) => {
+                    const sprite = pm.sprite;
+                    const hero = pm.hero;
+                    if (sprite) {
+                        log(`Hero ${i} (${hero?.id || 'unknown'}): visible=${sprite.visible}, active=${sprite.active}, x=${sprite.x}, y=${sprite.y}`, 'info');
+                    } else {
+                        log(`Hero ${i}: NO SPRITE!`, 'fail');
+                    }
+                });
+            } else {
+                log('❌ No party member sprites found!', 'fail');
+            }
+        }
+        
+        function runFullDiagnostic() {
+            results.innerHTML = '';
+            const scene = testGameScene();
+            if (!scene) return;
+            
+            log('Running full diagnostic...', 'info');
+            const diagnostics = [];
+            
+            // Check 1: Hero Sprites
+            if (scene.partyMemberSprites && scene.partyMemberSprites.length === 5) {
+                diagnostics.push({ check: 'Hero Count', status: 'PASS', message: '5 heroes found' });
+            } else {
+                diagnostics.push({ check: 'Hero Count', status: 'FAIL', message: `Found ${scene.partyMemberSprites?.length || 0} heroes (expected 5)` });
+            }
+            
+            // Check 2: Visibility
+            let visibleCount = 0;
+            scene.partyMemberSprites?.forEach((pm, i) => {
+                if (pm.sprite && pm.sprite.visible && pm.sprite.active) {
+                    visibleCount++;
+                }
+            });
+            diagnostics.push({ 
+                check: 'Visibility', 
+                status: visibleCount === 5 ? 'PASS' : 'FAIL', 
+                message: `${visibleCount}/5 heroes visible and active` 
+            });
+            
+            // Check 3: Camera
+            const camera = scene.cameras?.main;
+            if (camera) {
+                diagnostics.push({ 
+                    check: 'Camera', 
+                    status: 'PASS', 
+                    message: `Camera at (${camera.scrollX.toFixed(0)}, ${camera.scrollY.toFixed(0)})` 
+                });
+            } else {
+                diagnostics.push({ check: 'Camera', status: 'FAIL', message: 'Camera not found' });
+            }
+            
+            // Check 4: Positions
+            const positions = scene.partyMemberSprites?.map(pm => ({
+                x: pm.sprite?.x || 0,
+                y: pm.sprite?.y || 0
+            })) || [];
+            
+            const minX = Math.min(...positions.map(p => p.x));
+            const maxX = Math.max(...positions.map(p => p.x));
+            const centerX = (minX + maxX) / 2;
+            
+            diagnostics.push({ 
+                check: 'Positioning', 
+                status: 'INFO', 
+                message: `Heroes span from x=${minX.toFixed(0)} to x=${maxX.toFixed(0)}, center=${centerX.toFixed(0)}` 
+            });
+            
+            // Display results
+            diagnostics.forEach(d => {
+                log(`${d.check}: ${d.status} - ${d.message}`, d.status === 'PASS' ? 'pass' : d.status === 'FAIL' ? 'fail' : 'info');
+            });
+        }
+        
+        function forceAllVisible() {
+            results.innerHTML = '';
+            const scene = testGameScene();
+            if (!scene) return;
+            
+            log('Forcing all heroes visible...', 'info');
+            
+            let count = 0;
+            scene.partyMemberSprites?.forEach((pm, i) => {
+                if (pm.sprite) {
+                    pm.sprite.setVisible(true);
+                    pm.sprite.setActive(true);
+                    pm.sprite.setAlpha(1.0);
+                    count++;
+                    log(`Hero ${i}: Forced visible`, 'pass');
+                }
+            });
+            
+            log(`✅ Forced ${count} heroes visible!`, 'pass');
+        }
+        
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testGameScene();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
+

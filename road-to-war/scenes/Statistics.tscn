@@ -1,0 +1,21 @@
+[gd_scene load_steps=2 format=3 uid="uid://dvtsmtjsdmvk2"]
+
+[ext_resource type="Script" uid="uid://dmkkyyma5ekox" path="res://scripts/Statistics.gd" id="1_cr0jn"]
+
+[node name="Statistics" type="Node"]
+
+[node name="Statistics" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_cr0jn")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Statistics"]
+layout_mode = 0
+
+[node name="BackButton" type="Button" parent="Statistics/VBoxContainer"]
+layout_mode = 2
+text = "BACK"
+
+[node name="StatsLabel" type="RichTextLabel" parent="Statistics/VBoxContainer"]
+layout_mode = 2
+fit_content = true

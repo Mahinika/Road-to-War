@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Road of War - Incremental Prestige RPG">
+    <!-- Development-friendly CSP: permissive for local/dev. Replace with stricter policy for production. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' blob:; worker-src 'self' blob: data: *; style-src * 'unsafe-inline'; img-src * data: blob:; font-src * data:; connect-src * ws: wss: http://127.0.0.1:7243 http://localhost:7243;">
+    <title>Road of War</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            border: 2px solid #333;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 18px;
+            text-align: center;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #333;
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        canvas {
+            display: block;
+            background-color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="loading">
+            <div class="loading-spinner"></div>
+            <div>Loading Road of War...</div>
+        </div>
+    </div>
+    
+        <script type="module">
+            // Use alias path for better Vite resolution
+            // The @ alias is configured in vite.config.js to point to src/
+            import('@/main.js');
+        </script>
+        
+        <!-- Auto-load animation debugger and hero regenerator in development -->
+        <script>
+            // Load console tools when game is ready
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                window.addEventListener('load', () => {
+                    setTimeout(() => {
+                        // Load animation debugger
+                        const debuggerScript = document.createElement('script');
+                        debuggerScript.src = '/animation-debugger-console.js';
+                        debuggerScript.onload = () => {
+                            console.log('💡 Animation Debugger: Type animDebug.help() for commands');
+                        };
+                        document.head.appendChild(debuggerScript);
+
+                        // Load hero regenerator
+                        const regeneratorScript = document.createElement('script');
+                        regeneratorScript.src = '/regenerate-hero.js';
+                        regeneratorScript.onload = () => {
+                            console.log('💡 Hero Regenerator: Type regenerateHero.help() for commands');
+                        };
+                        document.head.appendChild(regeneratorScript);
+                    }, 2000); // Wait for game to initialize
+                });
+            }
+        </script>
+</body>
+</html>
