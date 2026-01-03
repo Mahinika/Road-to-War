@@ -50,7 +50,8 @@ func _ready():
 	add_child(timer)
 
 func _initialize_achievements():
-	var data = DataManager.get_data("achievements")
+	var dm = get_node_or_null("/root/DataManager")
+	var data = dm.get_data("achievements") if dm else null
 	if not data or not data.has("achievements"): return
 	
 	for ach in data["achievements"]:
@@ -62,8 +63,12 @@ func _initialize_achievements():
 			}
 
 func check_all_achievements():
-	var data = DataManager.get_data("achievements")
+	var dm = get_node_or_null("/root/DataManager")
+	var data = dm.get_data("achievements") if dm else null
 	if not data or not data.has("achievements"): return
+	
+	var stm = get_node_or_null("/root/StatisticsManager")
+	if not stm: return
 	
 	for ach in data["achievements"]:
 		var id = ach["id"]
@@ -72,9 +77,9 @@ func check_all_achievements():
 		# Simple logic: map achievement IDs to stats
 		var is_met = false
 		match id:
-			"defeat_10_enemies": is_met = StatisticsManager.get_stat("combat", "enemiesDefeated") >= 10
-			"defeat_100_enemies": is_met = StatisticsManager.get_stat("combat", "enemiesDefeated") >= 100
-			"reach_level_10": is_met = StatisticsManager.get_stat("progression", "currentLevel") >= 10
+			"defeat_10_enemies": is_met = stm.get_stat("combat", "enemiesDefeated") >= 10
+			"defeat_100_enemies": is_met = stm.get_stat("combat", "enemiesDefeated") >= 100
+			"reach_level_10": is_met = stm.get_stat("progression", "currentLevel") >= 10
 			# Add more as needed
 			
 		if is_met:
@@ -89,7 +94,10 @@ func unlock_achievement(id: String):
 	achievements[id]["unlocked"] = true
 	achievements[id]["unlocked_at"] = Time.get_ticks_msec()
 	
-	var data = DataManager.get_data("achievements")
+	var dm = get_node_or_null("/root/DataManager")
+	var data = dm.get_data("achievements") if dm else null
+	if not data: return
+	
 	var ach_data = {}
 	for ach in data["achievements"]:
 		if ach["id"] == id:
@@ -104,22 +112,27 @@ func unlock_achievement(id: String):
 	if reward:
 		if reward.has("gold"):
 			var gold_amt = reward["gold"]
-			if has_node("/root/ShopManager"):
-				ShopManager.add_gold(gold_amt)
-			if has_node("/root/StatisticsManager"):
-				StatisticsManager.increment_stat("collection", "goldEarned", gold_amt)
+			var shm = get_node_or_null("/root/ShopManager")
+			if shm:
+				shm.add_gold(gold_amt)
+			var stm = get_node_or_null("/root/StatisticsManager")
+			if stm:
+				stm.increment_stat("collection", "goldEarned", gold_amt)
 				
 		if reward.has("experience"):
 			var exp_amt = reward["experience"]
-			for hero in PartyManager.heroes:
-				hero.gain_experience(exp_amt)
+			var pm = get_node_or_null("/root/PartyManager")
+			if pm:
+				for hero in pm.heroes:
+					hero.gain_experience(exp_amt)
 
 func is_unlocked(id: String) -> bool:
 	return achievements.has(id) and achievements[id]["unlocked"]
 
 func get_all_achievements() -> Dictionary:
 	"""Return achievements combined with data for UI"""
-	var data = DataManager.get_data("achievements")
+	var dm = get_node_or_null("/root/DataManager")
+	var data = dm.get_data("achievements") if dm else null
 	var result = {}
 	
 	if not data or not data.has("achievements"):

@@ -47,8 +47,10 @@ func _ready():
 	_log_info("CombatManager", "Initialized with Multi-Enemy support")
 	
 	# Connect sub-module signals
-	DamageCalculator.damage_applied.connect(_on_damage_applied)
-	DamageCalculator.healing_applied.connect(_on_healing_applied)
+	var dc = get_node_or_null("/root/DamageCalculator")
+	if dc:
+		dc.damage_applied.connect(_on_damage_applied)
+		dc.healing_applied.connect(_on_healing_applied)
 
 func _on_damage_applied(attacker, target, amount, is_crit):
 	var attacker_id = "unknown"
@@ -163,11 +165,15 @@ func _process_turn():
 		_schedule_next_action()
 
 func _process_status_effects(combatant_id: String):
-	var res = StatusEffectsManager.process_turn(combatant_id)
+	var sem = get_node_or_null("/root/StatusEffectsManager")
+	var dc = get_node_or_null("/root/DamageCalculator")
+	if not sem or not dc: return
+	
+	var res = sem.process_turn(combatant_id)
 	if res["damage"] > 0:
 		var combatant = _get_combatant_by_id(combatant_id)
 		if not combatant.is_empty():
-			DamageCalculator.deal_damage({"id": "status_effect"}, combatant, res["damage"], false)
+			dc.deal_damage({"id": "status_effect"}, combatant, res["damage"], false)
 
 func _get_combatant_by_id(id: String) -> Dictionary:
 	# Check enemies first
@@ -175,7 +181,8 @@ func _get_combatant_by_id(id: String) -> Dictionary:
 		if enemy.get("instance_id") == id: return enemy
 		
 	# Check heroes
-	var hero = PartyManager.get_hero_by_id(id)
+	var pm = get_node_or_null("/root/PartyManager")
+	var hero = pm.get_hero_by_id(id) if pm else null
 	if hero: return hero.get_stats_dict()
 	
 	return {}
@@ -248,14 +255,17 @@ func _distribute_group_rewards(defeated_enemies: Array):
 			hero.gain_experience(total_exp)
 		
 	# Give Gold
-	if has_node("/root/ShopManager"):
-		ShopManager.add_gold(total_gold)
+	var shm = get_node_or_null("/root/ShopManager")
+	if shm:
+		shm.add_gold(total_gold)
 	
-	if has_node("/root/StatisticsManager"):
-		StatisticsManager.increment_stat("collection", "goldEarned", total_gold)
+	var stm = get_node_or_null("/root/StatisticsManager")
+	if stm:
+		stm.increment_stat("collection", "goldEarned", total_gold)
 	
 	# Spawn Loot
-	if not all_loot_drops.is_empty() and has_node("/root/LootManager"):
+	var lm = get_node_or_null("/root/LootManager")
+	if not all_loot_drops.is_empty() and lm:
 		# Just use the first enemy's position for collective loot spawn for now, 
 		# or refine this to spawn at each enemy's death spot later.
-		LootManager.spawn_loot(defeated_enemies[0], all_loot_drops)
+		lm.spawn_loot(defeated_enemies[0], all_loot_drops)

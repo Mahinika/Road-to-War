@@ -80,15 +80,19 @@ func purchase_item(item_id: String, quantity: int = 1) -> bool:
 	
 	var cost = item_data.get("buyPrice", item_data.get("sellValue", 0) * 2) * quantity
 	if player_gold < cost:
-		ParticleManager.create_floating_text(Vector2(400, 300), "Not enough gold!", Color.RED)
+		var pm = get_node_or_null("/root/ParticleManager")
+		if pm:
+			pm.create_floating_text(Vector2(400, 300), "Not enough gold!", Color.RED)
 		return false
 	
 	player_gold -= cost
-	if has_node("/root/StatisticsManager"):
-		StatisticsManager.increment_stat("collection", "goldSpent", cost)
+	var stm = get_node_or_null("/root/StatisticsManager")
+	if stm:
+		stm.increment_stat("collection", "goldSpent", cost)
 	
 	# Add to inventory
-	if has_node("/root/LootManager"):
+	var lm = get_node_or_null("/root/LootManager")
+	if lm:
 		var loot_item = {
 			"id": item_id,
 			"data": item_data,
@@ -97,11 +101,13 @@ func purchase_item(item_id: String, quantity: int = 1) -> bool:
 			"spawned_at": Time.get_ticks_msec(),
 			"lifetime": 30000
 		}
-		LootManager.pickup_loot(loot_item)
+		lm.pickup_loot(loot_item)
 	
 	item_purchased.emit(item_data, cost)
 	
-	ParticleManager.create_floating_text(Vector2(400, 300), "Purchased!", Color.GREEN)
+	var part_m = get_node_or_null("/root/ParticleManager")
+	if part_m:
+		part_m.create_floating_text(Vector2(400, 300), "Purchased!", Color.GREEN)
 	_log_info("ShopManager", "Purchased %s for %d gold" % [item_data.get("name", "item"), cost])
 	
 	return true

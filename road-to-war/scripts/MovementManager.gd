@@ -32,7 +32,8 @@ func _ready():
 	_log_info("MovementManager", "Initialized with Role-Based formations")
 
 func update_party_formation():
-	var heroes = PartyManager.heroes
+	var pm = get_node_or_null("/root/PartyManager")
+	var heroes = pm.heroes if pm else []
 	var role_counts = {"tank": 0, "melee": 0, "ranged": 0, "healer": 0}
 	
 	for hero in heroes:

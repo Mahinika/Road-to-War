@@ -296,7 +296,8 @@ func _update_biome_visuals(_delta):
 		current_biome = biome
 
 func _apply_biome_theme(biome: String):
-	var sky_color = UITheme.COLORS.get("biome_" + biome, Color(0.05, 0.05, 0.1))
+	var ut = get_node_or_null("/root/UITheme")
+	var sky_color = ut.COLORS.get("biome_" + biome, Color(0.05, 0.05, 0.1)) if ut else Color(0.05, 0.05, 0.1)
 	var mountain_color = sky_color.darkened(0.2)
 	var tree_color = sky_color.lightened(0.1)
 	
@@ -345,9 +346,11 @@ func _on_damage_dealt(source_id, target_id, amount, is_crit):
 		var pos = target_node.global_position + Vector2(0, -40)
 		var spec_color = Color.WHITE
 		
-		var hero = PartyManager.get_hero_by_id(source_id)
+		var pm_node = get_node_or_null("/root/PartyManager")
+		var hero = pm_node.get_hero_by_id(source_id) if pm_node else null
 		if hero:
-			spec_color = UITheme.get_spec_color(hero.class_id)
+			var ut = get_node_or_null("/root/UITheme")
+			spec_color = ut.get_spec_color(hero.class_id) if ut else Color.WHITE
 		
 		if target_node.has_method("play_hit_flash"):
 			target_node.play_hit_flash()
@@ -587,7 +590,11 @@ func _on_combat_ended(victory: bool):
 		audio_m.play_music("travel")
 	
 	if has_node("/root/CameraManager"):
-		CameraManager.reset_zoom()
+	# Resume travel
+	is_traveling = true
+	var cam_m = get_node_or_null("/root/CameraManager")
+	if cam_m:
+		cam_m.reset_zoom()
 	
 	# Reset boss lighting if active
 	var lighting = get_node_or_null("AtmosphericLighting")

@@ -77,11 +77,13 @@ func spawn_loot(enemy: Dictionary, loot_items: Array):
 		_log_info("LootManager", "Spawned %d loot items" % spawned_items.size())
 
 func roll_procedural_loot(level: int, x: float, y: float) -> Dictionary:
-	var item_data = ProceduralItemGenerator.generate_random_item(level)
+	var pig = get_node_or_null("/root/ProceduralItemGenerator")
+	var item_data = pig.generate_random_item(level) if pig else {"id": "fallback", "name": "Broken Item"}
 	
 	# Register the instance so EquipmentManager can find it
-	if has_node("/root/EquipmentManager"):
-		EquipmentManager.item_instances[item_data.id] = item_data
+	var eq = get_node_or_null("/root/EquipmentManager")
+	if eq:
+		eq.item_instances[item_data.id] = item_data
 	
 	return {
 		"id": item_data.id,
@@ -96,7 +98,8 @@ func roll_procedural_loot(level: int, x: float, y: float) -> Dictionary:
 	}
 
 func create_loot_item(loot_data: Dictionary, x: float, y: float) -> Dictionary:
-	var items_json = DataManager.get_data("items")
+	var dm = get_node_or_null("/root/DataManager")
+	var items_json = dm.get_data("items") if dm else {}
 	var item_id = loot_data.get("id", "")
 	var item_data = {}
 	
@@ -135,28 +138,29 @@ func check_loot_pickups(hero_position: Vector2) -> Array:
 
 func pickup_loot(loot_item: Dictionary) -> bool:
 	var item_rarity = loot_item.get("quality", "common")
+	var pm_node = get_node_or_null("/root/ParticleManager")
 	
 	# Check loot filter
 	if should_filter_item(item_rarity):
-		if loot_item.has("x") and loot_item.has("y"):
-			ParticleManager.create_floating_text(Vector2(loot_item.x, loot_item.y), "Filtered", Color.GRAY)
+		if loot_item.has("x") and loot_item.has("y") and pm_node:
+			pm_node.create_floating_text(Vector2(loot_item.x, loot_item.y), "Filtered", Color.GRAY)
 		return true
 	
 	# Check inventory space
 	if inventory.size() >= max_inventory_size:
-		if loot_item.has("x") and loot_item.has("y"):
-			ParticleManager.create_floating_text(Vector2(loot_item.x, loot_item.y), "Inventory Full!", Color.RED)
+		if loot_item.has("x") and loot_item.has("y") and pm_node:
+			pm_node.create_floating_text(Vector2(loot_item.x, loot_item.y), "Inventory Full!", Color.RED)
 		return false
 	
 	# Add to inventory
 	inventory.append(loot_item)
 	item_picked_up.emit(loot_item)
 	
-	if loot_item.has("x") and loot_item.has("y"):
+	if loot_item.has("x") and loot_item.has("y") and pm_node:
 		var item_name = "Item"
 		if loot_item.has("data"):
 			item_name = loot_item.data.get("name", "Item")
-		ParticleManager.create_floating_text(Vector2(loot_item.x, loot_item.y), "+" + item_name, Color.GREEN)
+		pm_node.create_floating_text(Vector2(loot_item.x, loot_item.y), "+" + item_name, Color.GREEN)
 	
 	_log_info("LootManager", "Picked up: %s" % loot_item.data.get("name", "Unknown"))
 	return true
@@ -179,13 +183,15 @@ func remove_from_inventory(item_id: String, _quantity: int = 1) -> bool:
 
 func use_consumable(item_id: String, hero_id: String) -> bool:
 	var item_data = {}
-	var items_json = DataManager.get_data("items")
+	var dm = get_node_or_null("/root/DataManager")
+	var items_json = dm.get_data("items") if dm else {}
 	if items_json and items_json.has("consumables"):
 		item_data = items_json["consumables"].get(item_id, {})
 		
 	if item_data.is_empty(): return false
 	
-	var hero = PartyManager.get_hero_by_id(hero_id)
+	var pm = get_node_or_null("/root/PartyManager")
+	var hero = pm.get_hero_by_id(hero_id) if pm else null
 	if not hero: return false
 	
 	var effects = item_data.get("effects", {})
@@ -198,9 +204,10 @@ func use_consumable(item_id: String, hero_id: String) -> bool:
 				hero.current_stats["health"] = min(hero.current_stats.get("health", 0) + amount, hero.current_stats.get("maxHealth", 100))
 				used = true
 			"restoreMana":
-				if has_node("/root/ResourceManager"):
-					ResourceManager.add_consumable(item_id, 1, effects)
-					ResourceManager.use_consumable(hero_id, item_id)
+				var res_m = get_node_or_null("/root/ResourceManager")
+				if res_m:
+					res_m.add_consumable(item_id, 1, effects)
+					res_m.use_consumable(hero_id, item_id)
 				used = true
 				
 	if used:

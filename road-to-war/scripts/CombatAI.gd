@@ -92,7 +92,8 @@ func select_ability(enemy_id: String, enemy_data: Dictionary) -> Dictionary:
 		return {"name": "Auto Attack", "type": "attack", "damageMultiplier": 1.0}
 		
 	# Filter abilities by phase if it's a boss
-	var enemies_data = DataManager.get_data("enemies")
+	var dm = get_node_or_null("/root/DataManager")
+	var enemies_data = dm.get_data("enemies") if dm else {}
 	var static_data = enemies_data.get(enemy_data.get("id"), {})
 	
 	var current_phase_abilities = []
@@ -202,7 +203,8 @@ func update_ai_state(enemy_id: String, enemy_data: Dictionary, combat_time_ms: i
 	var hp_pct = float(current_hp) / max_hp
 	
 	# Handle boss phases if they exist in enemy data
-	var enemies_data = DataManager.get_data("enemies")
+	var dm = get_node_or_null("/root/DataManager")
+	var enemies_data = dm.get_data("enemies") if dm else {}
 	var static_data = enemies_data.get(enemy_data.get("id"), {})
 	
 	if static_data.has("bossMechanics") and static_data["bossMechanics"].has("phases"):

@@ -6,7 +6,8 @@ var stats_config = {}
 
 func _ready():
 	print("StatCalculator: Initialized")
-	stats_config = DataManager.get_data("stats-config")
+	var dm = get_node_or_null("/root/DataManager")
+	stats_config = dm.get_data("stats-config") if dm else {}
 	if not stats_config:
 		stats_config = get_default_stats_config()
 
@@ -74,7 +75,8 @@ func calculate_final_stats(hero, equipment_stats: Dictionary = {}, talent_bonuse
 		if "level" in hero:
 			level = hero.level
 	
-	var world_config = DataManager.get_data("world-config")
+	var dm = get_node_or_null("/root/DataManager")
+	var world_config = dm.get_data("world-config") if dm else {}
 	if world_config and world_config.has("player"):
 		var level_gains = world_config["player"].get("levelStatGains", {})
 		for stat in level_gains:

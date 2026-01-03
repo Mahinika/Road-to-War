@@ -78,7 +78,8 @@ func set_cooldown(hero_id: String, ability_name: String):
 	ability_cooldown_updated.emit(hero_id, ability_name, ability_def["cooldown"], ability_def["cooldown"])
 
 func get_ability_definition(hero_id: String, ability_name: String) -> Dictionary:
-	var abilities_data = DataManager.get_data("abilities")
+	var dm = get_node_or_null("/root/DataManager")
+	var abilities_data = dm.get_data("abilities") if dm else null
 	if not abilities_data: return {}
 	
 	# Check general
@@ -86,7 +87,8 @@ func get_ability_definition(hero_id: String, ability_name: String) -> Dictionary
 		return abilities_data["general"][ability_name]
 		
 	# Check class
-	var hero = PartyManager.get_hero_by_id(hero_id)
+	var pm = get_node_or_null("/root/PartyManager")
+	var hero = pm.get_hero_by_id(hero_id) if pm else null
 	if hero and abilities_data.has(hero.class_id) and abilities_data[hero.class_id].has(ability_name):
 		return abilities_data[hero.class_id][ability_name]
 		
@@ -133,7 +135,8 @@ func _can_afford(hero_id: String, ability_name: String, rm) -> bool:
 
 func get_available_abilities(hero) -> Array:
 	var available = []
-	var class_data = DataManager.get_data("classes")
+	var dm = get_node_or_null("/root/DataManager")
+	var class_data = dm.get_data("classes") if dm else null
 	if not class_data or not class_data.has(hero.class_id):
 		return ["auto_attack"]
 		

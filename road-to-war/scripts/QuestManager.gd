@@ -29,7 +29,8 @@ func _ready():
 
 func _load_quests():
 	# Initial quest loading (could be from save or JSON)
-	var data = DataManager.get_data("quests")
+	var dm = get_node_or_null("/root/DataManager")
+	var data = dm.get_data("quests") if dm else null
 	if not data: return
 	
 	for q_id in data.get("active_quests", {}):
@@ -39,7 +40,8 @@ func _load_quests():
 func update_progress(quest_id: String, amount: int = 1):
 	if not player_quests.has(quest_id) or player_quests[quest_id].completed: return
 	
-	var q_data = DataManager.get_data("quests").get("active_quests", {}).get(quest_id, {})
+	var dm = get_node_or_null("/root/DataManager")
+	var q_data = dm.get_data("quests").get("active_quests", {}).get(quest_id, {}) if dm else {}
 	if q_data.is_empty(): return
 	
 	player_quests[quest_id].current += amount
@@ -59,16 +61,20 @@ func _complete_quest(quest_id: String):
 	_log_info("QuestManager", "Quest completed: %s" % quest_id)
 	
 	# Grant rewards
-	var q_data = DataManager.get_data("quests").get("active_quests", {}).get(quest_id, {})
+	var dm = get_node_or_null("/root/DataManager")
+	var q_data = dm.get_data("quests").get("active_quests", {}).get(quest_id, {}) if dm else {}
 	var rewards = q_data.get("rewards", {})
 	
-	if rewards.has("gold"):
-		ShopManager.add_gold(rewards["gold"])
-	if rewards.has("experience"):
-		for hero in PartyManager.heroes:
+	var shm = get_node_or_null("/root/ShopManager")
+	if rewards.has("gold") and shm:
+		shm.add_gold(rewards["gold"])
+		
+	var pm = get_node_or_null("/root/PartyManager")
+	if rewards.has("experience") and pm:
+		for hero in pm.heroes:
 			hero.gain_experience(rewards["experience"])
-	if rewards.has("talent_points"):
-		for hero in PartyManager.heroes:
+	if rewards.has("talent_points") and pm:
+		for hero in pm.heroes:
 			hero.talent_points += rewards["talent_points"]
 			
 	# Notify visual
@@ -77,8 +83,11 @@ func _complete_quest(quest_id: String):
 		pm.create_floating_text(Vector2(960, 200), "Quest Completed: " + q_data.get("name", "Unknown"), Color.GOLD)
 
 func _on_mile_changed(mile: int, _max: int, _old: int):
+	var dm = get_node_or_null("/root/DataManager")
+	if not dm: return
+	
 	for q_id in player_quests:
-		var q_data = DataManager.get_data("quests").get("active_quests", {}).get(q_id, {})
+		var q_data = dm.get_data("quests").get("active_quests", {}).get(q_id, {})
 		if q_data.get("type") == "reach_mile":
 			update_progress(q_id, mile)
 
@@ -88,7 +97,7 @@ func _on_combat_ended(victory: bool):
 	# This is a bit simplified, ideally we track which enemies were killed
 	# For now, let's assume if victory, we increment generic kill quests
 	var cm = get_node_or_null("/root/CombatManager")
-	if not cm: return
+	if not cm or not cm.current_combat.has("enemies"): return
 	
 	var enemies = cm.current_combat.get("enemies", [])
 	for enemy in enemies:
@@ -97,8 +106,11 @@ func _on_combat_ended(victory: bool):
 			_process_enemy_kill(enemy_id)
 
 func _process_enemy_kill(enemy_id: String):
+	var dm = get_node_or_null("/root/DataManager")
+	if not dm: return
+	
 	for q_id in player_quests:
-		var q_data = DataManager.get_data("quests").get("active_quests", {}).get(q_id, {})
+		var q_data = dm.get_data("quests").get("active_quests", {}).get(q_id, {})
 		if q_data.get("type") == "kill" and q_data.get("target_id") == enemy_id:
 			update_progress(q_id, 1)
 

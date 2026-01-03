@@ -84,7 +84,8 @@ func equip_item(hero_id: String, item_id: String, slot: String) -> bool:
 	# 2. Check Armor Proficiency (WoW style)
 	if item_data.get("type") == "armor":
 		var armor_type = item_data.get("armor_type", "cloth")
-		var class_data = DataManager.get_data("classes").get(hero.class_id, {})
+		var dm = get_node_or_null("/root/DataManager")
+		var class_data = dm.get_data("classes").get(hero.class_id, {}) if dm else {}
 		var proficiencies = class_data.get("armorProficiency", ["cloth"])
 		if not armor_type in proficiencies:
 			_log_warn("EquipmentManager", "Hero %s cannot wear %s armor" % [hero.name, armor_type])
@@ -123,7 +124,8 @@ func get_item_data(item_id: String) -> Dictionary:
 	if item_instances.has(item_id):
 		return item_instances[item_id]
 		
-	var items_data = DataManager.get_data("items")
+	var dm = get_node_or_null("/root/DataManager")
+	var items_data = dm.get_data("items") if dm else null
 	if not items_data: return {}
 	
 	for category in ["weapons", "armor", "accessories"]:
@@ -159,7 +161,8 @@ func calculate_equipment_stats(hero_id: String) -> Dictionary:
 	return total_stats
 
 func get_gem_data(gem_id: String) -> Dictionary:
-	var gems_json = DataManager.get_data("skill-gems")
+	var dm = get_node_or_null("/root/DataManager")
+	var gems_json = dm.get_data("skill-gems") if dm else null
 	if not gems_json: return {}
 	
 	for cat in gems_json.get("skillGems", {}):
@@ -190,7 +193,8 @@ func get_active_set_bonuses(hero_id: String) -> Dictionary:
 	for slot in equipment:
 		if equipment[slot]: item_ids.append(equipment[slot])
 		
-	var items_json = DataManager.get_data("items")
+	var dm = get_node_or_null("/root/DataManager")
+	var items_json = dm.get_data("items") if dm else null
 	if not items_json or not items_json.has("sets"): return active_bonuses
 	
 	var sets = items_json["sets"]
@@ -249,17 +253,18 @@ func calculate_item_score(item_data: Dictionary) -> int:
 func auto_equip_best_in_slot(hero_id: String):
 	"""Scan inventory and equip the highest scoring compatible items for a hero"""
 	var pm = get_node_or_null("/root/PartyManager")
+	var lm = get_node_or_null("/root/LootManager")
 	var hero = pm.get_hero_by_id(hero_id) if pm else null
-	if not hero: return
+	if not hero or not lm: return
 	
-	var inventory = LootManager.get_inventory()
+	var inventory = lm.get_inventory()
 	var equipment = get_hero_equipment(hero_id)
 	
 	# We'll do multiple passes to ensure we don't skip items if indices change
 	var upgrades_found = true
 	while upgrades_found:
 		upgrades_found = false
-		inventory = LootManager.get_inventory()
+		inventory = lm.get_inventory()
 		
 		var best_upgrade = null # {slot, item, index, score}
 		
@@ -277,7 +282,8 @@ func auto_equip_best_in_slot(hero_id: String):
 			# Check proficiency
 			if data.get("type") == "armor":
 				var armor_type = data.get("armor_type", "cloth")
-				var class_data = DataManager.get_data("classes").get(hero.class_id, {})
+				var dm = get_node_or_null("/root/DataManager")
+				var class_data = dm.get_data("classes").get(hero.class_id, {}) if dm else {}
 				var proficiencies = class_data.get("armorProficiency", ["cloth"])
 				if not armor_type in proficiencies:
 					continue
@@ -310,12 +316,12 @@ func auto_equip_best_in_slot(hero_id: String):
 			equip_item(hero_id, item_id, slot)
 			
 			# Remove from inventory
-			LootManager.inventory.remove_at(best_upgrade.index)
+			lm.inventory.remove_at(best_upgrade.index)
 			
 			# Add old back to inventory
 			if old_item_id:
 				var old_data = get_item_data(old_item_id)
-				LootManager.pickup_loot({
+				lm.pickup_loot({
 					"id": old_item_id, 
 					"data": old_data, 
 					"quality": old_data.get("rarity", "common")
@@ -326,7 +332,11 @@ func auto_equip_best_in_slot(hero_id: String):
 
 func sell_all_trash():
 	"""Sell all 'common' quality items in the inventory"""
-	var inventory = LootManager.get_inventory()
+	var lm = get_node_or_null("/root/LootManager")
+	var shm = get_node_or_null("/root/ShopManager")
+	if not lm: return
+	
+	var inventory = lm.get_inventory()
 	var total_gold = 0
 	var sold_count = 0
 	
@@ -337,13 +347,14 @@ func sell_all_trash():
 			var val = item.get("data", {}).get("sellValue", 5)
 			total_gold += val
 			sold_count += 1
-			LootManager.inventory.remove_at(i)
+			lm.inventory.remove_at(i)
 	
-	if total_gold > 0:
-		ShopManager.add_gold(total_gold)
+	if total_gold > 0 and shm:
+		shm.add_gold(total_gold)
 		_log_info("EquipmentManager", "Sold %d trash items for %d gold" % [sold_count, total_gold])
-		if has_node("/root/ParticleManager"):
-			ParticleManager.create_floating_text(Vector2(960, 540), "Trash Sold: +%dg" % total_gold, Color.YELLOW)
+		var part_m = get_node_or_null("/root/ParticleManager")
+		if part_m:
+			part_m.create_floating_text(Vector2(960, 540), "Trash Sold: +%dg" % total_gold, Color.YELLOW)
 
 func load_save_data(save_data: Dictionary):
 	hero_equipment = save_data.duplicate(true)

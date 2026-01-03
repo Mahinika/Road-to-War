@@ -16,7 +16,8 @@ var hero_id: String = ""
 
 func setup(p_hero_id: String):
 	hero_id = p_hero_id
-	var hero = PartyManager.get_hero_by_id(hero_id)
+	var pm = get_node_or_null("/root/PartyManager")
+	var hero = pm.get_hero_by_id(hero_id) if pm else null
 	if not hero: return
 	
 	if portrait:
@@ -32,29 +33,31 @@ func setup(p_hero_id: String):
 		name_label.text = hero.name
 	
 	# Apply WoW styling from UITheme
-	if has_node("Panel"):
-		var class_color = UITheme.COLORS.get(hero.role, UITheme.COLORS["gold_border"])
-		$Panel.add_theme_stylebox_override("panel", UITheme.get_stylebox_panel(UITheme.COLORS["frame"], class_color))
+	var ut = get_node_or_null("/root/UITheme")
+	if has_node("Panel") and ut:
+		var class_color = ut.COLORS.get(hero.role, ut.COLORS["gold_border"])
+		$Panel.add_theme_stylebox_override("panel", ut.get_stylebox_panel(ut.COLORS["frame"], class_color))
 	
-	if health_bar:
-		health_bar.add_theme_stylebox_override("fill", UITheme.get_stylebox_bar(UITheme.COLORS["health"]))
-	if resource_bar:
+	if health_bar and ut:
+		health_bar.add_theme_stylebox_override("fill", ut.get_stylebox_bar(ut.COLORS["health"]))
+	if resource_bar and ut:
 		var type = "mana"
 		var rm = get_node_or_null("/root/ResourceManager")
 		if rm: type = rm.get_resource_type(hero_id)
-		var res_color = UITheme.COLORS.get(type, UITheme.COLORS["mana"])
-		resource_bar.add_theme_stylebox_override("fill", UITheme.get_stylebox_bar(res_color))
-	if xp_bar:
-		xp_bar.add_theme_stylebox_override("fill", UITheme.get_stylebox_bar(UITheme.COLORS["xp"]))
-	if casting_bar:
-		casting_bar.add_theme_stylebox_override("fill", UITheme.get_stylebox_bar(UITheme.COLORS["casting"]))
+		var res_color = ut.COLORS.get(type, ut.COLORS["mana"])
+		resource_bar.add_theme_stylebox_override("fill", ut.get_stylebox_bar(res_color))
+	if xp_bar and ut:
+		xp_bar.add_theme_stylebox_override("fill", ut.get_stylebox_bar(ut.COLORS["xp"]))
+	if casting_bar and ut:
+		casting_bar.add_theme_stylebox_override("fill", ut.get_stylebox_bar(ut.COLORS["casting"]))
 
 func _ready():
 	if hero_id != "":
 		setup(hero_id)
 
 func _process(_delta):
-	var hero = PartyManager.get_hero_by_id(hero_id)
+	var pm = get_node_or_null("/root/PartyManager")
+	var hero = pm.get_hero_by_id(hero_id) if pm else null
 	if not hero: return
 	
 	var stats = hero.current_stats
@@ -94,8 +97,10 @@ func _process(_delta):
 		resource_bar.value = current
 		
 		# Change color based on type
-		var color = UITheme.COLORS.get(type, UITheme.COLORS["mana"])
-		resource_bar.add_theme_stylebox_override("fill", UITheme.get_stylebox_bar(color))
+		var ut = get_node_or_null("/root/UITheme")
+		if ut:
+			var color = ut.COLORS.get(type, ut.COLORS["mana"])
+			resource_bar.add_theme_stylebox_override("fill", ut.get_stylebox_bar(color))
 	
 	_update_status_icons()
 	_update_casting_bar()
@@ -105,7 +110,10 @@ func _update_status_icons():
 	
 	# Only update every few frames or on signal for performance? 
 	# For now, clear and rebuild if count changed or every 0.5s
-	var active = StatusEffectsManager.get_active_effects(hero_id)
+	var sem = get_node_or_null("/root/StatusEffectsManager")
+	if not sem: return
+	
+	var active = sem.get_active_effects(hero_id)
 	
 	# Simple clear and rebuild for now
 	for child in status_container.get_children():
@@ -113,7 +121,7 @@ func _update_status_icons():
 		
 	for type in active:
 		var data = active[type]
-		var def = StatusEffectsManager.effect_types.get(type, {})
+		var def = sem.effect_types.get(type, {})
 		
 		var icon_rect = ColorRect.new()
 		icon_rect.custom_minimum_size = Vector2(14, 14)

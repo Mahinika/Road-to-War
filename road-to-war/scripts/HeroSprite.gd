@@ -42,8 +42,9 @@ func _ready():
 	# Setup layer nodes dictionary
 	setup_layers()
 	
-	if casting_bar:
-		casting_bar.add_theme_stylebox_override("fill", UITheme.get_stylebox_bar(UITheme.COLORS["casting"]))
+	var ut = get_node_or_null("/root/UITheme")
+	if casting_bar and ut:
+		casting_bar.add_theme_stylebox_override("fill", ut.get_stylebox_bar(ut.COLORS["casting"]))
 	
 	# Apply transparency shader to all layers
 	var shader_path = "res://scripts/SpriteTransparency.gdshader"
@@ -235,7 +236,8 @@ func update_equipment_visuals():
 		
 	if hero_id == "": return
 	
-	var equipment = EquipmentManager.get_hero_equipment(hero_id)
+	var eq = get_node_or_null("/root/EquipmentManager")
+	var equipment = eq.get_hero_equipment(hero_id) if eq else {}
 	
 	# Reset all equipment layers (except body)
 	for slot in ["legs", "chest", "shoulder", "head", "weapon", "offhand"]:
@@ -249,11 +251,12 @@ func update_equipment_visuals():
 
 func apply_equipment(equipment: Dictionary):
 	"""Parse JSON and apply textures/modulates with class restrictions (SOP v3.0)"""
+	var eq = get_node_or_null("/root/EquipmentManager")
 	for slot in equipment:
 		var item_id = equipment[slot]
 		if not item_id: continue
 		
-		var item_data = EquipmentManager.get_item_data(item_id)
+		var item_data = eq.get_item_data(item_id) if eq else null
 		if not item_data or item_data.is_empty(): continue
 		
 		# Check class restriction (SOP v3.0 feature)
@@ -437,14 +440,17 @@ func _process(_delta):
 func _update_status_icons():
 	if not status_container or not hero_data: return
 	
+	var sem = get_node_or_null("/root/StatusEffectsManager")
+	if not sem: return
+	
 	var hero_id = hero_data.get("id", "") if hero_data is Dictionary else hero_data.id
-	var active = StatusEffectsManager.get_active_effects(hero_id)
+	var active = sem.get_active_effects(hero_id)
 	
 	for child in status_container.get_children():
 		child.queue_free()
 		
 	for type in active:
-		var def = StatusEffectsManager.effect_types.get(type, {})
+		var def = sem.effect_types.get(type, {})
 		var icon_rect = ColorRect.new()
 		icon_rect.custom_minimum_size = Vector2(10, 10)
 		icon_rect.color = Color.from_string(def.get("color", "ffffff"), Color.WHITE)

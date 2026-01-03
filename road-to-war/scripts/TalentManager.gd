@@ -62,7 +62,8 @@ func _build_initial_tree(hero_id: String) -> Dictionary:
 	if not hero: return {}
 	
 	var class_id = hero.class_id
-	var talents_data = DataManager.get_data("talents")
+	var dm = get_node_or_null("/root/DataManager")
+	var talents_data = dm.get_data("talents") if dm else null
 	if not talents_data or not talents_data.has(class_id): return {}
 	
 	var tree_state = {}
@@ -90,7 +91,8 @@ func allocate_talent_point(hero_id: String, tree_id: String, talent_id: String) 
 		return false
 		
 	# Check max points
-	var talents_data = DataManager.get_data("talents")
+	var dm = get_node_or_null("/root/DataManager")
+	var talents_data = dm.get_data("talents") if dm else {}
 	var class_id = hero.class_id
 	var talent_def = talents_data[class_id]["trees"][tree_id]["talents"][talent_id]
 	var max_points = talent_def.get("maxPoints", 1)
@@ -160,7 +162,8 @@ func get_talent_bonuses(hero_id: String) -> Dictionary:
 	if not hero: return bonuses
 	
 	var talents = get_hero_talents(hero_id)
-	var talents_data = DataManager.get_data("talents")
+	var dm = get_node_or_null("/root/DataManager")
+	var talents_data = dm.get_data("talents") if dm else null
 	var class_id = hero.class_id
 	
 	if not talents_data or not talents_data.has(class_id): return bonuses
