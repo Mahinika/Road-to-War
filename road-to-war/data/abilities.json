@@ -113,6 +113,53 @@
             "healPercent": 0.25,
             "scaling": "strength",
             "range": 200
+        },
+        "avenging_wrath": {
+            "name": "Avenging Wrath",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 120,
+            "duration": 10
+        },
+        "divine_favor": {
+            "name": "Divine Favor",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 120,
+            "duration": 10
+        },
+        "flash_of_light": {
+            "name": "Flash of Light",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "heal",
+            "range": 800,
+            "healMultiplier": 2.0,
+            "scaling": "intellect"
+        },
+        "righteous_fury": {
+            "name": "Righteous Fury",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 120,
+            "duration": 10
+        },
+        "seal_of_vengeance": {
+            "name": "Seal of Vengeance",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "strength"
         }
     },
     "warrior": {
@@ -169,6 +216,116 @@
             "healingReduced": 0.5,
             "scaling": "strength",
             "range": 120
+        },
+        "shield_block": {
+            "name": "Shield Block",
+            "cost": 10,
+            "resourceType": "rage",
+            "cooldown": 15,
+            "type": "buff",
+            "blockChanceBonus": 1.0,
+            "duration": 6,
+            "range": 0
+        },
+        "thunder_clap": {
+            "name": "Thunder Clap",
+            "cost": 20,
+            "resourceType": "rage",
+            "cooldown": 6,
+            "type": "aoe",
+            "damageMultiplier": 0.5,
+            "attackSpeedReduction": 0.2,
+            "aoeRadius": 200,
+            "scaling": "strength",
+            "range": 0
+        },
+        "bladestorm": {
+            "name": "Bladestorm",
+            "cost": 20,
+            "resourceType": "rage",
+            "cooldown": 10,
+            "type": "aoe",
+            "range": 120,
+            "damageMultiplier": 0.8,
+            "aoeRadius": 200,
+            "scaling": "strength"
+        },
+        "devastate": {
+            "name": "Devastate",
+            "cost": 20,
+            "resourceType": "rage",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "strength"
+        },
+        "overpower": {
+            "name": "Overpower",
+            "cost": 20,
+            "resourceType": "rage",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "strength"
+        },
+        "rampage": {
+            "name": "Rampage",
+            "cost": 0,
+            "resourceType": "rage",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 120,
+            "duration": 10
+        },
+        "recklessness": {
+            "name": "Recklessness",
+            "cost": 0,
+            "resourceType": "rage",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 120,
+            "duration": 10
+        },
+        "revenge": {
+            "name": "Revenge",
+            "cost": 20,
+            "resourceType": "rage",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "strength"
+        },
+        "shield_wall": {
+            "name": "Shield Wall",
+            "cost": 0,
+            "resourceType": "rage",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 120,
+            "duration": 10
+        },
+        "sweeping_strikes": {
+            "name": "Sweeping Strikes",
+            "cost": 0,
+            "resourceType": "rage",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 120,
+            "duration": 10
+        },
+        "whirlwind": {
+            "name": "Whirlwind",
+            "cost": 20,
+            "resourceType": "rage",
+            "cooldown": 10,
+            "type": "aoe",
+            "range": 120,
+            "damageMultiplier": 0.8,
+            "aoeRadius": 200,
+            "scaling": "strength"
         }
     },
     "rogue": {
@@ -212,6 +369,106 @@
             "type": "interrupt",
             "duration": 5,
             "range": 120
+        },
+        "evasion": {
+            "name": "Evasion",
+            "cost": 0,
+            "resourceType": "energy",
+            "cooldown": 120,
+            "type": "buff",
+            "dodgeBonus": 0.5,
+            "duration": 10,
+            "range": 0
+        },
+        "adrenaline_rush": {
+            "name": "Adrenaline Rush",
+            "cost": 20,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "agility"
+        },
+        "backstab": {
+            "name": "Backstab",
+            "cost": 20,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "agility"
+        },
+        "envenom": {
+            "name": "Envenom",
+            "cost": 20,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "agility"
+        },
+        "hemorrhage": {
+            "name": "Hemorrhage",
+            "cost": 20,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "agility"
+        },
+        "killing_spree": {
+            "name": "Killing Spree",
+            "cost": 20,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "agility"
+        },
+        "preparation": {
+            "name": "Preparation",
+            "cost": 20,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "agility"
+        },
+        "shadow_dance": {
+            "name": "Shadow Dance",
+            "cost": 20,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "agility"
+        },
+        "vanish": {
+            "name": "Vanish",
+            "cost": 20,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "agility"
+        },
+        "vendetta": {
+            "name": "Vendetta",
+            "cost": 20,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "agility"
         }
     },
     "mage": {
@@ -246,6 +503,826 @@
             "stackingCost": true,
             "scaling": "intellect",
             "range": 800
+        },
+        "counterspell": {
+            "name": "Counterspell",
+            "cost": 10,
+            "resourceType": "mana",
+            "cooldown": 24,
+            "type": "interrupt",
+            "range": 800
+        },
+        "pyroblast": {
+            "name": "Pyroblast",
+            "cost": 50,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 3.5,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "arcane_explosion": {
+            "name": "Arcane Explosion",
+            "cost": 30,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "aoe",
+            "damageMultiplier": 0.6,
+            "aoeRadius": 300,
+            "scaling": "intellect",
+            "range": 0
+        },
+        "ice_block": {
+            "name": "Ice Block",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 300,
+            "type": "buff",
+            "invulnerability": true,
+            "duration": 10,
+            "range": 0
+        },
+        "arcane_barrage": {
+            "name": "Arcane Barrage",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 600,
+            "duration": 10
+        },
+        "arcane_power": {
+            "name": "Arcane Power",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 600,
+            "duration": 10
+        },
+        "combustion": {
+            "name": "Combustion",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 600,
+            "duration": 10
+        },
+        "deep_freeze": {
+            "name": "Deep Freeze",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 600,
+            "damageMultiplier": 1.3,
+            "scaling": "intellect"
+        },
+        "ice_lance": {
+            "name": "Ice Lance",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 600,
+            "damageMultiplier": 1.3,
+            "scaling": "intellect"
+        },
+        "icy_veins": {
+            "name": "Icy Veins",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 600,
+            "duration": 10
+        },
+        "living_bomb": {
+            "name": "Living Bomb",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "dot",
+            "range": 600,
+            "damageMultiplier": 0.4,
+            "duration": 12,
+            "scaling": "intellect"
+        },
+        "presence_of_mind": {
+            "name": "Presence of Mind",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 600,
+            "duration": 10
+        }
+    },
+    "priest": {
+        "smite": {
+            "name": "Smite",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 1.4,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "holy_fire": {
+            "name": "Holy Fire",
+            "cost": 25,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "dot_attack",
+            "damageMultiplier": 1.2,
+            "dotMultiplier": 0.4,
+            "duration": 7,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "greater_heal": {
+            "name": "Greater Heal",
+            "cost": 40,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "heal",
+            "healMultiplier": 3.0,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "renew": {
+            "name": "Renew",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "hot",
+            "healMultiplier": 0.5,
+            "duration": 15,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "power_word_shield": {
+            "name": "Power Word: Shield",
+            "cost": 30,
+            "resourceType": "mana",
+            "cooldown": 4,
+            "type": "shield",
+            "shieldMultiplier": 2.0,
+            "duration": 15,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "circle_of_healing": {
+            "name": "Circle of Healing",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "heal",
+            "range": 800,
+            "healMultiplier": 2.0,
+            "scaling": "intellect"
+        },
+        "divine_hymn": {
+            "name": "Divine Hymn",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "heal",
+            "range": 800,
+            "healMultiplier": 2.0,
+            "scaling": "intellect"
+        },
+        "mind_blast": {
+            "name": "Mind Blast",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 600,
+            "damageMultiplier": 1.3,
+            "scaling": "intellect"
+        },
+        "pain_suppression": {
+            "name": "Pain Suppression",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 600,
+            "damageMultiplier": 1.3,
+            "scaling": "intellect"
+        },
+        "penance": {
+            "name": "Penance",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "heal",
+            "range": 800,
+            "healMultiplier": 2.0,
+            "scaling": "intellect"
+        },
+        "prayer_of_healing": {
+            "name": "Prayer of Healing",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "heal",
+            "range": 800,
+            "healMultiplier": 2.0,
+            "scaling": "intellect"
+        },
+        "rapture": {
+            "name": "Rapture",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 600,
+            "damageMultiplier": 1.3,
+            "scaling": "intellect"
+        },
+        "shadow_word_pain": {
+            "name": "Shadow Word Pain",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "dot",
+            "range": 600,
+            "damageMultiplier": 0.4,
+            "duration": 12,
+            "scaling": "intellect"
+        },
+        "shadowform": {
+            "name": "Shadowform",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 600,
+            "duration": 10
+        },
+        "vampiric_touch": {
+            "name": "Vampiric Touch",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "dot",
+            "range": 600,
+            "damageMultiplier": 0.4,
+            "duration": 12,
+            "scaling": "intellect"
+        }
+    },
+    "warlock": {
+        "shadow_bolt": {
+            "name": "Shadow Bolt",
+            "cost": 30,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 1.8,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "corruption": {
+            "name": "Corruption",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "dot",
+            "damageMultiplier": 0.3,
+            "duration": 18,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "seed_of_corruption": {
+            "name": "Seed of Corruption",
+            "cost": 45,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "aoe_dot",
+            "damageMultiplier": 0.8,
+            "aoeRadius": 300,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "unstable_affliction": {
+            "name": "Unstable Affliction",
+            "cost": 25,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "dot",
+            "damageMultiplier": 0.5,
+            "duration": 15,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "chaos_bolt": {
+            "name": "Chaos Bolt",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 600,
+            "damageMultiplier": 1.3,
+            "scaling": "intellect"
+        },
+        "demonbolt": {
+            "name": "Demonbolt",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 600,
+            "damageMultiplier": 1.3,
+            "scaling": "intellect"
+        },
+        "drain_soul": {
+            "name": "Drain Soul",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "dot",
+            "range": 600,
+            "damageMultiplier": 0.4,
+            "duration": 12,
+            "scaling": "intellect"
+        },
+        "hand_of_guldan": {
+            "name": "Hand of Guldan",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 600,
+            "damageMultiplier": 1.3,
+            "scaling": "intellect"
+        },
+        "haunt": {
+            "name": "Haunt",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "dot",
+            "range": 600,
+            "damageMultiplier": 0.4,
+            "duration": 12,
+            "scaling": "intellect"
+        },
+        "havoc": {
+            "name": "Havoc",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 600,
+            "damageMultiplier": 1.3,
+            "scaling": "intellect"
+        },
+        "incinerate": {
+            "name": "Incinerate",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 600,
+            "damageMultiplier": 1.3,
+            "scaling": "intellect"
+        },
+        "inferno": {
+            "name": "Inferno",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "aoe",
+            "range": 600,
+            "damageMultiplier": 0.8,
+            "aoeRadius": 200,
+            "scaling": "intellect"
+        },
+        "metamorphosis": {
+            "name": "Metamorphosis",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 600,
+            "duration": 10
+        },
+        "summon_demon": {
+            "name": "Summon Demon",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "summon",
+            "range": 600
+        }
+    },
+    "hunter": {
+        "aimed_shot": {
+            "name": "Aimed Shot",
+            "cost": 35,
+            "resourceType": "mana",
+            "cooldown": 6,
+            "type": "attack",
+            "damageMultiplier": 2.5,
+            "scaling": "agility",
+            "range": 800
+        },
+        "steady_shot": {
+            "name": "Steady Shot",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 1.2,
+            "scaling": "agility",
+            "range": 800
+        },
+        "explosive_trap": {
+            "name": "Explosive Trap",
+            "cost": 25,
+            "resourceType": "mana",
+            "cooldown": 30,
+            "type": "aoe",
+            "damageMultiplier": 1.0,
+            "aoeRadius": 250,
+            "scaling": "agility",
+            "range": 100
+        },
+        "beast_within": {
+            "name": "Beast Within",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 600,
+            "duration": 10
+        },
+        "bestial_wrath": {
+            "name": "Bestial Wrath",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 600,
+            "duration": 10
+        },
+        "black_arrow": {
+            "name": "Black Arrow",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "dot",
+            "range": 600,
+            "damageMultiplier": 0.4,
+            "duration": 12,
+            "scaling": "agility"
+        },
+        "call_pet": {
+            "name": "Call Pet",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "summon",
+            "range": 600
+        },
+        "chimera_shot": {
+            "name": "Chimera Shot",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 600,
+            "damageMultiplier": 1.3,
+            "scaling": "agility"
+        },
+        "explosive_shot": {
+            "name": "Explosive Shot",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 600,
+            "damageMultiplier": 1.3,
+            "scaling": "agility"
+        },
+        "kill_command": {
+            "name": "Kill Command",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 600,
+            "damageMultiplier": 1.3,
+            "scaling": "agility"
+        },
+        "lock_and_load": {
+            "name": "Lock and Load",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 600,
+            "duration": 10
+        },
+        "trueshot_aura": {
+            "name": "Trueshot Aura",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 600,
+            "duration": 10
+        },
+        "wyvern_sting": {
+            "name": "Wyvern Sting",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 600,
+            "damageMultiplier": 1.3,
+            "scaling": "agility"
+        }
+    },
+    "shaman": {
+        "lightning_bolt": {
+            "name": "Lightning Bolt",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 1.6,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "lava_burst": {
+            "name": "Lava Burst",
+            "cost": 30,
+            "resourceType": "mana",
+            "cooldown": 8,
+            "type": "attack",
+            "damageMultiplier": 2.2,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "earth_shock": {
+            "name": "Earth Shock",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 6,
+            "type": "interrupt",
+            "damageMultiplier": 1.0,
+            "scaling": "intellect",
+            "range": 600
+        },
+        "chain_heal": {
+            "name": "Chain Heal",
+            "cost": 45,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "aoe_heal",
+            "healMultiplier": 1.5,
+            "targets": 3,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "chain_lightning": {
+            "name": "Chain Lightning",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "aoe",
+            "range": 120,
+            "damageMultiplier": 0.8,
+            "aoeRadius": 200,
+            "scaling": "intellect"
+        },
+        "elemental_mastery": {
+            "name": "Elemental Mastery",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 120,
+            "duration": 10
+        },
+        "healing_wave": {
+            "name": "Healing Wave",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "heal",
+            "range": 800,
+            "healMultiplier": 2.0,
+            "scaling": "intellect"
+        },
+        "lava_lash": {
+            "name": "Lava Lash",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "intellect"
+        },
+        "mana_tide_totem": {
+            "name": "Mana Tide Totem",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 120,
+            "duration": 10
+        },
+        "riptide": {
+            "name": "Riptide",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "heal",
+            "range": 800,
+            "healMultiplier": 2.0,
+            "scaling": "intellect"
+        },
+        "shamanistic_rage": {
+            "name": "Shamanistic Rage",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 120,
+            "duration": 10
+        },
+        "stormstrike": {
+            "name": "Stormstrike",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "aoe",
+            "range": 120,
+            "damageMultiplier": 0.8,
+            "aoeRadius": 200,
+            "scaling": "intellect"
+        },
+        "thunderstorm": {
+            "name": "Thunderstorm",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "aoe",
+            "range": 120,
+            "damageMultiplier": 0.8,
+            "aoeRadius": 200,
+            "scaling": "intellect"
+        },
+        "windfury": {
+            "name": "Windfury",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "intellect"
+        }
+    },
+    "druid": {
+        "wrath": {
+            "name": "Wrath",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 1.3,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "starfire": {
+            "name": "Starfire",
+            "cost": 35,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 2.4,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "rejuvenation": {
+            "name": "Rejuvenation",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "hot",
+            "healMultiplier": 0.6,
+            "duration": 12,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "feral_bite": {
+            "name": "Feral Bite",
+            "cost": 35,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "finisher",
+            "damageMultiplier": 2.5,
+            "scaling": "agility",
+            "range": 120
+        },
+        "eclipse": {
+            "name": "Eclipse",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 120,
+            "duration": 10
+        },
+        "frenzied_regeneration": {
+            "name": "Frenzied Regeneration",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 120,
+            "duration": 10
+        },
+        "mangle": {
+            "name": "Mangle",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "range": 120,
+            "damageMultiplier": 1.3,
+            "scaling": "intellect"
+        },
+        "regrowth": {
+            "name": "Regrowth",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "heal",
+            "range": 800,
+            "healMultiplier": 2.0,
+            "scaling": "intellect"
+        },
+        "starfall": {
+            "name": "Starfall",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "aoe",
+            "range": 120,
+            "damageMultiplier": 0.8,
+            "aoeRadius": 200,
+            "scaling": "intellect"
+        },
+        "survival_instincts": {
+            "name": "Survival Instincts",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "buff",
+            "range": 120,
+            "duration": 10
+        },
+        "swipe": {
+            "name": "Swipe",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "aoe",
+            "range": 120,
+            "damageMultiplier": 0.8,
+            "aoeRadius": 200,
+            "scaling": "intellect"
+        },
+        "tranquility": {
+            "name": "Tranquility",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "heal",
+            "range": 800,
+            "healMultiplier": 2.0,
+            "scaling": "intellect"
+        },
+        "wild_growth": {
+            "name": "Wild Growth",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "heal",
+            "range": 800,
+            "healMultiplier": 2.0,
+            "scaling": "intellect"
         }
     }
 }

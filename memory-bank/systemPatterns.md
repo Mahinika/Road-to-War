@@ -15,30 +15,28 @@ The game follows a modular, event-driven architecture with clear separation betw
 ### 1. Manager Pattern
 Central managers coordinate major game systems:
 
-**Current System (Modularization Complete):**
-- **BaseManager Pattern (January 2026)**: All managers now extend `BaseManager` for consistent initialization, dependency management, and lifecycle handling
-  - **Location**: `src/managers/base-manager.js`
+**Current System (Godot 4.x - January 2026):**
+- **Manager Pattern**: All managers are Godot Autoloads (Singletons) defined in `project.godot`
+  - **Location**: `road-to-war/scripts/` - All manager scripts are `.gd` files
   - **Features**: 
-    - Standardized `init()` async initialization pattern
-    - Dependency injection via `getDependencies()` static method
-    - Consistent scene and config access
-    - DataService integration (optional, falls back to scene cache)
-  - **Adoption**: EquipmentManager, CombatManager, AbilityManager, AnimationManager, AudioManager, CameraManager, BloodlineManager, InteractionManager, MovementManager, ParticleManager, ResourceManager, StatusEffectsManager, PrestigeManager, ShopManager, TalentManager, AchievementManager, LootManager, StatisticsManager, PartyManager, WorldManager all extend BaseManager
-  - **Benefits**: Unified initialization order, dependency resolution, consistent error handling, easier testing
-  - **Init Method Handling (Jan 1, 2026)**: ManagerRegistry now correctly handles async `init()` methods with optional parameters (e.g., `async init(partyManager = null)`). Old sync `init(parameter)` methods are deprecated and skipped during initialization. EquipmentManager's old `init(hero)` method renamed to `initWithHero()` to avoid conflicts.
-- **Modular GameScene Architecture**: Complete transition from monolithic `game-world.js` to modular components:
-  - `src/scenes/core/`: `GameSceneCore`, `game-scene-combat.js`, `game-scene-ui.js`, `game-scene-update.js`
-  - `src/scenes/handlers/`: `combat-handler.js`, `event-handler.js`, `level-up-handler.js`, `save-load-handler.js`, `setup-handler.js` (all integrated)
-  - `src/scenes/ui/`: `combat-ui-manager.js`, `consumables-ui-manager.js`, `encounter-ui-manager.js`, `game-ui-manager.js`
-  - **Status**: All handlers properly initialized in GameSceneCore, event delegation working, cleanup implemented
+    - Godot Autoload system provides singleton access via `/root/ManagerName`
+    - Managers communicate via Signals (Godot's event system)
+    - Consistent data access via `DataManager` singleton
+    - Initialization handled in `_ready()` lifecycle method
+  - **Adoption**: All managers are Autoloads: EquipmentManager, CombatManager, AbilityManager, AnimationManager, AudioManager, CameraManager, BloodlineManager, InteractionManager, MovementManager, ParticleManager, ResourceManager, StatusEffectsManager, PrestigeManager, ShopManager, TalentManager, AchievementManager, LootManager, StatisticsManager, PartyManager, WorldManager
+  - **Benefits**: Automatic singleton access, Godot-native signal system, consistent lifecycle, easier scene integration
+- **Scene Architecture**: Modular scene-based architecture:
+  - `road-to-war/scenes/`: All game scenes (`.tscn` files)
+  - `road-to-war/scripts/`: Scene scripts attached to scenes
+  - **Status**: All scenes properly connected, signals working, cleanup implemented via `_exit_tree()`
 - **PartyManager**: Manages array of 5 heroes with role constraints (1 tank, 1 healer, 3 DPS) - 199 lines
-- **WorldManager**: World generation and progression, "Road to War" mile system (0-100), party combat triggering - Enhanced with milestone reward tracking (`checkMilestoneRewards()`, `claimMilestoneReward()`), endgame enemy selection
-  - **Movement Responsibility**: Moves primary hero (tank) in **sprite-space** and applies to physics via `body.reset(newX, newY)` (avoid sprite/body coordinate mismatch jitter)
-  - **Position Source**: `this.worldManager.hero.x/y` (sprite-space) is the authoritative position for leader calculations
+- **WorldManager**: World generation and progression, "Road to War" mile system (0-100), party combat triggering - Enhanced with milestone reward tracking (`check_milestone_rewards()`, `claim_milestone_reward()`), endgame enemy selection
+  - **Movement Responsibility**: Manages party movement via Godot's Node2D position system
+  - **Position Source**: Hero positions stored in `Hero` resource objects, accessed via `PartyManager`
 - **CombatManager**: Party combat resolution with threat/aggro system, role-based AI, party attack execution
 - **MovementManager**: Party movement coordination, hero positioning, target tracking
-  - **Travel Mode**: Excludes tank from position updates (WorldManager handles tank via velocity)
-  - **Formation Calculation**: Uses `this.worldManager.hero.x` for leader position (not `tank.sprite.x`)
+  - **Travel Mode**: Handles party formation and road-following
+  - **Formation Calculation**: Uses `PartyManager` hero positions for formation calculations
 - **CameraManager**: Dynamic camera system that keeps all 5 party members visible
 - **AbilityManager**: Per-hero abilities, mana system, and ability selection
 - **StatusEffectsManager**: Status effects system (stun, bleed, poison, shield, regeneration, buffs/debuffs)
@@ -52,75 +50,58 @@ Central managers coordinate major game systems:
 - **AchievementManager**: Achievement system and progress tracking
 - **PrestigeManager**: Prestige system and meta-progression - Enhanced with gear/talent integration (`getItemQualityBonus()`, `getItemLevelBoost()`, `getGearEffectiveness()`, `getTalentCostReduction()`, `getPrestigeTalentPoints()`, `getCombatBonus()`)
 - **ResourceManager**: Resource systems (mana/energy/focus), regeneration strategies, consumables
-- **GameplayDataHotReload** (src/managers/gameplay-data-hot-reload.js): Live data update system
-  - Watches `public/data/*.json` files for changes using polling
-  - Triggers `reload*Data()` methods on affected managers
+- **GameplayDataHotReload** (`road-to-war/scripts/GameplayDataHotReload.gd`): Live data update system
+  - Watches `road-to-war/data/*.json` files for changes using polling
+  - Triggers `reload_*_data()` methods on affected managers
   - Enables instant balancing feedback loop
-- **TooltipManager**: UI tooltips and item comparison - Enhanced with item level/tier display, set bonus previews (`isItemInSet()`, `getItemSetInfo()`)
-- **SaveManager**: Game state persistence (singleton utility - browser localStorage + Electron IPC)
-- **RuntimePaladinGenerator**: Dynamic sprite generation based on equipped items
-  - Generates base sprite texture (`paladin_dynamic_party`)
-  - Generates animation frames from base sprite using RenderTexture transformations
-  - Uses `RenderTexture.saveTexture()` API (not `generateTexture()` - that's for Graphics objects)
-- **AnimationManager**: Animation system with runtime sprite integration and centralized configuration
-  - Forces deletion of old paladin animations when runtime sprite exists
-  - Mandatory runtime sprite frame generation for paladin/hero characters (no fallback)
-  - Scans and deletes animations using old frame textures
-  - Uses centralized animation configuration (`animation-config.js`) for frame counts and frame rates
-  - Integrates with keyframe generator (`keyframe-generator.js`) for animation parameters
-  - Hot-reload support via `animation-hot-reload.js` for live development updates
-  - Texture validation via `texture-utils.js` for reliable animation creation
-- **AnimationConfig** (src/config/animation-config.js): Centralized animation configuration system
-  - Loads from `public/data/animation-config.json` (frame counts, frame rates, dimensions, settings)
-  - Provides `getFrameCount()` and `getFrameRate()` functions
-  - Supports hot-reload for live updates during development
-- **KeyframeGenerator** (src/config/keyframe-generator.js): Keyframe generation from configuration
-  - Loads from `public/data/keyframe-configs.json` (animation parameters per type)
-  - Generates keyframes for breathing, walk cycle, attack, defend, death animations
-  - Supports multiple animation types with configurable parameters
-- **AnimationHotReload** (src/managers/animation-hot-reload.js): Live animation updates
+- **TooltipManager** (`road-to-war/scripts/TooltipManager.gd`): UI tooltips and item comparison - Enhanced with item level/tier display, set bonus previews (`is_item_in_set()`, `get_item_set_info()`)
+- **SaveManager** (`road-to-war/scripts/SaveManager.gd`): Game state persistence using Godot FileAccess API
+  - Saves to `user://saves/` directory (cross-platform)
+  - JSON-based save format
+- **HeroSprite** (`road-to-war/scripts/HeroSprite.gd`): Hero sprite rendering and animation
+  - Uses Godot's Sprite2D nodes with layered equipment
+  - AnimationPlayer for animations (idle, walk, attack, death)
+  - Equipment visuals applied via texture modulation
+- **AnimationManager** (`road-to-war/scripts/AnimationManager.gd`): Animation system management
+  - Uses Godot's AnimationPlayer nodes
+  - Loads animation configs from `road-to-war/data/animation-config.json`
+  - Integrates with HeroSprite for hero animations
+- **AnimationHotReload** (`road-to-war/scripts/AnimationHotReload.gd`): Live animation updates
   - Watches for changes in animation config files
   - Automatically reloads configuration and regenerates animations
   - Enabled in development mode for instant feedback
-- **TextureUtils** (src/utils/texture-utils.js): Texture validation and retry utilities
-  - `waitForTextures()` - Polls for texture availability with timeout
-  - `validateFramesReady()` - Validates frame data before animation creation
-  - `createAnimationWithRetry()` - Retries animation creation with exponential backoff
-- **AnimationDebugger** (src/utils/animation-debugger.js): Animation debugging tools
+- **TextureUtils** (`road-to-war/scripts/TextureUtils.gd`): Texture validation and retry utilities
+  - `wait_for_textures()` - Polls for texture availability with timeout
+  - `validate_frames_ready()` - Validates frame data before animation creation
+  - `create_animation_with_retry()` - Retries animation creation with exponential backoff
+- **AnimationDebugger** (`road-to-war/scripts/AnimationDebugger.gd`): Animation debugging tools
   - Logs animation state, validates animations, provides statistics
-  - Console-based interface via `animation-debugger-console.js`
-- **AnimationValidator** (src/utils/animation-validator.js): Animation validation system
+  - Integrated with CursorLogManager for real-time debugging
+- **AnimationValidator** (`road-to-war/scripts/AnimationValidator.gd`): Animation validation system
   - Validates animation integrity, detects common issues
   - Provides health checks for animation system
-- **DataValidator** (src/utils/data-validator.js): JSON data validation system
+- **DataValidator** (`road-to-war/scripts/DataValidator.gd`): JSON data validation system
   - Uses schema-based checks for talents, items, stats, and configs
-  - Runs during PreloadScene to catch data entry errors early
-- **DevStatMonitor** (src/utils/dev-stat-monitor.js): Real-time debugging HUD
+  - Runs during Preload scene to catch data entry errors early
+- **DevStatMonitor** (`road-to-war/scripts/DevStatMonitor.gd`): Real-time debugging HUD
   - Displays party stats, combat threat, performance, and world state
   - Includes integrated CombatSimulator interface (F8 toggle)
-- **CombatSimulator** (src/utils/combat-simulator.js): Headless combat simulation
+- **CombatSimulator** (`road-to-war/scripts/CombatSimulator.gd`): Headless combat simulation
   - Runs 100+ iterations in milliseconds to test balancing
   - Calculates win rates, avg DPS, survival probability
-- **GameplayStateReplay** (src/utils/gameplay-state-replay.js): State snapshot system
+- **GameplayStateReplay** (`road-to-war/scripts/GameplayStateReplay.gd`): State snapshot system
   - Saves (F9) and restores (F10) full game state (party, equipment, world, combat)
   - Essential for bug reproduction and scenario testing
-- **MemoryMonitor** (src/utils/memory-monitor.js): Extended memory tracking and leak detection
+- **MemoryMonitor** (`road-to-war/scripts/MemoryMonitor.gd`): Extended memory tracking and leak detection
   - Tracks memory usage over time (100 data points = 100 minutes)
   - Detects memory leaks (10% growth threshold)
   - Warns at 150MB, critical at 200MB
   - Automatic cleanup suggestions and event-based notifications
   - Automatically enabled in development mode
-- **Memory Cleanup System** (src/scenes/game-scene.js): Aggressive memory cleanup with safety
-  - Deferred texture cleanup (100ms delay) to avoid rendering conflicts
-  - Recursive texture usage detection (checks nested containers)
-  - Particle texture protection (skips `particle-*` textures)
-  - Automatic particle manager cleanup
-  - Throttled to once per 10 seconds
-- **PerformanceValidator** (src/utils/performance-validator.js): Automated performance testing
+- **PerformanceValidator** (`road-to-war/scripts/PerformanceValidator.gd`): Automated performance testing
   - Hardware detection (CPU cores, GPU, memory)
   - Multiple test scenarios (baseline FPS, combat, particles, UI)
   - Generates comprehensive reports
-  - Available via `window.performanceValidator` in console
 
 **5-Man Team System (COMPLETE):**
 - **PartyManager**: Manages array of 5 heroes with role constraints (1 tank, 1 healer, 3 DPS) - Enhanced with proper classId/specId save/load support
@@ -191,86 +172,74 @@ All gameplay values come from external data:
 ## Component Relationships
 
 ```
-GameScene (Phaser Scene)
-├── PartyManager (manages 5 heroes)
-│   ├── Hero array management
+World Scene (road-to-war/scenes/World.tscn)
+├── PartyManager (Autoload - manages 5 heroes)
+│   ├── Hero array management (Array<Hero>)
 │   ├── Role constraints (tank/healer/DPS)
 │   └── Party utility methods
-├── CameraManager (dynamic party tracking)
+├── CameraManager (Autoload - dynamic party tracking)
 │   ├── Party bounds calculation
-│   ├── Camera offset adjustment
-│   └── Smooth interpolation
-├── MovementManager (party movement coordination)
+│   ├── Camera2D offset adjustment
+│   └── Smooth interpolation via Tween
+├── MovementManager (Autoload - party movement coordination)
 │   ├── Hero positioning
 │   ├── Target tracking
 │   └── Movement state management
-├── WorldManager (uses PartyManager)
-│   ├── SegmentGenerator (internal)
+├── WorldManager (Autoload - uses PartyManager)
+│   ├── RoadGenerator (internal)
 │   ├── EncounterManager (internal)
 │   ├── ProgressionTracker (internal - mile system 0-100)
-│   └── Party combat event triggering
-├── CombatManager (party combat)
-│   ├── AbilityManager (integrated - per hero)
-│   ├── StatusEffectsManager (integrated - status effects on combatants)
-│   ├── StatCalculator (uses StatCalculator utility)
-│   ├── DamageResolver (internal)
-│   ├── ThreatSystem (aggro tracking)
-│   ├── PartyAttackExecutor (party attack coordination)
-│   └── RoleAI (tank/healer/DPS decision making)
-├── LootManager
+│   └── Party combat event triggering via Signals
+├── CombatManager (Autoload - party combat)
+│   ├── AbilityManager (Autoload - per hero)
+│   ├── StatusEffectsManager (Autoload - status effects on combatants)
+│   ├── StatCalculator (Autoload utility)
+│   ├── DamageCalculator (internal)
+│   ├── ThreatSystem (Autoload - aggro tracking)
+│   ├── CombatAI (internal - party attack coordination)
+│   └── RoleAI (internal - tank/healer/DPS decision making)
+├── LootManager (Autoload)
 │   ├── DropTableResolver (internal)
-│   ├── ItemGenerator (internal)
+│   ├── ProceduralItemGenerator (Autoload)
 │   └── EquipmentValidator (internal)
-├── EquipmentManager (UPDATED - per hero)
-│   ├── StatCalculator (uses new StatCalculator utility)
+├── EquipmentManager (Autoload - per hero)
+│   ├── StatCalculator (uses StatCalculator Autoload)
 │   └── EquipmentValidator (internal)
-│   └── HeroEquipment Map (heroId → equipmentSlots)
-├── TalentManager (NEW)
+│   └── HeroEquipment Dictionary (heroId → equipmentSlots)
+├── TalentManager (Autoload)
 │   ├── TalentTreeManager (internal)
 │   ├── TalentPointAllocation (internal)
 │   └── TalentBonusCalculator (internal)
-├── ResourceManager (NEW)
-│   ├── HeroResourcePools (internal - Map<heroId, resources>)
-│   ├── ConsumableInventory (internal - Map<itemId, consumableData>)
+├── ResourceManager (Autoload)
+│   ├── HeroResourcePools (Dictionary<heroId, resources>)
+│   ├── ConsumableInventory (Dictionary<itemId, consumableData>)
 │   ├── RegenerationStrategies (internal - passive/active/burst)
 │   └── ResourceConsumption (internal - mana/energy/focus)
-├── StatCalculator (NEW - utility)
+├── StatCalculator (Autoload utility)
 │   ├── RatingToPercentageConverter (internal)
 │   ├── DefenseCapChecker (internal)
 │   └── DerivedStatCalculator (internal)
-├── HeroFactory (NEW - utility)
+├── HeroFactory (Autoload utility)
 │   └── HeroCreationLogic (internal)
-├── LevelUpHandler (NEW - utility)
-│   ├── ExperienceCalculation (internal - exponential scaling)
-│   ├── StatGrowthCalculation (internal - per-level gains)
-│   └── MilestoneBonusApplication (internal - level 20/40/60/80/100 bonuses)
-├── ShopManager
+├── ShopManager (Autoload)
 │   └── ItemGenerator (internal)
-├── AudioManager
-│   └── AudioContext (internal)
-├── ParticleManager
-│   └── EffectGenerator (internal)
-└── RuntimePaladinGenerator (UPDATED - per hero)
+├── AudioManager (Autoload)
+│   └── AudioStreamPlayer nodes (internal)
+├── ParticleManager (Autoload)
+│   └── CPUParticles2D nodes (internal)
+└── HeroSprite (Node2D - per hero instance)
     ├── Equipment Visual Mapper (internal)
-    └── Sprite Drawing Methods (internal)
+    └── AnimationPlayer (internal)
 
-SaveManager (Singleton Utility - UPDATED)
-├── LocalStorage Interface (Browser)
-├── Electron IPC Interface (Desktop)
-└── Generic game data persistence (party data included in gameData object)
+SaveManager (Autoload Singleton)
+├── FileAccess API (Godot native)
+├── Save to user://saves/ directory
+└── Generic game data persistence (party data included in save data)
 
-Electron Main Process
-├── BrowserWindow Management
-├── IPC Handlers (save/load operations)
-└── File System Access (AppData saves)
-
-Electron Preload Script
-└── Secure API Bridge (electronAPI)
-
-Console Log Capture System
-├── Electron: webContents.on('console-message') → logs/game-output.log
-├── Browser: Console override → localStorage + window.gameLogs
-└── Real-time log file for debugging (logs/game-output.log)
+CursorLogManager (Autoload)
+├── Real-time logging to user://cursor_logs.txt
+├── Explicit flush() calls for Cursor IDE visibility
+└── Integrated into GameManager initialization
 ```
 
 ## Data Flow Patterns
@@ -281,35 +250,25 @@ Console Log Capture System
 3. Render phase: Update visual representation
 4. Input phase: Process user interactions
 
-## Coordinate System Rule (Arcade Physics)
-- **Authoritative position**: sprite-space (`sprite.x/y`, origin-based)
-- **Physics body**: `body.x/y` is **top-left**, not directly comparable to `sprite.x/y`
-- **Rule**: Do not “sync” sprite and body by setting both to the same numeric values. When adjusting tank position, prefer `body.reset(x, y)` using sprite-space targets to keep Phaser alignment stable.
+## Coordinate System Rule (Godot 2D)
+- **Authoritative position**: Node2D `position` property (Vector2)
+- **Sprite positioning**: HeroSprite nodes use `position` for world coordinates
+- **Rule**: All position updates go through Node2D `position` property. Use `global_position` for world-space calculations. Road following uses `RoadGenerator` Y-coordinate calculations.
 
 ### 2. Combat Resolution Flow
 
-**Current Single-Hero System:**
-1. CombatManager detects enemy encounter
-2. AbilityManager selects appropriate ability based on hero state (health, mana)
-3. AbilityManager executes ability (auto attack, defensive stance, heal)
-4. StatCalculator compares hero vs enemy stats (with ability modifiers)
-5. DamageResolver processes combat rounds
-6. AbilityManager regenerates mana over time
-7. LootManager handles post-combat rewards
-8. UIManager displays results
-
-**Planned 5-Man Team System:**
-1. CombatManager detects enemy encounter
+**5-Man Team System (IMPLEMENTED):**
+1. CombatManager detects enemy encounter via Signal
 2. ThreatSystem tracks aggro per enemy per hero
 3. Tank AI: Generates threat, uses defensive cooldowns, picks up loose adds
 4. Healer AI: Targets lowest health % party members, selects healing spell type (emergency/sustained/AoE), manages mana
 5. DPS AI: Attacks tank's target, executes ability rotation, uses offensive cooldowns, monitors threat
 6. StatCalculator calculates final stats per hero (base + equipment + talents, rating conversions)
-7. DamageResolver processes combat rounds for all heroes
+7. DamageCalculator processes combat rounds for all heroes
 8. AbilityManager regenerates resources (mana/energy/rage) per hero
 9. XP distributed to all party members (with catch-up scaling for lower levels)
 10. LootManager handles post-combat rewards
-11. UIManager displays results (party health/mana bars, damage numbers, etc.)
+11. HUD displays results (party health/mana bars, damage numbers, etc.) via Signals
 
 ### 3. Equipment System Flow
 
@@ -336,25 +295,23 @@ Console Log Capture System
 - **Glow Effects**: Shader parameter support for legendary/epic item visual effects
 - **Backward Compatibility**: Fallback system ensures old items without new fields still work
 
-### 4. Save System Flow (Desktop)
-1. SaveManager detects Electron environment
-2. Calls window.electronAPI.saveGame() via preload bridge
-3. Electron main process receives IPC message
-4. Writes save file to AppData/RoadOfWar/saves/
-5. Returns success/failure to renderer process
+### 4. Save System Flow (Godot Native)
+1. SaveManager uses Godot FileAccess API
+2. Saves to `user://saves/` directory (cross-platform)
+3. JSON-based save format
+4. Returns success/failure via return value
 
-**Party Data Save/Load (December 2025):**
-- **PartyManager.getSaveData()**: Saves `classId`/`specId` (preferred) with backward-compat fallbacks to `class`/`specialization`
-- **PartyManager.loadData()**: Loads `classId`/`specId` (preferred) with backward-compat fallbacks for old save files
-- **Critical Fix**: Previously saved `class`/`specialization` which didn't match `HeroFactory` output (`classId`/`specId`), causing all heroes to default to paladin
-- **Impact**: Heroes now maintain correct class across save/load cycles
+**Party Data Save/Load:**
+- **PartyManager.get_save_data()**: Saves `class_id`/`spec_id` with hero data
+- **PartyManager.load_data()**: Loads `class_id`/`spec_id` from save file
+- **HeroFactory Integration**: Heroes created via HeroFactory maintain correct class/spec across save/load cycles
 
-### 5. Console Log Capture Flow
-1. Renderer process generates console.log/warn/error
-2. Electron: webContents.on('console-message') captures in main process
-3. Logs written to logs/game-output.log file with timestamps
-4. Browser: Console override captures logs in memory/localStorage
-5. Logs accessible via window.gameLogs or logs/game-output.log file
+### 5. Logging System Flow
+1. CursorLogManager captures all log messages
+2. Writes to `user://cursor_logs.txt` with timestamps
+3. Explicit `flush()` calls ensure real-time visibility in Cursor IDE
+4. Integrated into GameManager initialization
+5. Logs accessible via file system or CursorLogManager API
 
 ## Critical Implementation Paths
 
@@ -383,31 +340,28 @@ Console Log Capture System
 
 ## File Structure Patterns
 
-### Electron Integration
-- **electron/main.js**: Main Electron process, manages BrowserWindow and IPC handlers (save/load operations)
-- **electron/preload.js**: Secure bridge between renderer and main process (uses CommonJS require syntax)
-- **electron-builder.json**: Configuration for packaging Windows EXE
-- **scripts/start-electron-dev.js**: Orchestrates Vite server + Electron startup
+### Godot Project Structure
+- **road-to-war/project.godot**: Godot project configuration, Autoload definitions
+- **road-to-war/scenes/**: All game scenes (`.tscn` files)
+- **road-to-war/scripts/**: All game logic (`.gd` files)
+- **road-to-war/data/**: JSON data files loaded by DataManager
+- **road-to-war/assets/**: Game assets (sprites, audio, fonts)
 
 ### Save System Architecture
-- **Browser**: Uses localStorage API (synchronous)
-- **Desktop**: Uses Electron IPC (asynchronous via preload bridge)
-- **SaveManager**: Automatically detects environment and uses appropriate method
+- **Godot Native**: Uses FileAccess API (synchronous)
+- **SaveManager**: Autoload singleton for save/load operations
 - **Save Location**: 
-  - Browser: Browser's localStorage
-  - Desktop: `%AppData%/RoadOfWar/saves/` directory
+  - Cross-platform: `user://saves/` directory (Godot's user data folder)
+  - Windows: `%APPDATA%/Godot/app_userdata/Road to war/saves/`
+  - Linux: `~/.local/share/godot/app_userdata/Road to war/saves/`
+  - macOS: `~/Library/Application Support/Godot/app_userdata/Road to war/saves/`
 
 ## Generator System
 
-### Runtime Generators (src/generators/)
-- **RuntimePaladinGenerator**: Dynamic hero sprite generation based on equipped items (Phaser Graphics API)
-- **ProceduralItemGenerator**: Dynamic item generation with modifiers - Enhanced with `generateItemForMile()` method, tier calculation (`calculateTier()`), prestige integration, mile-based item level scaling
-- **RuntimeEnemyGenerator**: Dynamic enemy sprite generation
-- **AnimationGenerator**: Animation sequence generation
+### Runtime Generators (road-to-war/scripts/)
+- **ProceduralItemGenerator**: Dynamic item generation with modifiers - Enhanced with `generate_item_for_mile()` method, tier calculation (`calculate_tier()`), prestige integration, mile-based item level scaling
+- **AnimationGenerator**: Animation sequence generation using Godot AnimationPlayer
 - **AssetGenerator**: General asset generation utilities
-- **ItemIconGenerator**: Item icon generation
-- **SpriteGenerator**: Sprite generation utilities
-- **SpriteSheetGenerator**: Sprite sheet generation
 - **TerrainGenerator**: Terrain/background generation
 - **UIGenerator**: UI element generation
 
@@ -416,66 +370,59 @@ Console Log Capture System
 - **HumanoidGenerator**: Humanoid sprite generation
 - **EquipmentGenerator**: Equipment sprite generation
 
-## Utility System (src/utils/)
-- **async-helpers.js**: Async operation utilities
-- **error-handler.js**: Error handling and reporting
-- **event-constants.js**: Event name constants
-- **event-tracker.js**: Event tracking utilities
-- **event-validator.js**: Event validation
-- **health-bar.js**: Health bar UI component
-- **hero-factory.js**: Hero creation factory (210 lines)
-- **logger.js**: Logging system (actively used throughout codebase)
-- **object-pool.js**: Object pooling for performance
-- **performance-monitor.js**: Performance monitoring utilities
-- **placeholder-helper.js**: Placeholder asset utilities
-- **save-manager.js**: Save/load system (browser + Electron)
-- **stat-calculator.js**: Stat calculation utilities (227 lines)
-- **texture-helper.js**: Texture management utilities
-- **tooltip-manager.js**: Tooltip system - Enhanced with item level/tier display, set bonus previews (`isItemInSet()`, `getItemSetInfo()`), comparison functionality
-- **type-validators.js**: Type validation utilities
-- **ui-helper.js**: UI component helpers
-- **ui-theme.js**: UI theming system (updated with WoW WOTLK color palette)
-- **wow-ui-helper.js**: WoW-specific UI creation functions (createWoWFrame, createWoWBar, createWoWButton)
+## Utility System (road-to-war/scripts/)
+- **AsyncHelpers.gd**: Async operation utilities (await/async patterns)
+- **ErrorHandler.gd**: Error handling and reporting
+- **EventConstants.gd**: Event name constants (Signal names)
+- **EventBus.gd**: Global event bus for Signals
+- **HealthBar.gd**: Health bar UI component
+- **HeroFactory.gd**: Hero creation factory (centralized hero instantiation)
+- **Logger.gd**: Logging system (actively used throughout codebase)
+- **ObjectPool.gd**: Object pooling for performance
+- **PerformanceMonitor.gd**: Performance monitoring utilities
+- **PlaceholderHelper.gd**: Placeholder asset utilities
+- **SaveManager.gd**: Save/load system (Godot FileAccess)
+- **StatCalculator.gd**: Stat calculation utilities
+- **TextureHelper.gd**: Texture management utilities
+- **TooltipManager.gd**: Tooltip system - Enhanced with item level/tier display, set bonus previews (`is_item_in_set()`, `get_item_set_info()`), comparison functionality
+- **TypeValidators.gd**: Type validation utilities
+- **UITheme.gd**: UI theming system (WoW WOTLK color palette)
+- **UIBuilder.gd**: WoW-specific UI creation functions (create_frame, create_button, create_progress_bar)
 
 ## Testing Framework
 
-**Current Testing Architecture (December 30, 2025):**
-- **Vitest Framework**: Modern unit testing framework with Phaser 3 mocks
-  - Location: `tests/setup.js` - Phaser 3 scene mocks and test environment
-  - Location: `tests/utils/test-helpers.js` - Test utilities (createMockScene, createMockHero, etc.)
-  - Configuration: `vite.config.js` - Test environment (jsdom), coverage settings
-  - Commands: `npm test`, `npm run test:ui`, `npm run test:coverage`, `npm run test:unit`, `npm run test:integration`
-- **Unit Tests**: 
-  - `tests/unit/managers/party-manager.test.js` - Comprehensive PartyManager tests (party creation, validation, hero management, save/load)
-  - In Progress: Tests for remaining managers (CombatManager, EquipmentManager, TalentManager, etc.)
-- **Legacy Testing Tools** (still available):
-  - `test-runner.js`: Unified test runner consolidating all test scripts
-  - `test-5man-direct-methods.js`: Direct method calls for 5-man team testing
-  - `run-full-test.js`: Full test suite orchestrator
-  - `test-specific-party.js`: Automated party creation testing
+**Current Testing Architecture (Godot 4.x):**
+- **Godot Test Framework**: Native GDScript testing via `@tool` scripts
+  - Location: `road-to-war/tests/` - Test scripts
+  - Location: `road-to-war/scripts/TestSuite.gd` - Test suite runner
+  - Configuration: Godot Editor → Run → Test Scene
+  - Commands: Run tests via Godot Editor or command line
+- **Test Suite**: 
+  - `TestSuite.gd` - Comprehensive test runner for all systems
+  - Tests for managers, utilities, and integration flows
+  - Manual testing via debug tools (F1-F10 shortcuts)
 
 **Testing Features**:
-- Modern unit testing with Vitest (target: 80%+ coverage)
-- Phaser 3 scene and manager mocks for isolated testing
-- Test utilities for creating mock scenes, heroes, and party managers
+- Native GDScript testing via Godot's test framework
+- Manager testing via Autoload access
+- Test utilities for creating mock heroes and party managers
 - Direct game state manipulation for reliable testing
-- Automated game navigation and state verification
-- Party creation and combat flow testing
-- Equipment and talent system validation
+- Debug tools for manual testing (DevStatMonitor, CombatSimulator)
+- Integration testing via scene flow testing
 
-## Desktop Performance Optimization Patterns
+## Performance Optimization Patterns
 
 **Object Pooling Pattern:**
-- **Location**: `src/utils/object-pool.js`, integrated into `ParticleManager`
+- **Location**: `road-to-war/scripts/ObjectPool.gd`, integrated into `ParticleManager`
 - **Purpose**: Reuse frequently created/destroyed objects to reduce garbage collection pressure
 - **Implementation**: 
   - Floating text uses object pooling (50 max pool size)
   - Objects are reset and returned to pool instead of being destroyed
-  - Automatic cleanup on scene shutdown
+  - Automatic cleanup on scene shutdown via `_exit_tree()`
 - **Benefits**: Reduced memory allocations, smoother performance during particle-heavy scenes
 
 **Performance Throttling Pattern:**
-- **Location**: `src/managers/particle-manager.js`
+- **Location**: `road-to-war/scripts/ParticleManager.gd`
 - **Purpose**: Prevent excessive particle creation that causes frame time spikes
 - **Implementation**:
   - Cooldown system per effect type (100-500ms intervals)
@@ -483,7 +430,7 @@ Console Log Capture System
   - Maintains visual quality while improving performance
 
 **Critical Performance Mode Pattern:**
-- **Location**: `src/scenes/core/game-scene-update.js`
+- **Location**: `road-to-war/scripts/World.gd` (update loop)
 - **Purpose**: Prevent total system collapse during performance degradation
 - **Implementation**:
   - Automatically disables particle effects when FPS < 10
@@ -492,59 +439,61 @@ Console Log Capture System
   - Thresholds: FPS < 10 (critical), FPS < 30 (reduced), FPS > 50 (normal)
 
 **Memory Leak Detection Pattern:**
-- **Location**: `src/utils/memory-monitor.js`
+- **Location**: `road-to-war/scripts/MemoryMonitor.gd`
 - **Purpose**: Track memory usage over time and detect potential leaks
 - **Implementation**:
   - Periodic memory checks (every 60 seconds)
   - Growth rate calculation (10% threshold = potential leak)
-  - Event-based notifications for scene handling
+  - Signal-based notifications for scene handling
   - Automatic cleanup suggestions
 
-## Validation Patterns (December 2025)
+## Validation Patterns
 
 **Input Validation System:**
-- **Location**: `src/utils/input-validation.js` (1471 lines)
+- **Location**: `road-to-war/scripts/InputValidation.gd`
 - **ValidationBuilder**: Fluent API for building validation chains with automatic error collection
-- **ManagerValidationMixin**: Provides `quickValidate()`, `validateSlot()`, `validateItemId()`, `validateHeroId()` convenience methods
+- **ManagerValidationMixin**: Provides `quick_validate()`, `validate_slot()`, `validate_item_id()`, `validate_hero_id()` convenience methods
 - **Adoption Status**: 
-  - ✅ EquipmentManager: Uses `ValidationBuilder` in `equipItem()` and `unequipItem()`
-  - ✅ TalentManager: Uses `ValidationBuilder` in `allocateTalentPoint()`
-  - ✅ CombatManager: Uses `ValidationBuilder` in `startPartyCombat()` and `validateCombatStart()`
+  - ✅ EquipmentManager: Uses `ValidationBuilder` in `equip_item()` and `unequip_item()`
+  - ✅ TalentManager: Uses `ValidationBuilder` in `allocate_talent_point()`
+  - ✅ CombatManager: Uses `ValidationBuilder` in `start_party_combat()` and `validate_combat_start()`
 - **Pattern**: All manager methods that handle user input or external data should use `ValidationBuilder` for consistent error handling
 
-**Null Safety Patterns (December 2025):**
-- **Array Operations**: All `heroes.map()`, `heroes.forEach()`, `heroes.reduce()`, `heroes.filter()` operations must check `Array.isArray(heroes)` first
-- **Implementation**: Added defensive checks in CombatManager (8 locations) and EquipmentManager (1 location)
-- **Pattern**: Always validate array existence before calling array methods to prevent "Cannot read property 'map' of undefined" errors
+**Null Safety Patterns:**
+- **Array Operations**: All Array operations must check `Array.is_empty()` or `Array.size() > 0` before accessing elements
+- **Implementation**: Added defensive checks in CombatManager and EquipmentManager
+- **Pattern**: Always validate array existence before calling array methods to prevent index errors
 
-## Troubleshooting Pattern (December 2025)
+## Troubleshooting Pattern (January 2026)
 
 **Automatic Log Analysis and Fix Workflow:**
 - User command: **"check logs"**
-- AI automatically reads full `logs/game-output.log` file
-- Analyzes all errors, warnings, and issues
+- AI automatically reads:
+  1. `%APPDATA%\Godot\app_userdata\Road to war\cursor_logs.txt` (Primary Godot Log)
+  2. `logs/game-output.log` (Legacy Phaser/Electron Log)
+- Analyzes all errors, warnings, and issues.
 - Automatically fixes problems found:
-  - Code errors (TypeErrors, undefined references)
-  - Missing defensive guards and null checks
-  - Initialization order issues
-  - Error handling improvements
-- Applies minimal, well-scoped fixes following senior engineer guidelines
-- Provides summary of issues found and fixes applied
+  - Godot runtime errors or script crashes.
+  - Logic failures captured via `CursorLogManager.debug_log()`.
+  - Missing defensive guards and null checks.
+- Provides summary of issues found and fixes applied.
 
-**Console Capture System Integration:**
-- Logs captured in real-time to `logs/game-output.log` (Electron) and `window.gameLogs` (browser)
-- Verification function: `window.verifyConsoleCapture()` available in console
-- Enables rapid troubleshooting during development
+**CursorLogManager System (Godot):**
+- Real-time logging to `user://cursor_logs.txt` with timestamps.
+- Explicit `flush()` calls ensure real-time visibility in Cursor IDE.
+- Helper `log_hero_state(hero)` for diagnosing physics/movement jitter.
+- Integrated into `GameManager.gd` initialization.
+- **Pattern**: When fixing bugs, always request to check logs first to get runtime evidence.
 
-**Runtime Evidence-Based Debugging (December 2025):**
+**Runtime Evidence-Based Debugging:**
 - **Critical Pattern**: Always use runtime evidence from logs, never fix based on code analysis alone
 - **Workflow**: Generate hypotheses → Instrument code with logs → Reproduce issue → Analyze logs → Fix with 100% confidence
 - **Example**: Hero movement stopping issue
-  - **Hypothesis**: Leader position calculation using stale sprite position
-  - **Evidence**: Logs showed `velocityX: 50` (tank moving) but `leaderPosition` stuck at `{"x":240,"y":794.2265625}`
-  - **Root Cause**: `tank.sprite.x` was stale; actual position is `this.worldManager.hero.x` (moved via physics velocity)
-  - **Fix**: Use `this.worldManager.hero.x` for leader position calculation
-- **Key Insight**: When multiple systems manage the same entity (WorldManager velocity + MovementManager positions), ensure position source is authoritative
+  - **Hypothesis**: Leader position calculation using stale position
+  - **Evidence**: Logs showed movement values but position stuck
+  - **Root Cause**: Position source mismatch between systems
+  - **Fix**: Use authoritative position source (PartyManager or WorldManager)
+- **Key Insight**: When multiple systems manage the same entity (WorldManager + MovementManager), ensure position source is authoritative
 
 ## Development Workflow Patterns
 
@@ -625,8 +574,8 @@ Console Log Capture System
 
 **UI Enhancement Systems:**
 - ✅ Item comparison UI: item level/tier display, stat differences, set bonus previews (`TooltipManager` enhanced)
-- ✅ Talent tree visualization: point requirements, available vs locked, synergies (`TalentManager.canAllocateTalent()` enhanced)
-- ✅ Progression tracking UI: current mile, average item level, talent points, sets completed, next milestone (`GameUIManager.createProgressionPanel()`)
+- ✅ Talent tree visualization: point requirements, available vs locked, synergies (`TalentManager.can_allocate_talent()` enhanced)
+- ✅ Progression tracking UI: current mile, average item level, talent points, sets completed, next milestone (HUD displays)
 
 **Reference Documents:**
 - Plan: `c:\Users\Ropbe\.cursor\plans\endgame_completion_roadmap_9988d6fb.plan.md`

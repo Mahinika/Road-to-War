@@ -116,10 +116,10 @@ All managers are Godot Autoloads (Singletons) defined in `project.godot`:
 - `addons/` - Godot plugins
   - `godot_mcp/` - MCP plugin for Cursor integration
 
-### `/src` - Legacy Phaser 3 Code (Reference Only)
-- **Status**: Kept for reference, not actively used
-- Contains original Phaser 3 implementation
-- Can be archived or removed if no longer needed
+### `/src` - Legacy Phaser 3 Code
+- **Status**: ✅ REMOVED (January 2026)
+- **Reason**: Migration to Godot 4.x complete, Phaser code no longer needed
+- **Note**: All functionality has been migrated to `road-to-war/scripts/`
 
 ### `/tools` - Development Tools
 - **Active Tools**:

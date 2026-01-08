@@ -1,0 +1,8 @@
+{
+  "id": "void_walker",
+  "description": "Void-touched wanderer",
+  "size": 64,
+  "primaryColor": "#800080",
+  "generator": "lpc-style",
+  "timestamp": "2026-01-07T10:14:40.412Z"
+}

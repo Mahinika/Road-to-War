@@ -197,16 +197,29 @@
 - **Asset Organization**: Godot's resource system with .import files for optimization
   - Sprites in `assets/sprites/` with automatic import processing
   - Equipment sprites in `assets/sprites/equipment/` (referenced via JSON texture paths)
-  - Audio placeholders in `assets/audio/` (ready for WAV/OGG files)
+  - Audio placeholders in `assets/audio/` (ready for WAV/OGG files) - **NOTE**: Currently empty, causing warnings but not affecting gameplay
   - Icons in `assets/icons/` with gem variations
+- **Audio System Status**: `AudioManager.gd` is fully functional and attempts to load audio files from:
+  - SFX: `res://assets/audio/sfx/{sound_name}.wav` (hit, miss, crit, hit_enemy, level_up, heal, etc.)
+  - Music: `res://assets/audio/music/{music_name}.ogg` or `.wav` (travel, combat)
+  - Ambient: `res://assets/audio/ambient/{biome_name}.ogg` or `.wav`
+  - Missing files generate debug warnings but do not crash the game
 - **Data-Driven Architecture**: All gameplay values from JSON configuration
 - **Save System**: Godot's FileAccess for cross-platform save/load functionality
 
-### Hero Asset Creation Pipeline (SOP v3.0 - January 2026)
+### Hero Asset Creation Pipeline (LPC-Based - January 2026)
+- **LPC Asset Pipeline**: Hero sprites now generated from Liberated Pixel Cup (LPC) spritesheets
+  - **Base Asset**: Real LPC spritesheet (832x1344, 13x21 grid) downloaded from GitHub
+  - **Extraction Tool**: `tools/extract-spritesheet.js` extracts front-facing idle frame and animation strips
+  - **Variant Generation**: `tools/create-hero-variants.js` creates class-specific sprites from base
+  - **Quality Source**: Uses professional pixel art as foundation instead of procedural generation
+  - **Class Variants**: 11 hero classes with class-specific color tints (gold for paladin, blue for mage, etc.)
+  - **Progression Sprites**: 20 humanoid variants (humanoid_0 through humanoid_19) for early-game progression
 - **Modular Paper Doll System**: HeroSprite.gd uses layered Sprite2D nodes for equipment visualization
   - Layers: Body (base), Legs, Chest, Shoulder, Head, Weapon, Offhand
   - Pivot: Bottom-center alignment (Vector2(-32, -64) for 64×64 grid)
   - Transparency: SpriteTransparency.gdshader applied to all layers for pixel-perfect transparency
+  - Base Body: Uses extracted LPC sprites (paladin.png, ancient_warrior.png, etc.) or progression sprites (humanoid_0.png, etc.)
 - **JSON-Driven Equipment Visuals**: Equipment items define visual properties in items.json:
   - `texture`: Direct sprite paths (e.g., "res://assets/sprites/equipment/paladin_sword_legendary.png")
   - `modulate`: HEX color strings with alpha (e.g., "#FFD70080" for legendary gold tint)
@@ -216,6 +229,15 @@
   - All animations use precise durations and frame counts as specified in SOP
   - Smooth transitions with sine wave interpolation for natural motion
   - Death animation integrates with ParticleManager for visual effects
+  - Animation Strips: Extracted from LPC spritesheets (walk, attack, cast, hurt) available for future use
+- **Asset Generation Tools**:
+  - `tools/fetch-lpc-bases.js`: Downloads LPC spritesheets from GitHub repositories
+  - `tools/extract-spritesheet.js`: Extracts frames and animation strips from LPC spritesheets
+  - `tools/create-hero-variants.js`: Generates class variants with color tints and overlays
+  - `tools/analyze-sprite.js`: Analyzes spritesheets to extract proportions, colors, and shading for generator improvement
+  - `npm run fetch-lpc`: Download LPC base spritesheets
+  - `npm run extract-sprites`: Extract frames from spritesheets
+  - `npm run lpc-assets`: Generate hero variants from LPC base
 - **Documentation**: Complete SOP v3.0 guide in `docs/HERO_ASSET_CREATION_GUIDE.md`
   - Art style guidelines (Dragumagu-inspired pixel-perfect chibi)
   - Technical implementation pipeline

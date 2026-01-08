@@ -1,0 +1,139 @@
+{
+  "physical": {
+    "id": "physical",
+    "name": "Physical",
+    "description": "Physical attacks dealing direct damage",
+    "color": "#FFFFFF",
+    "icon": "physical_damage",
+    "default_resistance": 0.0,
+    "opposing_types": [],
+    "environmental_modifiers": {
+      "armored": 0.2,
+      "ethereal": -0.5
+    }
+  },
+  "magical": {
+    "id": "magical",
+    "name": "Magical",
+    "description": "Arcane magic attacks",
+    "color": "#8A2BE2",
+    "icon": "magical_damage",
+    "default_resistance": 0.0,
+    "opposing_types": ["physical"],
+    "environmental_modifiers": {
+      "arcane": 0.3,
+      "holy": -0.2
+    }
+  },
+  "fire": {
+    "id": "fire",
+    "name": "Fire",
+    "description": "Fire-based elemental damage",
+    "color": "#FF4500",
+    "icon": "fire_damage",
+    "default_resistance": 0.0,
+    "opposing_types": ["cold", "water"],
+    "environmental_modifiers": {
+      "volcanic": 0.5,
+      "arctic": -0.8,
+      "water": -0.6
+    }
+  },
+  "cold": {
+    "id": "cold",
+    "name": "Cold",
+    "description": "Ice and frost elemental damage",
+    "color": "#00BFFF",
+    "icon": "cold_damage",
+    "default_resistance": 0.0,
+    "opposing_types": ["fire", "nature"],
+    "environmental_modifiers": {
+      "arctic": 0.5,
+      "volcanic": -0.8,
+      "desert": -0.6
+    }
+  },
+  "lightning": {
+    "id": "lightning",
+    "name": "Lightning",
+    "description": "Electrical elemental damage",
+    "color": "#FFD700",
+    "icon": "lightning_damage",
+    "default_resistance": 0.0,
+    "opposing_types": ["earth"],
+    "environmental_modifiers": {
+      "stormy": 0.4,
+      "underground": -0.7
+    }
+  },
+  "poison": {
+    "id": "poison",
+    "name": "Poison",
+    "description": "Toxic and venom damage over time",
+    "color": "#32CD32",
+    "icon": "poison_damage",
+    "default_resistance": 0.0,
+    "opposing_types": ["holy", "nature"],
+    "environmental_modifiers": {
+      "swamp": 0.3,
+      "desert": -0.4,
+      "holy": -0.5
+    }
+  },
+  "holy": {
+    "id": "holy",
+    "name": "Holy",
+    "description": "Divine and radiant damage",
+    "color": "#FFFF00",
+    "icon": "holy_damage",
+    "default_resistance": 0.0,
+    "opposing_types": ["shadow", "undead"],
+    "environmental_modifiers": {
+      "holy": 0.6,
+      "cursed": -0.9,
+      "undead": -0.7
+    }
+  },
+  "shadow": {
+    "id": "shadow",
+    "name": "Shadow",
+    "description": "Dark and necrotic damage",
+    "color": "#800080",
+    "icon": "shadow_damage",
+    "default_resistance": 0.0,
+    "opposing_types": ["holy", "light"],
+    "environmental_modifiers": {
+      "dark": 0.4,
+      "holy": -0.8,
+      "light": -0.6
+    }
+  },
+  "nature": {
+    "id": "nature",
+    "name": "Nature",
+    "description": "Plant and life-based damage",
+    "color": "#228B22",
+    "icon": "nature_damage",
+    "default_resistance": 0.0,
+    "opposing_types": ["fire"],
+    "environmental_modifiers": {
+      "forest": 0.4,
+      "desert": -0.5,
+      "volcanic": -0.3
+    }
+  },
+  "earth": {
+    "id": "earth",
+    "name": "Earth",
+    "description": "Stone and ground elemental damage",
+    "color": "#8B4513",
+    "icon": "earth_damage",
+    "default_resistance": 0.0,
+    "opposing_types": ["lightning", "wind"],
+    "environmental_modifiers": {
+      "mountain": 0.5,
+      "air": -0.4,
+      "stormy": -0.2
+    }
+  }
+}

@@ -1,7 +1,8 @@
 {
-  "seed": 13347,
-  "type": "bloodline_hero",
-  "bloodline": "shadow_assassin",
-  "generatedAt": "2025-12-30T01:14:44.480Z",
-  "version": "1.1.0"
+  "id": "shadow_assassin",
+  "description": "Hooded rogue with daggers",
+  "size": 64,
+  "primaryColor": "#2F2F2F",
+  "generator": "lpc-style",
+  "timestamp": "2026-01-07T10:14:40.397Z"
 }

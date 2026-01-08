@@ -10,9 +10,15 @@ import { fileURLToPath } from 'url';
 import { PaladinGenerator } from './generators/paladin-generator.js';
 import { HumanoidGenerator } from './generators/humanoid-generator.js';
 import { GemGenerator } from './generators/gem-generator.js';
+import { AnimationGenerator } from './generators/animation-generator.js';
 import { SeededRNG } from './utils/seeded-rng.js';
+import { PixelDrawer } from './utils/pixel-drawer.js';
 import { createCanvas } from 'canvas';
 import { ImageAnalyzer } from './utils/image-analyzer.js';
+import { GlowRenderer } from './utils/glow-renderer.js';
+import { QAValidator } from './utils/qa-validator.js';
+import { VariationManager } from './utils/variation-manager.js';
+import { ExportManager } from './utils/export-manager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +31,14 @@ const CONFIG = {
     SPRITE_COUNT: 10,
     SEED: 12345,
     STYLE_CONFIG: null,
-    ANALYZE_INPUT: null
+    ANALYZE_INPUT: null,
+    GENERATE_ANIMATIONS: false,
+    APPLY_GLOW: false,
+    QA_VALIDATE: false,
+    GENERATE_VARIATIONS: false,
+    VARIATION_COUNT: 0,
+    EXPORT_FORMATS: ['png'],
+    EXPORT_SIZES: []
 };
 
 /**
@@ -53,6 +66,24 @@ function parseArgs() {
             case '--analyze':
                 config.ANALYZE_INPUT = args[++i];
                 break;
+            case '--animations':
+                config.GENERATE_ANIMATIONS = true;
+                break;
+            case '--glow':
+                config.APPLY_GLOW = true;
+                break;
+            case '--qa':
+                config.QA_VALIDATE = true;
+                break;
+            case '--variations':
+                config.GENERATE_VARIATIONS = true;
+                const varCount = parseInt(args[++i], 10);
+                config.VARIATION_COUNT = isNaN(varCount) ? 5 : varCount;
+                break;
+            case '--export-sizes':
+                const sizesStr = args[++i];
+                config.EXPORT_SIZES = sizesStr.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+                break;
             case '--help':
                 console.log(`
 Build-Time Pixel-Art Asset Generator
@@ -65,6 +96,11 @@ Options:
   --output <path>      Output directory (default: ${CONFIG.OUTPUT_DIR})
   --style <path>      Path to style configuration JSON file
   --analyze <path>    Analyze reference image and generate style config first
+  --animations        Generate animation frames for sprites
+  --glow              Apply class-specific glow effects
+  --qa                Run QA validation on generated sprites
+  --variations <n>    Generate N sprite variations (default: 5)
+  --export-sizes <s>  Export at multiple sizes (comma-separated, e.g., "32,48,64")
   --help              Show this help message
 
 Examples:
@@ -141,15 +177,111 @@ async function analyzeReference(inputPath, outputPath) {
 /**
  * Generate Paladin sprite
  */
-function generatePaladin(config, styleConfig = null) {
+async function generatePaladin(config, styleConfig = null) {
     const generator = new PaladinGenerator(config.SEED, styleConfig);
-    const result = generator.generate();
+    let result = generator.generate();
+
+    // Apply glow effects if enabled
+    if (config.APPLY_GLOW) {
+        const glowRenderer = new GlowRenderer();
+        const ctx = result.canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, result.canvas.width, result.canvas.height);
+        
+        // Create PixelDrawer for glow rendering
+        const drawer = new PixelDrawer(ctx, result.canvas.width, result.canvas.height);
+        drawer.imageData = imageData;
+        
+        // Apply class glow (Paladin holy glow)
+        const headBounds = generator.proportionManager.getHeadBounds(
+            Math.floor(result.canvas.width / 2),
+            Math.floor(result.canvas.height / 2)
+        );
+        glowRenderer.renderClassGlow(drawer, headBounds.centerX, headBounds.centerY, 8, 'paladin');
+        drawer.apply();
+    }
 
     const pngPath = path.join(config.OUTPUT_DIR, 'paladin.png');
     const jsonPath = path.join(config.OUTPUT_DIR, 'paladin.json');
 
+    // QA Validation
+    if (config.QA_VALIDATE) {
+        const qaValidator = new QAValidator();
+        const validation = qaValidator.validateSprite(result);
+        
+        if (!validation.valid) {
+            console.warn('QA Validation Issues:', validation.issues);
+        } else {
+            console.log('QA Validation: PASSED');
+        }
+        
+        const qaPath = path.join(config.OUTPUT_DIR, 'paladin_qa.json');
+        saveMetadata(validation, qaPath);
+    }
+
+    // Export at multiple sizes if requested
+    if (config.EXPORT_SIZES && config.EXPORT_SIZES.length > 0) {
+        const exportManager = new ExportManager();
+        const sizeExports = exportManager.exportMultipleSizes(result, config.EXPORT_SIZES, {
+            basePath: path.join(config.OUTPUT_DIR, 'paladin')
+        });
+        console.log(`Exported ${sizeExports.length} size variations`);
+    }
+
     savePNG(result.canvas, pngPath);
     saveMetadata(result.metadata, jsonPath);
+
+    // Generate animations if enabled
+    if (config.GENERATE_ANIMATIONS) {
+        const animationGen = new AnimationGenerator();
+        const animations = {
+            idle: animationGen.generateIdleFrames(result, 4),
+            walk: animationGen.generateWalkFrames(result, 8),
+            attack: animationGen.generateAttackFrames(result, 6),
+            jump: animationGen.generateJumpFrames(result, 4),
+            death: animationGen.generateDeathFrames(result, 5)
+        };
+
+        // Save animation data
+        const animationData = {};
+        for (const [type, frames] of Object.entries(animations)) {
+            animationData[type] = animationGen.generateAnimationData(type, frames);
+        }
+
+        const animationPath = path.join(config.OUTPUT_DIR, 'paladin_animations.json');
+        saveMetadata(animationData, animationPath);
+        
+        // Export sprite sheet if animations generated
+        const exportManager = new ExportManager();
+        const idleSheet = exportManager.exportSpriteSheet(animations.idle, {
+            outputPath: path.join(config.OUTPUT_DIR, 'paladin_idle_sheet.png'),
+            frameWidth: result.canvas.width,
+            frameHeight: result.canvas.height
+        });
+        console.log(`Exported idle animation sheet: ${idleSheet.pngPath}`);
+    }
+
+    // Generate variations if enabled
+    if (config.GENERATE_VARIATIONS && config.VARIATION_COUNT > 0) {
+        const variationManager = new VariationManager(config.SEED);
+        const variations = await variationManager.generateVariations(result, config.VARIATION_COUNT, {
+            colorVariation: 0.1,
+            sizeVariation: 0.05
+        });
+
+        for (const variation of variations) {
+            const varPngPath = path.join(config.OUTPUT_DIR, `paladin_variation_${variation.index}.png`);
+            savePNG(variation.sprite.canvas, varPngPath);
+            
+            // Validate variation
+            const qaValidator = new QAValidator();
+            const validation = qaValidator.validateSprite(variation.sprite);
+            if (!validation.valid) {
+                console.warn(`Variation ${variation.index} QA issues:`, validation.issues);
+            }
+        }
+        
+        console.log(`Generated ${variations.length} sprite variations`);
+    }
 
     return { pngPath, jsonPath };
 }
@@ -163,9 +295,9 @@ function generateHumanoids(config) {
     for (let i = 0; i < config.SPRITE_COUNT; i++) {
         const seed = config.SEED + i;
         const rng = new SeededRNG(seed);
-        const canvas = createCanvas(64, 64);
+        const canvas = createCanvas(48, 48); // Fixed to 48x48
         const generator = new HumanoidGenerator(canvas, rng, { paletteName: 'warm' });
-        generator.generate();
+        const result = generator.generate();
 
         const metadata = {
             seed,
@@ -205,7 +337,7 @@ function generateBloodlineSprites(config) {
     bloodlines.forEach((bloodline, index) => {
         const seed = config.SEED + 1000 + index;
         const rng = new SeededRNG(seed);
-        const canvas = createCanvas(64, 64);
+        const canvas = createCanvas(48, 48); // Fixed to 48x48
         const generator = new HumanoidGenerator(canvas, rng, { bloodline });
         generator.generate();
 
@@ -303,7 +435,7 @@ async function main() {
 
     try {
         // Generate Paladin
-        generatePaladin(config, styleConfig);
+        await generatePaladin(config, styleConfig);
 
         // Generate bloodline-specific sprites
         generateBloodlineSprites(config);

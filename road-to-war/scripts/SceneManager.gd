@@ -10,6 +10,17 @@ var scene_history: Array[String] = []
 var is_in_game: bool = false
 var scene_data: Dictionary = {}
 
+const MENU_SCENES_THAT_PAUSE_COMBAT: Array[String] = [
+	"CharacterPanel",
+	"TalentAllocation",
+	"Statistics",
+	"Achievements",
+	"Options",
+	"SaveLoad",
+	"Prestige",
+	"WorldMap"
+]
+
 func _get_logger():
 	return get_node_or_null("/root/Logger")
 
@@ -49,6 +60,13 @@ func change_scene(scene_path: String, fade_duration: float = 0.3):
 	var scene_name = scene_path.get_file().get_basename()
 	_log_info("SceneManager", "Changing scene to: " + scene_name)
 	
+	# If we leave the World scene during combat, we must pause CombatManager,
+	# otherwise combat continues "in the background" with no visuals.
+	var cm = get_node_or_null("/root/CombatManager")
+	if cm and current_scene_name == "World" and cm.in_combat:
+		if cm.has_method("set_combat_paused"):
+			cm.set_combat_paused(true)
+	
 	# Store current scene in history
 	if current_scene_name != "":
 		scene_history.append(current_scene_name)
@@ -70,7 +88,9 @@ func change_scene(scene_path: String, fade_duration: float = 0.3):
 		
 		# Change scene
 		_log_info("SceneManager", "PRE-CALL change_scene_to_file: " + scene_path)
+		print("CRITICAL TRACE: About to call change_scene_to_file for " + scene_path)
 		var err = get_tree().change_scene_to_file(scene_path)
+		print("CRITICAL TRACE: change_scene_to_file returned: " + str(err))
 		_log_info("SceneManager", "POST-CALL change_scene_to_file, err: " + str(err))
 		if err != OK:
 			_log_error("SceneManager", "Failed to change scene! Error code: " + str(err))
@@ -94,6 +114,15 @@ func change_scene(scene_path: String, fade_duration: float = 0.3):
 	else:
 		get_tree().change_scene_to_file(scene_path)
 		current_scene_name = scene_name
+	
+	# If we are entering World, resume combat (if it was paused).
+	# If we are entering a menu scene, keep combat paused.
+	cm = get_node_or_null("/root/CombatManager")
+	if cm and cm.in_combat and cm.has_method("set_combat_paused"):
+		if scene_name == "World":
+			cm.set_combat_paused(false)
+		elif MENU_SCENES_THAT_PAUSE_COMBAT.has(scene_name):
+			cm.set_combat_paused(true)
 	
 	scene_changed.emit(scene_name)
 

@@ -81,10 +81,12 @@ func _ready():
 	stats["time"]["sessionStartTime"] = Time.get_ticks_msec()
 	
 	# Connect to global signals if they exist
-	if CombatManager.has_signal("damage_dealt"):
-		CombatManager.damage_dealt.connect(_on_damage_dealt)
-	if CombatManager.has_signal("combat_end"):
-		CombatManager.combat_end.connect(_on_combat_end)
+	var cm = get_node_or_null("/root/CombatManager")
+	if cm:
+		if cm.has_signal("damage_dealt"):
+			cm.damage_dealt.connect(_on_damage_dealt)
+		if cm.has_signal("combat_end"):
+			cm.combat_end.connect(_on_combat_end)
 
 func _on_damage_dealt(source, _target, amount, _is_crit):
 	if source != "enemy":
@@ -120,7 +122,7 @@ func get_all_stats() -> Dictionary:
 		"gold_spent": get_stat("collection", "goldSpent"),
 		"items_found": get_stat("collection", "itemsFound"),
 		"items_collected": get_stat("collection", "itemsFound"), # Alias
-		"play_time": stats["time"]["totalPlayTime"] / 1000, # In seconds
+		"play_time": stats["time"]["totalPlayTime"] / 1000.0, # In seconds
 		"sessions": stats["time"]["sessionsCount"]
 	}
 

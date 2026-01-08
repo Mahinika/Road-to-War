@@ -49,11 +49,12 @@ func _ready():
 	_log_info("TalentAllocation", "Scene initialized")
 	
 	# Connect back button
-	back_button.pressed.connect(_on_back_pressed)
+	if back_button: back_button.pressed.connect(_on_back_pressed)
 	
 	# Initialize with first hero if none provided
-	if not current_hero and PartyManager.heroes.size() > 0:
-		current_hero = PartyManager.heroes[0]
+	var pm = get_node_or_null("/root/PartyManager")
+	if not current_hero and pm and pm.heroes.size() > 0:
+		current_hero = pm.heroes[0]
 	
 	# Create hero selection buttons
 	_create_hero_selection()
@@ -65,32 +66,40 @@ func _ready():
 
 func _create_hero_selection():
 	"""Create buttons to select which hero to allocate talents for"""
+	if not hero_select_container: return
+	
 	# Clear existing buttons
 	for child in hero_select_container.get_children():
 		child.queue_free()
 	
+	var pm = get_node_or_null("/root/PartyManager")
+	var ut = get_node_or_null("/root/UITheme")
+	if not pm: return
+	
 	# Create button for each hero
-	for i in range(PartyManager.heroes.size()):
-		var hero = PartyManager.heroes[i]
+	for i in range(pm.heroes.size()):
+		var hero = pm.heroes[i]
 		var button = Button.new()
 		button.text = hero.name
 		button.custom_minimum_size = Vector2(120, 40)
 		
 		# WoW Style tabs
-		var class_color = UITheme.COLORS.get(hero.role, UITheme.COLORS["gold_border"])
-		var bg_color = Color(0.2, 0.2, 0.2) if hero == current_hero else Color(0.1, 0.1, 0.1)
-		var border_width = 3 if hero == current_hero else 1
-		button.add_theme_stylebox_override("normal", UITheme.get_stylebox_panel(bg_color, class_color, border_width))
-		button.add_theme_stylebox_override("hover", UITheme.get_stylebox_panel(bg_color.lightened(0.1), class_color, border_width))
-		button.add_theme_stylebox_override("pressed", UITheme.get_stylebox_panel(bg_color.darkened(0.1), class_color, border_width))
+		if ut:
+			var class_color = ut.COLORS.get(hero.role, ut.COLORS["gold_border"])
+			var bg_color = Color(0.2, 0.2, 0.2) if hero == current_hero else Color(0.1, 0.1, 0.1)
+			var border_width = 3 if hero == current_hero else 1
+			button.add_theme_stylebox_override("normal", ut.get_stylebox_panel(bg_color, class_color, border_width))
+			button.add_theme_stylebox_override("hover", ut.get_stylebox_panel(bg_color.lightened(0.1), class_color, border_width))
+			button.add_theme_stylebox_override("pressed", ut.get_stylebox_panel(bg_color.darkened(0.1), class_color, border_width))
 		
 		button.pressed.connect(_on_hero_selected.bind(i))
 		hero_select_container.add_child(button)
 
 func _on_hero_selected(hero_index: int):
 	"""Handle hero selection"""
-	if hero_index >= 0 and hero_index < PartyManager.heroes.size():
-		current_hero = PartyManager.heroes[hero_index]
+	var pm = get_node_or_null("/root/PartyManager")
+	if pm and hero_index >= 0 and hero_index < pm.heroes.size():
+		current_hero = pm.heroes[hero_index]
 		_load_talent_trees()
 		_update_display()
 		_create_hero_selection()  # Refresh to update highlights
@@ -101,7 +110,8 @@ func _load_talent_trees():
 		return
 	
 	talent_trees.clear()
-	var talents_data = DataManager.get_data("talents")
+	var dm = get_node_or_null("/root/DataManager")
+	var talents_data = dm.get_data("talents") if dm else null
 	if not talents_data:
 		_log_error("TalentAllocation", "No talents data found")
 		return
@@ -122,17 +132,22 @@ func _update_display():
 	# Update hero info
 	var class_id = current_hero.class_id
 	var spec_id = current_hero.spec_id
-	hero_info_label.text = "%s - %s (Level %d)" % [class_id.capitalize(), spec_id.capitalize() if spec_id else "", current_hero.level]
+	if hero_info_label:
+		hero_info_label.text = "%s - %s (Level %d)" % [class_id.capitalize(), spec_id.capitalize() if spec_id else "", current_hero.level]
 	
 	# Update available points
-	var available = TalentManager.get_available_points(current_hero)
-	points_label.text = "Available Points: %d" % available
+	var tm = get_node_or_null("/root/TalentManager")
+	var available = tm.get_available_points(current_hero) if tm else 0
+	if points_label:
+		points_label.text = "Available Points: %d" % available
 	
 	# Create talent tree panels
 	_create_talent_trees()
 
 func _create_talent_trees():
 	"""Create UI panels for each talent tree"""
+	if not trees_container: return
+	
 	# Clear existing trees
 	for child in trees_container.get_children():
 		child.queue_free()
@@ -154,9 +169,13 @@ func _create_talent_trees():
 
 func _create_talent_tree_panel(tree_id: String, tree_data: Dictionary):
 	"""Create a single talent tree panel"""
+	var ut = get_node_or_null("/root/UITheme")
+	var tm = get_node_or_null("/root/TalentManager")
+	if not ut or not tm: return
+	
 	var outer_panel = PanelContainer.new()
 	outer_panel.custom_minimum_size = Vector2(320, 550)
-	outer_panel.add_theme_stylebox_override("panel", UITheme.get_stylebox_panel(UITheme.COLORS["frame"], UITheme.COLORS["gold_border"], 2))
+	outer_panel.add_theme_stylebox_override("panel", ut.get_stylebox_panel(ut.COLORS["frame"], ut.COLORS["gold_border"], 2))
 	
 	var panel = VBoxContainer.new()
 	outer_panel.add_child(panel)
@@ -165,12 +184,12 @@ func _create_talent_tree_panel(tree_id: String, tree_data: Dictionary):
 	var tree_label = Label.new()
 	tree_label.text = tree_id.replace("_", " ").to_upper()
 	tree_label.add_theme_font_size_override("font_size", 22)
-	tree_label.add_theme_color_override("font_color", UITheme.COLORS["gold"])
+	tree_label.add_theme_color_override("font_color", ut.COLORS["gold"])
 	tree_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	panel.add_child(tree_label)
 	
 	# Total points in tree label
-	var hero_talents = TalentManager.get_hero_talents(current_hero.id)
+	var hero_talents = tm.get_hero_talents(current_hero.id)
 	var tree_points = 0
 	for t_id in hero_talents.get(tree_id, {}):
 		tree_points += hero_talents[tree_id][t_id]
@@ -225,11 +244,15 @@ func _create_talent_tree_panel(tree_id: String, tree_data: Dictionary):
 
 func _create_talent_button(talent_id: String, talent_data: Dictionary, tree_id: String) -> Button:
 	"""Create a button for a talent node"""
+	var ut = get_node_or_null("/root/UITheme")
+	var tm = get_node_or_null("/root/TalentManager")
+	if not ut or not tm: return Button.new()
+	
 	var button = Button.new()
 	button.custom_minimum_size = Vector2(84, 84)
 	
 	# Get current points
-	var hero_talents = TalentManager.get_hero_talents(current_hero.id)
+	var hero_talents = tm.get_hero_talents(current_hero.id)
 	var current_points = 0
 	if hero_talents.has(tree_id) and hero_talents[tree_id].has(talent_id):
 		current_points = hero_talents[tree_id][talent_id]
@@ -244,8 +267,9 @@ func _create_talent_button(talent_id: String, talent_data: Dictionary, tree_id: 
 		# Check tree points
 		if prereq.has("treePointsRequired"):
 			var total_tree_points = 0
-			for t_id in hero_talents[tree_id]:
-				total_tree_points += hero_talents[tree_id][t_id]
+			if hero_talents.has(tree_id):
+				for t_id in hero_talents[tree_id]:
+					total_tree_points += hero_talents[tree_id][t_id]
 			if total_tree_points < prereq["treePointsRequired"]:
 				is_available = false
 		
@@ -253,15 +277,15 @@ func _create_talent_button(talent_id: String, talent_data: Dictionary, tree_id: 
 		if is_available and prereq.has("talentId") and prereq.has("pointsRequired"):
 			var req_id = prereq["talentId"]
 			var req_points = prereq["pointsRequired"]
-			if hero_talents[tree_id].get(req_id, 0) < req_points:
+			if hero_talents.get(tree_id, {}).get(req_id, 0) < req_points:
 				is_available = false
 	
 	# WoW Style Styling
-	var border_color = UITheme.COLORS["gold_border"]
-	var bg_color = UITheme.COLORS["frame_dark"]
+	var border_color = ut.COLORS["gold_border"]
+	var bg_color = ut.COLORS["frame_dark"]
 	
 	if current_points >= max_points:
-		border_color = UITheme.COLORS["gold"]
+		border_color = ut.COLORS["gold"]
 		bg_color = Color(0.3, 0.3, 0.1) # Maxed out glow
 	elif current_points > 0:
 		border_color = Color.GREEN
@@ -271,18 +295,17 @@ func _create_talent_button(talent_id: String, talent_data: Dictionary, tree_id: 
 		bg_color = Color(0.05, 0.05, 0.05)
 		button.disabled = true
 	
-	button.add_theme_stylebox_override("normal", UITheme.get_stylebox_panel(bg_color, border_color, 2))
-	button.add_theme_stylebox_override("disabled", UITheme.get_stylebox_panel(bg_color, border_color, 1))
-	button.add_theme_stylebox_override("hover", UITheme.get_stylebox_panel(bg_color.lightened(0.1), border_color.lightened(0.2), 3))
+	button.add_theme_stylebox_override("normal", ut.get_stylebox_panel(bg_color, border_color, 2))
+	button.add_theme_stylebox_override("disabled", ut.get_stylebox_panel(bg_color, border_color, 1))
+	button.add_theme_stylebox_override("hover", ut.get_stylebox_panel(bg_color.lightened(0.1), border_color.lightened(0.2), 3))
 	
-	# Set button text with BBCode-like colors via modulate or themes if needed
-	# For simplicity, using text and color overrides
+	# Set button text
 	button.text = "%s\n%d/%d" % [talent_name, current_points, max_points]
 	
 	if not is_available:
 		button.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 	elif current_points >= max_points:
-		button.add_theme_color_override("font_color", UITheme.COLORS["gold"])
+		button.add_theme_color_override("font_color", ut.COLORS["gold"])
 	
 	# Tooltip
 	var tooltip = "[color=gold]%s[/color]\nRank %d/%d\n\n" % [talent_name, current_points, max_points]
@@ -312,7 +335,10 @@ func _on_talent_clicked(talent_id: String, tree_id: String):
 		return
 	
 	# Try to allocate point
-	var success = TalentManager.allocate_talent_point(current_hero.id, tree_id, talent_id)
+	var tm = get_node_or_null("/root/TalentManager")
+	if not tm: return
+	
+	var success = tm.allocate_talent_point(current_hero.id, tree_id, talent_id)
 	
 	if success:
 		_log_info("TalentAllocation", "Allocated talent %s for hero %s" % [talent_id, current_hero.id])
@@ -323,4 +349,5 @@ func _on_talent_clicked(talent_id: String, tree_id: String):
 func _on_back_pressed():
 	"""Return to previous scene"""
 	_log_info("TalentAllocation", "Returning to: %s" % return_scene)
-	SceneManager.change_scene(return_scene)
+	var sm = get_node_or_null("/root/SceneManager")
+	if sm: sm.change_scene(return_scene)

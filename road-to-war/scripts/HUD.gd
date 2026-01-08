@@ -2,10 +2,15 @@ extends Control
 
 # HUD.gd - Manages the main game HUD
 
-@onready var party_container: VBoxContainer = $PartyContainer
-@onready var mile_label: Label = get_node_or_null("MileLabel")
+@onready var party_container: VBoxContainer = $PartyPanel/PartyContainer
+@onready var mile_label: Label = get_node_or_null("TopBar/MileLabel")
+@onready var world_progress_bar: ProgressBar = get_node_or_null("TopBar/WorldProgressBar")
 
 var unit_frame_scene = preload("res://scenes/UnitFrame.tscn")
+var spellbook_scene = preload("res://scenes/Spellbook.tscn")
+
+var _spellbook_has_new: bool = false
+var _last_level_by_hero: Dictionary = {} # hero_id -> int
 
 func _ready():
 	# Ensure HUD is full screen and responsive
@@ -18,8 +23,8 @@ func _ready():
 	# Wait for PartyManager to be ready or heroes to be loaded
 	call_deferred("refresh_party_ui")
 	if pm:
-		pm.hero_added.connect(func(_h): refresh_party_ui())
-		pm.hero_removed.connect(func(_id): refresh_party_ui())
+		pm.hero_added.connect(_on_hero_added)
+		pm.hero_removed.connect(_on_hero_removed)
 	
 	if wm:
 		if wm.mile_changed.is_connected(_on_mile_changed):
@@ -27,36 +32,143 @@ func _ready():
 		wm.mile_changed.connect(_on_mile_changed)
 		
 		# Initial update
-		_update_mile_label(wm.current_mile)
+		_update_mile_display(wm.current_mile)
+	
+	# Apply theme to progress bar
+	_apply_wow_hud_style()
 	
 	# Ensure BottomMenu is anchored correctly
-	var bottom_menu = get_node_or_null("BottomMenu")
+	var bottom_menu_panel = get_node_or_null("BottomMenuPanel")
+	var bottom_menu = get_node_or_null("BottomMenuPanel/BottomMenu")
 	if bottom_menu:
-		bottom_menu.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-		# Ensure it's not off-screen
-		bottom_menu.position.y = get_viewport_rect().size.y - bottom_menu.size.y
+		if bottom_menu_panel:
+			bottom_menu_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+			bottom_menu_panel.position.y = get_viewport_rect().size.y - bottom_menu_panel.size.y
 	
 	# Connect buttons
-	var char_btn = get_node_or_null("BottomMenu/CharacterButton")
-	if char_btn and sm: char_btn.pressed.connect(func(): sm.change_scene("res://scenes/CharacterPanel.tscn"))
+	var char_btn = get_node_or_null("BottomMenuPanel/BottomMenu/CharacterButton")
+	if char_btn and sm: char_btn.pressed.connect(_on_character_pressed)
 	
-	var inv_btn = get_node_or_null("BottomMenu/InventoryButton")
-	if inv_btn and sm: inv_btn.pressed.connect(func(): sm.change_scene("res://scenes/CharacterPanel.tscn"))
+	var inv_btn = get_node_or_null("BottomMenuPanel/BottomMenu/InventoryButton")
+	if inv_btn and sm: inv_btn.pressed.connect(_on_inventory_pressed)
 	
-	var talent_btn = get_node_or_null("BottomMenu/TalentsButton")
-	if talent_btn and sm: talent_btn.pressed.connect(func(): sm.change_scene("res://scenes/TalentAllocation.tscn"))
+	var talent_btn = get_node_or_null("BottomMenuPanel/BottomMenu/TalentsButton")
+	if talent_btn and sm: talent_btn.pressed.connect(_on_talents_pressed)
+
+	var spellbook_btn = get_node_or_null("BottomMenuPanel/BottomMenu/SpellbookButton")
+	if spellbook_btn: spellbook_btn.pressed.connect(_toggle_spellbook)
 	
-	var stats_btn = get_node_or_null("BottomMenu/StatsButton")
-	if stats_btn and sm: stats_btn.pressed.connect(func(): sm.change_scene("res://scenes/Statistics.tscn"))
+	var stats_btn = get_node_or_null("BottomMenuPanel/BottomMenu/StatsButton")
+	if stats_btn and sm: stats_btn.pressed.connect(_on_stats_pressed)
 	
-	var ach_btn = get_node_or_null("BottomMenu/AchievementsButton")
-	if ach_btn and sm: ach_btn.pressed.connect(func(): sm.change_scene("res://scenes/Achievements.tscn"))
+	var ach_btn = get_node_or_null("BottomMenuPanel/BottomMenu/AchievementsButton")
+	if ach_btn and sm: ach_btn.pressed.connect(_on_achievements_pressed)
 	
-	var map_btn = get_node_or_null("BottomMenu/MapButton")
+	var map_btn = get_node_or_null("BottomMenuPanel/BottomMenu/MapButton")
 	if map_btn: map_btn.pressed.connect(_toggle_map)
 	
-	var opt_btn = get_node_or_null("BottomMenu/OptionsButton")
-	if opt_btn and sm: opt_btn.pressed.connect(func(): sm.change_scene("res://scenes/Options.tscn"))
+	var opt_btn = get_node_or_null("BottomMenuPanel/BottomMenu/OptionsButton")
+	if opt_btn and sm: opt_btn.pressed.connect(_on_options_pressed)
+
+func _apply_wow_hud_style():
+	var ut = get_node_or_null("/root/UITheme")
+	if not ut:
+		return
+	
+	# Top bar panel
+	var top_bar = get_node_or_null("TopBar")
+	if top_bar and top_bar is Panel:
+		top_bar.add_theme_stylebox_override("panel", ut.get_stylebox_panel(ut.COLORS["frame_dark"], ut.COLORS["gold_border"], 2))
+	
+	# Party panel
+	var party_panel = get_node_or_null("PartyPanel")
+	if party_panel and party_panel is Panel:
+		party_panel.add_theme_stylebox_override("panel", ut.get_stylebox_panel(ut.COLORS["frame"], ut.COLORS["gold_border"], 2))
+	
+	# Bottom menu panel
+	var bottom_menu_panel = get_node_or_null("BottomMenuPanel")
+	if bottom_menu_panel and bottom_menu_panel is Panel:
+		bottom_menu_panel.add_theme_stylebox_override("panel", ut.get_stylebox_panel(ut.COLORS["frame_dark"], ut.COLORS["gold_border"], 2))
+	
+	# Mile label readability
+	if mile_label:
+		mile_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		mile_label.add_theme_constant_override("outline_size", 2)
+	
+	# Currency labels (keep them short + consistent)
+	var gold_label: Label = get_node_or_null("TopBar/CurrencyContainer/GoldLabel")
+	if gold_label:
+		gold_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		gold_label.add_theme_constant_override("outline_size", 1)
+		gold_label.add_theme_font_size_override("font_size", 16)
+	
+	var pp_label: Label = get_node_or_null("TopBar/CurrencyContainer/PrestigeLabel")
+	if pp_label:
+		pp_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		pp_label.add_theme_constant_override("outline_size", 1)
+		pp_label.add_theme_font_size_override("font_size", 16)
+	
+	# Progress bar styling
+	if world_progress_bar:
+		var sb_bg = StyleBoxFlat.new()
+		sb_bg.bg_color = Color(0.05, 0.05, 0.05, 0.7)
+		sb_bg.border_color = Color(0, 0, 0, 0.8)
+		sb_bg.border_width_left = 1
+		sb_bg.border_width_top = 1
+		sb_bg.border_width_right = 1
+		sb_bg.border_width_bottom = 1
+		world_progress_bar.add_theme_stylebox_override("background", sb_bg)
+		world_progress_bar.add_theme_stylebox_override("fill", ut.get_stylebox_bar(ut.COLORS["gold"]))
+	
+	# Bottom menu buttons: WoW-ish framed buttons
+	var bottom_menu = get_node_or_null("BottomMenuPanel/BottomMenu")
+	if bottom_menu:
+		for child in bottom_menu.get_children():
+			if child is Button:
+				var btn := child as Button
+				btn.add_theme_font_size_override("font_size", 14)
+				btn.custom_minimum_size = Vector2(90, 32)
+				
+				var normal_sb = ut.get_stylebox_panel(ut.COLORS["frame_dark"], ut.COLORS["gold_border"], 1)
+				var hover_sb = ut.get_stylebox_panel(Color(0.15, 0.15, 0.18, 0.95), ut.COLORS["gold"], 1)
+				var pressed_sb = ut.get_stylebox_panel(Color(0.08, 0.08, 0.10, 0.95), ut.COLORS["gold"], 2)
+				
+				btn.add_theme_stylebox_override("normal", normal_sb)
+				btn.add_theme_stylebox_override("hover", hover_sb)
+				btn.add_theme_stylebox_override("pressed", pressed_sb)
+				btn.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+				btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+				btn.add_theme_constant_override("outline_size", 1)
+
+func _on_hero_added(_hero):
+	refresh_party_ui()
+
+func _on_hero_removed(_hero_id):
+	refresh_party_ui()
+
+func _on_character_pressed():
+	var sm = get_node_or_null("/root/SceneManager")
+	if sm: sm.change_scene("res://scenes/CharacterPanel.tscn")
+
+func _on_inventory_pressed():
+	var sm = get_node_or_null("/root/SceneManager")
+	if sm: sm.change_scene("res://scenes/CharacterPanel.tscn")
+
+func _on_talents_pressed():
+	var sm = get_node_or_null("/root/SceneManager")
+	if sm: sm.change_scene("res://scenes/TalentAllocation.tscn")
+
+func _on_stats_pressed():
+	var sm = get_node_or_null("/root/SceneManager")
+	if sm: sm.change_scene("res://scenes/Statistics.tscn")
+
+func _on_achievements_pressed():
+	var sm = get_node_or_null("/root/SceneManager")
+	if sm: sm.change_scene("res://scenes/Achievements.tscn")
+
+func _on_options_pressed():
+	var sm = get_node_or_null("/root/SceneManager")
+	if sm: sm.change_scene("res://scenes/Options.tscn")
 
 func _input(event):
 	if event is InputEventKey and event.pressed:
@@ -68,6 +180,8 @@ func _input(event):
 				sm.change_scene("res://scenes/CharacterPanel.tscn")
 			KEY_M:
 				_toggle_map()
+			KEY_B:
+				_toggle_spellbook()
 			KEY_N:
 				sm.change_scene("res://scenes/TalentAllocation.tscn")
 			KEY_S:
@@ -89,12 +203,125 @@ func _toggle_map():
 	map.visible = !map.visible
 	get_tree().paused = map.visible
 
-func _on_mile_changed(mile, _max, _old):
-	_update_mile_label(mile)
+func _toggle_spellbook():
+	var book = get_node_or_null("Spellbook")
+	if not book:
+		if spellbook_scene:
+			book = spellbook_scene.instantiate()
+			book.name = "Spellbook"
+			add_child(book)
+		else:
+			return
+	
+	book.visible = !book.visible
+	get_tree().paused = book.visible
+	
+	# Clear "new spells" badge when opening
+	if book.visible:
+		_spellbook_has_new = false
+		_update_spellbook_button_badge()
+		if book.has_method("mark_levels_seen"):
+			book.mark_levels_seen()
 
-func _update_mile_label(mile):
+func _on_mile_changed(mile, _max, _old):
+	_update_mile_display(mile)
+	_update_prestige_display()
+	_update_brutal_mode_display()
+
+func _update_mile_display(mile):
+	var bm = get_node_or_null("/root/BrutalModeManager")
+	
 	if mile_label:
-		mile_label.text = "Mile %d" % mile
+		if mile <= 100:
+			mile_label.text = "Mile %d / 100" % mile
+		else:
+			if bm and bm.is_brutal_mode():
+				mile_label.text = "Mile %d+ (%s)" % [mile, bm.get_difficulty_name(bm.current_difficulty_level)]
+			else:
+				mile_label.text = "Mile %d+" % mile
+	
+	if world_progress_bar:
+		# Journey is 100 miles
+		world_progress_bar.max_value = 100
+		var progress = mile
+		if mile > 100:
+			# Extend progress beyond 100% visually
+			progress = 100 + ((mile - 100) / 100.0 * 100)  # Can go up to 200% (Mile 200)
+			progress = min(progress, 200)
+		world_progress_bar.value = progress
+
+func _update_prestige_display():
+	# Add prestige level and ethereal essence to HUD if not already present
+	var prestige_m = get_node_or_null("/root/PrestigeManager")
+	if not prestige_m:
+		return
+	
+	var prestige_label: Label = get_node_or_null("TopBar/CurrencyContainer/PrestigeLabel")
+	if prestige_label:
+		var prestige_level = prestige_m.get_prestige_level()
+		prestige_label.text = "PP: %d" % prestige_level
+	
+	# Find or create essence label inside the currency container
+	var currency_container: HBoxContainer = get_node_or_null("TopBar/CurrencyContainer")
+	if not currency_container:
+		return
+	
+	var essence_label: Label = get_node_or_null("TopBar/CurrencyContainer/EssenceLabel")
+	if not essence_label:
+		var ui_builder = get_node_or_null("/root/UIBuilder")
+		if ui_builder:
+			essence_label = ui_builder.create_label(currency_container, "", Vector2.ZERO, {
+				"font_color": Color(0.4, 1.0, 1.0),
+				"font_size": 16
+			})
+			essence_label.name = "EssenceLabel"
+		else:
+			# Fallback to manual creation
+			essence_label = Label.new()
+			essence_label.name = "EssenceLabel"
+			essence_label.add_theme_color_override("font_color", Color(0.4, 1.0, 1.0))
+			currency_container.add_child(essence_label)
+	
+	if essence_label:
+		var essence = prestige_m.get_ethereal_essence()
+		essence_label.text = "Ess: %d" % essence
+		essence_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		essence_label.add_theme_constant_override("outline_size", 1)
+		essence_label.add_theme_font_size_override("font_size", 16)
+
+func _update_brutal_mode_display():
+	# Add brutal mode indicator to HUD
+	var bm = get_node_or_null("/root/BrutalModeManager")
+	var brutal_label = get_node_or_null("TopBar/CurrencyContainer/BrutalLabel")
+	if not bm or not bm.is_brutal_mode():
+		# Hide brutal label if exists
+		if brutal_label:
+			brutal_label.text = ""
+		return
+	
+	# Find or create brutal mode label
+	if not brutal_label:
+		var currency_container: HBoxContainer = get_node_or_null("TopBar/CurrencyContainer")
+		if currency_container:
+			var ui_builder = get_node_or_null("/root/UIBuilder")
+			if ui_builder:
+				brutal_label = ui_builder.create_label(currency_container, "", Vector2.ZERO, {
+					"font_color": Color(1.0, 0.4, 0.4),
+					"font_size": 16
+				})
+				brutal_label.name = "BrutalLabel"
+			else:
+				# Fallback to manual creation
+				brutal_label = Label.new()
+				brutal_label.name = "BrutalLabel"
+				brutal_label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
+				currency_container.add_child(brutal_label)
+	
+	if brutal_label:
+		brutal_label.text = "Brutal: %s" % bm.get_difficulty_name(bm.current_difficulty_level)
+		brutal_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		brutal_label.add_theme_constant_override("outline_size", 1)
+		brutal_label.add_theme_font_size_override("font_size", 16)
 
 func refresh_party_ui():
 	# Clear existing frames
@@ -109,4 +336,52 @@ func refresh_party_ui():
 		var frame = unit_frame_scene.instantiate()
 		party_container.add_child(frame)
 		frame.setup(hero.id)
+	
+	_ensure_levelup_connections()
+
+func _ensure_levelup_connections():
+	var pm = get_node_or_null("/root/PartyManager")
+	if not pm:
+		return
+	for hero in pm.heroes:
+		_last_level_by_hero[hero.id] = int(_last_level_by_hero.get(hero.id, hero.level))
+		var cb := Callable(self, "_on_hero_level_up").bind(hero.id)
+		if not hero.level_up.is_connected(cb):
+			hero.level_up.connect(cb)
+
+func _on_hero_level_up(new_level: int, hero_id: String):
+	var pm = get_node_or_null("/root/PartyManager")
+	var am = get_node_or_null("/root/AbilityManager")
+	if not pm or not am:
+		_last_level_by_hero[hero_id] = new_level
+		return
+	
+	var hero = pm.get_hero_by_id(hero_id)
+	if not hero:
+		_last_level_by_hero[hero_id] = new_level
+		return
+	
+	var old_level := int(_last_level_by_hero.get(hero_id, new_level))
+	_last_level_by_hero[hero_id] = new_level
+	
+	# Detect newly unlocked abilities (old < minLevel <= new)
+	var all_names: Array = am.get_all_ability_names(hero) if am.has_method("get_all_ability_names") else []
+	var newly_unlocked := 0
+	for ability_id in all_names:
+		var def: Dictionary = am.get_ability_definition(hero_id, ability_id)
+		if def.is_empty():
+			continue
+		var min_level := int(def.get("minLevel", 1))
+		if min_level > old_level and min_level <= new_level:
+			newly_unlocked += 1
+	
+	if newly_unlocked > 0:
+		_spellbook_has_new = true
+		_update_spellbook_button_badge()
+
+func _update_spellbook_button_badge():
+	var spellbook_btn: Button = get_node_or_null("BottomMenuPanel/BottomMenu/SpellbookButton")
+	if not spellbook_btn:
+		return
+	spellbook_btn.text = "Spellbook *" if _spellbook_has_new else "Spellbook"
 

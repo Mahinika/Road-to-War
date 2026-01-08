@@ -10,4 +10,4 @@ script = ExtResource("1_script")
 [node name="HeroGroup" type="Node2D" parent="."]
 
 [node name="EnemyGroup" type="Node2D" parent="."]
-position = Vector2(1200, 0)
+position = Vector2(0, 0)

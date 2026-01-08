@@ -49,6 +49,51 @@ var equipment_slots = [
 
 func _ready():
 	_log_info("EquipmentManager", "Initialized")
+	_validate_item_visuals()
+
+func _validate_item_visuals():
+	# Asset pipeline validation: item visuals should exist if a texture path is provided.
+	# We log a summary and write the full report to user://missing_item_visuals.txt to avoid spam.
+	var dm = get_node_or_null("/root/DataManager")
+	var items_data = dm.get_data("items") if dm else null
+	if not items_data:
+		return
+	
+	var missing: Array[String] = []
+	var checked := 0
+	
+	for category in ["weapons", "armor", "accessories"]:
+		var cat = items_data.get(category, {})
+		for item_id in cat.keys():
+			var item = cat[item_id]
+			var tex_path = item.get("texture", "")
+			if tex_path != "":
+				checked += 1
+				if not ResourceLoader.exists(tex_path):
+					missing.append("%s -> %s" % [item_id, tex_path])
+	
+	if checked == 0:
+		return
+	
+	if missing.size() > 0:
+		_write_missing_visuals_report(missing, checked)
+		_log_warn("EquipmentManager", "Item visual textures missing: %d/%d (full report: user://missing_item_visuals.txt)" % [missing.size(), checked])
+	else:
+		_log_info("EquipmentManager", "Item visual textures OK: %d checked" % checked)
+
+func _write_missing_visuals_report(missing: Array[String], checked: int):
+	var file = FileAccess.open("user://missing_item_visuals.txt", FileAccess.WRITE)
+	if not file:
+		_log_warn("EquipmentManager", "Could not write missing visuals report (FileAccess error: %d)" % FileAccess.get_open_error())
+		return
+	
+	file.store_line("Missing Item Visual Textures Report")
+	file.store_line("Missing: %d / Checked: %d" % [missing.size(), checked])
+	file.store_line("")
+	for line in missing:
+		file.store_line(line)
+	file.flush()
+	file.close()
 
 func get_hero_equipment(hero_id: String) -> Dictionary:
 	if not hero_equipment.has(hero_id):
@@ -77,6 +122,9 @@ func equip_item(hero_id: String, item_id: String, slot: String) -> bool:
 			pass
 		elif item_slot == "trinket" and (slot == "trinket1" or slot == "trinket2"):
 			pass
+		elif item_slot == "amulet" and slot == "neck":
+			# Backward-compat: older data may call this "amulet"
+			pass
 		else:
 			_log_warn("EquipmentManager", "Item %s belongs in %s, not %s" % [item_id, item_slot, slot])
 			return false
@@ -85,7 +133,12 @@ func equip_item(hero_id: String, item_id: String, slot: String) -> bool:
 	if item_data.get("type") == "armor":
 		var armor_type = item_data.get("armor_type", "cloth")
 		var dm = get_node_or_null("/root/DataManager")
-		var class_data = dm.get_data("classes").get(hero.class_id, {}) if dm else {}
+		if not dm: return false
+		
+		var data = dm.get_data("classes")
+		if not data: return false
+		
+		var class_data = data.get(hero.class_id, {})
 		var proficiencies = class_data.get("armorProficiency", ["cloth"])
 		if not armor_type in proficiencies:
 			_log_warn("EquipmentManager", "Hero %s cannot wear %s armor" % [hero.name, armor_type])
@@ -283,7 +336,12 @@ func auto_equip_best_in_slot(hero_id: String):
 			if data.get("type") == "armor":
 				var armor_type = data.get("armor_type", "cloth")
 				var dm = get_node_or_null("/root/DataManager")
-				var class_data = dm.get_data("classes").get(hero.class_id, {}) if dm else {}
+				if not dm: continue
+				
+				var data_classes = dm.get_data("classes")
+				if not data_classes: continue
+				
+				var class_data = data_classes.get(hero.class_id, {})
 				var proficiencies = class_data.get("armorProficiency", ["cloth"])
 				if not armor_type in proficiencies:
 					continue
@@ -306,8 +364,8 @@ func auto_equip_best_in_slot(hero_id: String):
 						best_upgrade = {"slot": s, "item": item, "index": i, "score": score}
 		
 		if best_upgrade:
-			var item_id = best_upgrade.item.id
-			var slot = best_upgrade.slot
+			var item_id = best_upgrade["item"]["id"]
+			var slot = best_upgrade["slot"]
 			
 			# Unequip old
 			var old_item_id = unequip_item(hero_id, slot)
@@ -316,7 +374,7 @@ func auto_equip_best_in_slot(hero_id: String):
 			equip_item(hero_id, item_id, slot)
 			
 			# Remove from inventory
-			lm.inventory.remove_at(best_upgrade.index)
+			lm.inventory.remove_at(best_upgrade["index"])
 			
 			# Add old back to inventory
 			if old_item_id:

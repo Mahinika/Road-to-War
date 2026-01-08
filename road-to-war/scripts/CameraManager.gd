@@ -93,4 +93,7 @@ func reset_zoom():
 	var tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(current_camera, "zoom", default_zoom, 1.0)
 	tween.tween_property(current_camera, "global_position", Vector2.ZERO, 1.0)
-	tween.chain().tween_callback(func(): _is_zooming = false)
+	tween.chain().tween_callback(_on_zoom_complete)
+
+func _on_zoom_complete():
+	_is_zooming = false

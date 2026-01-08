@@ -113,7 +113,8 @@ func purchase_item(item_id: String, quantity: int = 1) -> bool:
 	return true
 
 func sell_item(item_id: String, quantity: int = 1) -> bool:
-	var items_json = DataManager.get_data("items")
+	var dm = get_node_or_null("/root/DataManager")
+	var items_json = dm.get_data("items") if dm else null
 	var item_data = {}
 	
 	if items_json:
@@ -131,7 +132,9 @@ func sell_item(item_id: String, quantity: int = 1) -> bool:
 	# Remove from inventory (would integrate with LootManager)
 	item_sold.emit(item_data, value)
 	
-	ParticleManager.create_floating_text(Vector2(400, 300), "+" + str(value) + "g", Color.YELLOW)
+	var pm = get_node_or_null("/root/ParticleManager")
+	if pm:
+		pm.create_floating_text(Vector2(400, 300), "+" + str(value) + "g", Color.YELLOW)
 	_log_info("ShopManager", "Sold %s for %d gold" % [item_data.get("name", "item"), value])
 	
 	return true

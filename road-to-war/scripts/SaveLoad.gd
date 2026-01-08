@@ -67,9 +67,15 @@ func _load_save_slots():
 	"""Load available save slots"""
 	save_slots.clear()
 	
-	# Get save slots from SaveManager
-	SaveManager.load_save_slots()
-	var manager_slots = SaveManager.get_save_slots()
+	# Get save slots from SaveLoadHandler (which wraps SaveManager)
+	var handler = get_node_or_null("/root/SaveLoadHandler")
+	var manager_slots: Array = []
+	if handler:
+		manager_slots = handler.get_save_slots()
+	else:
+		# Fallback to SaveManager if handler not available
+		SaveManager.load_save_slots()
+		manager_slots = SaveManager.get_save_slots()
 	
 	for i in range(manager_slots.size()):
 		var slot_data = manager_slots[i]
@@ -92,26 +98,38 @@ func _create_slot_buttons():
 	
 	# Create slot buttons
 	for slot_data in save_slots:
-		var slot_button = _create_slot_button(slot_data)
-		slots_container.add_child(slot_button)
+		_create_slot_button(slot_data)  # Button is added to container inside the function
 
 func _create_slot_button(slot_data: Dictionary) -> Button:
-	"""Create a button for a save slot"""
-	var button = Button.new()
-	button.custom_minimum_size = Vector2(200, 80)
-	
+	"""Create a button for a save slot using UIBuilder"""
+	var ui_builder = get_node_or_null("/root/UIBuilder")
 	var slot_num = slot_data.slot
 	var text = "Slot %d" % (slot_num + 1)
 	
 	if slot_data.exists:
 		text += "\n%s" % slot_data.timestamp
 		text += "\nParty: %d | Level: %d" % [slot_data.party_size, slot_data.level]
+	
+	if not slot_data.exists:
+		text += "\n(Empty)"
+	
+	# Use UIBuilder if available, fallback to manual creation
+	var button: Button
+	if ui_builder:
+		button = ui_builder.create_button(slots_container, text, Vector2(200, 80))
+	else:
+		# Fallback to manual creation
+		button = Button.new()
+		button.custom_minimum_size = Vector2(200, 80)
+		button.text = text
+		slots_container.add_child(button)
+	
+	# Apply modulate based on state
+	if slot_data.exists:
 		button.modulate = Color(1, 1, 1, 1)  # Normal color
 	else:
-		text += "\n(Empty)"
 		button.modulate = Color(0.7, 0.7, 0.7, 1)  # Grayed out
 	
-	button.text = text
 	button.pressed.connect(_on_slot_selected.bind(slot_num))
 	
 	return button
@@ -165,10 +183,19 @@ func _save_game():
 	
 	_log_info("SaveLoad", "Saving game to slot %d" % selected_slot)
 	
-	var success = SaveManager.save_game(selected_slot + 1)  # SaveManager uses 1-based slots
+	# Use SaveLoadHandler (which wraps SaveManager)
+	var handler = get_node_or_null("/root/SaveLoadHandler")
+	var slot_num = selected_slot + 1  # Convert to 1-based
+	
+	var success = false
+	if handler:
+		success = handler.save_game(slot_num)
+	else:
+		# Fallback to SaveManager if handler not available
+		success = SaveManager.save_game(slot_num)
 	
 	if success:
-		info_label.text = "Game saved to Slot %d!" % (selected_slot + 1)
+		info_label.text = "Game saved to Slot %d!" % slot_num
 		_log_info("SaveLoad", "Save successful")
 		
 		# Reload slots to show updated info
@@ -193,14 +220,23 @@ func _load_game():
 	
 	_log_info("SaveLoad", "Loading game from slot %d" % selected_slot)
 	
-	var save_data = SaveManager.load_game(selected_slot + 1)  # SaveManager uses 1-based slots
+	# Use SaveLoadHandler (which wraps SaveManager and applies data)
+	var handler = get_node_or_null("/root/SaveLoadHandler")
+	var slot_num = selected_slot + 1  # Convert to 1-based
 	
-	if not save_data.is_empty():
-		info_label.text = "Game loaded from Slot %d!" % (selected_slot + 1)
+	var success = false
+	if handler:
+		success = handler.load_game(slot_num)
+	else:
+		# Fallback to SaveManager if handler not available
+		var save_data = SaveManager.load_game(slot_num)
+		if not save_data.is_empty():
+			SaveManager.apply_save_data(save_data)
+			success = true
+	
+	if success:
+		info_label.text = "Game loaded from Slot %d!" % slot_num
 		_log_info("SaveLoad", "Load successful")
-		
-		# Apply loaded data to managers
-		SaveManager.apply_save_data(save_data)
 		
 		# Transition to game scene after a delay
 		await get_tree().create_timer(1.5).timeout

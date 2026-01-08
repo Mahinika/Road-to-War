@@ -17,6 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+CursorLogManager="*res://scripts/CursorLogManager.gd"
 Logger="*res://scripts/Logger.gd"
 DataManager="*res://scripts/DataManager.gd"
 SceneManager="*res://scripts/SceneManager.gd"
@@ -42,6 +43,9 @@ UITheme="*res://scripts/UITheme.gd"
 LootManager="*res://scripts/LootManager.gd"
 ShopManager="*res://scripts/ShopManager.gd"
 PrestigeManager="*res://scripts/PrestigeManager.gd"
+PrestigeBank="*res://scripts/PrestigeBank.gd"
+BrutalModeManager="*res://scripts/BrutalModeManager.gd"
+ChallengeModeManager="*res://scripts/ChallengeModeManager.gd"
 ResourceManager="*res://scripts/ResourceManager.gd"
 MovementManager="*res://scripts/MovementManager.gd"
 SaveManager="*res://scripts/SaveManager.gd"
@@ -49,6 +53,11 @@ DamageCalculator="*res://scripts/DamageCalculator.gd"
 RoadGenerator="*res://scripts/RoadGenerator.gd"
 ProceduralItemGenerator="*res://scripts/ProceduralItemGenerator.gd"
 QuestManager="*res://scripts/QuestManager.gd"
+HeroFactory="*res://scripts/HeroFactory.gd"
+ObjectPool="*res://scripts/ObjectPool.gd"
+UIBuilder="*res://scripts/UIBuilder.gd"
+InteractionManager="*res://scripts/InteractionManager.gd"
+SaveLoadHandler="*res://scripts/handlers/SaveLoadHandler.gd"
 
 [display]
 
@@ -57,8 +66,7 @@ window/size/viewport_height=1080
 window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
+enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg", "res://addons/gut/plugin.cfg")

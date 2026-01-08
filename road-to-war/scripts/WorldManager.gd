@@ -35,6 +35,8 @@ func _log_debug(source: String, message: String):
 
 signal mile_changed(current_mile, max_mile_reached, previous_mile)
 signal combat_triggered(enemy)
+signal mile_100_arrived()
+signal victory_achieved()
 
 var current_segment: int = 0
 var current_mile: int = 0
@@ -46,6 +48,7 @@ var encounters: Array = []
 var combat_active: bool = false
 var claimed_milestones: Array = []
 var encounter_cooldown: float = 0.0 # Time in seconds until next possible encounter
+var awaiting_final_boss_victory: bool = false
 
 var scroll_speed: float = 200.0
 var segment_width: float = 800.0
@@ -168,9 +171,9 @@ func _get_random_enemy(preferred_role: String = "") -> Dictionary:
 	if possible_enemies.is_empty():
 		_log_warn("WorldManager", "No possible enemies for mile %d! Fallback to slime." % mile)
 		if enemies_data.has("slime"):
-			return enemies_data["slime"].duplicate()
+			return _apply_brutal_scaling(enemies_data["slime"].duplicate(), mile)
 		else:
-			return enemies_data[enemies_data.keys()[0]].duplicate()
+			return _apply_brutal_scaling(enemies_data[enemies_data.keys()[0]].duplicate(), mile)
 	
 	var pool = role_matches if not role_matches.is_empty() else possible_enemies
 	var random_key = pool[randi() % pool.size()]
@@ -179,7 +182,59 @@ func _get_random_enemy(preferred_role: String = "") -> Dictionary:
 	if not enemy.has("id"):
 		enemy["id"] = random_key
 	
-	_log_info("WorldManager", "Selected random enemy: %s (Lv %d %s %s) for mile %d. Pool size: %d" % [random_key, enemy.get("level", 1), enemy.get("type", "basic"), enemy.get("role", "melee"), mile, pool.size()])
+	# Apply brutal mode scaling if in brutal mode
+	enemy = _apply_brutal_scaling(enemy, mile)
+	
+	# Make enemies tankier for better real-time combat visibility
+	# Apply a health multiplier based on mile to make combat last longer
+	if enemy.has("stats"):
+		var stats = enemy["stats"]
+		var base_health = stats.get("health", 100)
+		var health_multiplier = 3.0 + (mile * 0.5)  # 3.5x at mile 1, scales up
+		stats["health"] = int(base_health * health_multiplier)
+		stats["maxHealth"] = stats["health"]
+		
+		# Also reduce hero damage effectiveness by boosting enemy defense
+		var base_defense = stats.get("defense", 0)
+		stats["defense"] = base_defense + (mile * 2)
+	
+	_log_info("WorldManager", "Selected random enemy: %s (Lv %d %s %s) for mile %d. Pool size: %d. HP: %d" % [random_key, enemy.get("level", 1), enemy.get("type", "basic"), enemy.get("role", "melee"), mile, pool.size(), enemy.get("stats", {}).get("health", 0)])
+	return enemy
+
+func _apply_brutal_scaling(enemy: Dictionary, mile: int) -> Dictionary:
+	# Apply brutal mode scaling if in brutal mode and mile > 100
+	var bm = get_node_or_null("/root/BrutalModeManager")
+	if not bm or not bm.is_brutal_mode() or mile <= 100:
+		return enemy
+	
+	var multipliers = bm.calculate_brutal_multipliers(mile)
+	
+	# Scale enemy level
+	var base_level = enemy.get("level", 1)
+	enemy["level"] = int(base_level * multipliers.level)
+	
+	# Scale stats
+	if enemy.has("stats"):
+		var stats = enemy["stats"]
+		var base_health = stats.get("health", 100)
+		var base_max_health = stats.get("maxHealth", base_health)
+		var base_attack = stats.get("attack", 10)
+		
+		stats["health"] = int(base_health * multipliers.health)
+		stats["maxHealth"] = int(base_max_health * multipliers.health)
+		stats["attack"] = int(base_attack * multipliers.damage)
+		
+		# Apply Tyrannical affix for bosses
+		if enemy.get("type", "") == "boss" and bm.brutal_affixes.has("Tyrannical"):
+			stats["attack"] = int(stats["attack"] * 1.3)
+	
+	# Force elite status in brutal mode
+	if enemy.get("type", "") != "boss":
+		enemy["type"] = "elite"
+	
+	# Apply brutal affixes
+	enemy["brutal_affixes"] = bm.brutal_affixes.duplicate()
+	
 	return enemy
 
 func check_segment_generation():
@@ -201,6 +256,10 @@ func update_current_mile():
 		_log_info("WorldManager", "Mile updated: %d -> %d" % [old_mile, current_mile])
 		
 		check_milestone_rewards()
+		
+		# Check for Mile 100 arrival (special handling)
+		if current_mile == 100 and old_mile < 100:
+			check_mile_100_arrival()
 
 func check_milestone_rewards():
 	var milestones = [25, 50, 75, 100]
@@ -224,6 +283,64 @@ func _grant_milestone_reward(mile: int):
 	if part_m:
 		part_m.create_floating_text(Vector2(960, 540), "MILE %d MILESTONE REACHED!" % mile, Color.GOLD)
 
+func check_mile_100_arrival():
+	_log_info("WorldManager", "Mile 100 arrived! Triggering final boss fight and victory celebration")
+	mile_100_arrived.emit()
+	awaiting_final_boss_victory = true
+	
+	# Trigger final boss fight (War Lord)
+	_trigger_final_boss_fight()
+
+func _trigger_final_boss_fight():
+	_log_info("WorldManager", "Triggering final boss fight: War Lord")
+	
+	# Get War Lord boss enemy data
+	var enemies_data = {}
+	var dm = get_node_or_null("/root/DataManager")
+	if dm:
+		enemies_data = dm.get_data("enemies")
+	
+	var war_lord_data = {}
+	if enemies_data.has("war_lord"):
+		war_lord_data = enemies_data["war_lord"].duplicate(true)
+	else:
+		# Create War Lord boss if it doesn't exist
+		war_lord_data = {
+			"id": "war_lord",
+			"name": "War Lord",
+			"level": 100,
+			"type": "boss",
+			"stats": {
+				"health": 50000,
+				"maxHealth": 50000,
+				"attack": 500,
+				"defense": 200,
+				"speed": 30
+			},
+			"abilities": [
+				{
+					"name": "Devastating Strike",
+					"type": "damage",
+					"damage_multiplier": 3.0,
+					"cooldown": 5,
+					"description": "Deals massive damage to all heroes"
+				}
+			],
+			"rewards": {
+				"experience": 10000,
+				"gold": 20000
+			}
+		}
+	
+	# Ensure unique instance ID
+	war_lord_data["instance_id"] = "war_lord_final_%d" % current_mile
+	
+	# Create boss group (single boss)
+	var boss_group = [war_lord_data]
+	
+	# Trigger combat
+	trigger_combat(boss_group)
+
 func generate_segment(p_segment_index: int):
 	var segment = {
 		"index": p_segment_index,
@@ -245,6 +362,20 @@ func determine_segment_type(p_segment_index: int) -> String:
 func trigger_combat(p_enemy_group: Array):
 	if combat_active: return
 	
+	# Check for Elite Only challenge mode
+	var cm = get_node_or_null("/root/ChallengeModeManager")
+	if cm and cm.active_challenge == cm.ChallengeType.ELITE_ONLY:
+		# Filter to only elite enemies
+		var elite_group = []
+		for enemy in p_enemy_group:
+			if enemy.get("type", "") == "elite" or enemy.get("type", "") == "boss":
+				elite_group.append(enemy)
+		if elite_group.is_empty():
+			# No elites, skip this encounter
+			_log_info("WorldManager", "Elite Only mode: Skipping non-elite encounter")
+			return
+		p_enemy_group = elite_group
+	
 	combat_active = true
 	_log_info("WorldManager", "Triggering combat with group of %d enemies" % p_enemy_group.size())
 	combat_triggered.emit(p_enemy_group)
@@ -252,6 +383,9 @@ func trigger_combat(p_enemy_group: Array):
 func handle_combat_end(victory: bool):
 	combat_active = false
 	_log_info("WorldManager", "Combat ended. Victory: " + str(victory))
+	if awaiting_final_boss_victory and victory:
+		awaiting_final_boss_victory = false
+		victory_achieved.emit()
 
 func initialize_world():
 	current_segment = 0
@@ -284,3 +418,70 @@ func load_save_data(save_data: Dictionary):
 	generate_segment(current_segment + 1)
 	
 	_log_info("WorldManager", "World state loaded: Mile %d" % current_mile)
+
+func _update_challenge_mile_progress(mile: int):
+	var cm = get_node_or_null("/root/ChallengeModeManager")
+	if not cm or cm.active_challenge == cm.ChallengeType.NONE:
+		return
+	
+	match cm.active_challenge:
+		cm.ChallengeType.SPEED_RUN:
+			if mile >= cm.challenge_data.get("target_mile", 100):
+				var time_elapsed = cm.get_challenge_time()
+				var score = int(time_elapsed)  # Score = seconds elapsed (lower is better)
+				cm.end_challenge(true, score)
+		cm.ChallengeType.NO_DEATH:
+			if mile >= cm.challenge_data.get("target_mile", 100):
+				cm.end_challenge(true, 100)  # Perfect score
+		cm.ChallengeType.PRESTIGE_RUSH:
+			# Update prestige rush stats
+			var pm = get_node_or_null("/root/PartyManager")
+			if pm:
+				var total_levels = 0
+				for hero in pm.heroes:
+					total_levels += hero.level
+				cm.challenge_data["total_levels"] = total_levels
+			
+			if mile >= 100:
+				# Calculate efficiency score
+				var efficiency = _calculate_prestige_efficiency()
+				cm.end_challenge(true, efficiency)
+
+func _calculate_prestige_efficiency() -> int:
+	# Calculate prestige efficiency score based on levels, equipment, achievements
+	var pm = get_node_or_null("/root/PartyManager")
+	var em = get_node_or_null("/root/EquipmentManager")
+	var am = get_node_or_null("/root/AchievementManager")
+	
+	if not pm:
+		return 0
+	
+	var score = 0
+	
+	# Level contribution
+	for hero in pm.heroes:
+		score += hero.level * 10
+	
+	# Equipment contribution
+	if em:
+		var epic_count = 0
+		var legendary_count = 0
+		for hero in pm.heroes:
+			var equipment = em.get_hero_equipment(hero.id)
+			for slot in equipment:
+				var item_id = equipment[slot]
+				if item_id:
+					var item_data = em.get_item_data(item_id)
+					if item_data:
+						var quality = item_data.get("quality", "").to_lower()
+						if quality == "epic":
+							epic_count += 1
+						elif quality == "legendary":
+							legendary_count += 1
+		score += (epic_count * 20) + (legendary_count * 50)
+	
+	# Achievement contribution
+	if am and am.has_method("get_unlocked_count"):
+		score += am.get_unlocked_count() * 10
+	
+	return score

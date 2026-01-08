@@ -48,8 +48,8 @@ func get_hero_talents(hero_id: String) -> Dictionary:
 		hero_talents[hero_id] = _build_initial_tree(hero_id)
 	return hero_talents[hero_id]
 
-func initialize_hero_talents(hero_id: String, initial_talents: Dictionary = {}):
-	if not initial_talents.is_empty():
+func initialize_hero_talents(hero_id: String, initial_talents = {}):
+	if initial_talents is Dictionary and not initial_talents.is_empty():
 		hero_talents[hero_id] = initial_talents.duplicate(true)
 	else:
 		get_hero_talents(hero_id) # Triggers _build_initial_tree if missing
@@ -92,9 +92,21 @@ func allocate_talent_point(hero_id: String, tree_id: String, talent_id: String) 
 		
 	# Check max points
 	var dm = get_node_or_null("/root/DataManager")
-	var talents_data = dm.get_data("talents") if dm else {}
+	if not dm: return false
+	
+	var talents_data = dm.get_data("talents")
+	if not talents_data: return false
+	
 	var class_id = hero.class_id
-	var talent_def = talents_data[class_id]["trees"][tree_id]["talents"][talent_id]
+	if not talents_data.has(class_id): return false
+	
+	var class_trees = talents_data[class_id].get("trees", {})
+	if not class_trees.has(tree_id): return false
+	
+	var tree_talents = class_trees[tree_id].get("talents", {})
+	if not tree_talents.has(talent_id): return false
+	
+	var talent_def = tree_talents[talent_id]
 	var max_points = talent_def.get("maxPoints", 1)
 	
 	if talents[tree_id][talent_id] >= max_points:
@@ -122,8 +134,9 @@ func _check_prerequisites(hero_id: String, tree_id: String, talent_def: Dictiona
 	# Tree points required
 	if prereq.has("treePointsRequired"):
 		var total_tree_points = 0
-		for t_id in talents[tree_id]:
-			total_tree_points += talents[tree_id][t_id]
+		var tree_stats = talents.get(tree_id, {})
+		for t_id in tree_stats:
+			total_tree_points += tree_stats[t_id]
 		if total_tree_points < prereq["treePointsRequired"]:
 			return false
 			
@@ -131,7 +144,8 @@ func _check_prerequisites(hero_id: String, tree_id: String, talent_def: Dictiona
 	if prereq.has("talentId") and prereq.has("pointsRequired"):
 		var req_id = prereq["talentId"]
 		var req_points = prereq["pointsRequired"]
-		if talents[tree_id].get(req_id, 0) < req_points:
+		var tree_stats = talents.get(tree_id, {})
+		if tree_stats.get(req_id, 0) < req_points:
 			return false
 			
 	return true
@@ -163,17 +177,26 @@ func get_talent_bonuses(hero_id: String) -> Dictionary:
 	
 	var talents = get_hero_talents(hero_id)
 	var dm = get_node_or_null("/root/DataManager")
-	var talents_data = dm.get_data("talents") if dm else null
-	var class_id = hero.class_id
+	if not dm: return bonuses
 	
-	if not talents_data or not talents_data.has(class_id): return bonuses
+	var talents_data = dm.get_data("talents")
+	if not talents_data: return bonuses
+	
+	var class_id = hero.class_id
+	if not talents_data.has(class_id): return bonuses
+	
+	var class_trees = talents_data[class_id].get("trees", {})
 	
 	for tree_id in talents:
 		var tree_talents = talents[tree_id]
+		if not class_trees.has(tree_id): continue
+		
+		var tree_def = class_trees[tree_id].get("talents", {})
+		
 		for talent_id in tree_talents:
 			var points = tree_talents[talent_id]
-			if points > 0:
-				var talent_def = talents_data[class_id]["trees"][tree_id]["talents"][talent_id]
+			if points > 0 and tree_def.has(talent_id):
+				var talent_def = tree_def[talent_id]
 				var effects = talent_def.get("effects", {})
 				for effect in effects:
 					var val = effects[effect]

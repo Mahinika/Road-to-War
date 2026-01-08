@@ -149,6 +149,15 @@ func collect_save_data() -> Dictionary:
 	var pr = get_node_or_null("/root/PrestigeManager")
 	if pr: save_data["prestige"] = pr.get_save_data()
 	
+	var pb = get_node_or_null("/root/PrestigeBank")
+	if pb: save_data["prestige_bank"] = pb.get_save_data()
+	
+	var brutal_m = get_node_or_null("/root/BrutalModeManager")
+	if brutal_m: save_data["brutal_mode"] = brutal_m.get_save_data()
+	
+	var cm = get_node_or_null("/root/ChallengeModeManager")
+	if cm: save_data["challenge_mode"] = cm.get_save_data()
+	
 	var rm = get_node_or_null("/root/ResourceManager")
 	if rm: save_data["resources"] = rm.get_save_data()
 	
@@ -251,6 +260,18 @@ func apply_save_data(save_data: Dictionary):
 	var pr = get_node_or_null("/root/PrestigeManager")
 	if save_data.has("prestige") and pr:
 		pr.load_save_data(save_data.prestige)
+	
+	var pb = get_node_or_null("/root/PrestigeBank")
+	if save_data.has("prestige_bank") and pb:
+		pb.load_save_data(save_data.prestige_bank)
+	
+	var brutal_m = get_node_or_null("/root/BrutalModeManager")
+	if save_data.has("brutal_mode") and brutal_m:
+		brutal_m.load_save_data(save_data.brutal_mode)
+	
+	var cm = get_node_or_null("/root/ChallengeModeManager")
+	if save_data.has("challenge_mode") and cm:
+		cm.load_save_data(save_data.challenge_mode)
 		
 	var rm = get_node_or_null("/root/ResourceManager")
 	if save_data.has("resources") and rm:
@@ -271,4 +292,3 @@ func apply_save_data(save_data: Dictionary):
 			sc.recalculate_hero_stats(hero)
 	
 	_log_info("SaveManager", "All manager data applied and stats recalculated")
-

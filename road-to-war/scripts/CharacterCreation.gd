@@ -45,6 +45,8 @@ func _log_debug(source: String, message: String):
 @onready var auto_generate_button: Button = $ButtonContainer/AutoGenerateButton
 @onready var confirm_button: Button = $ButtonContainer/ConfirmButton
 
+var background_image: TextureRect
+
 # Data variables
 var classes_data: Dictionary = {}
 var specializations_data: Dictionary = {}
@@ -54,7 +56,7 @@ var role_panels: Dictionary = {}
 var class_buttons: Dictionary = {}  # role_id -> Array of buttons
 var spec_buttons: Dictionary = {}    # role_id -> Array of buttons
 
-# Role to eligible classes mapping
+# Role to eligible classes mapping ( Trinity Enforced )
 var role_class_map = {
 	"tank": ["paladin", "warrior", "druid"],
 	"healer": ["priest", "paladin", "shaman", "druid"],
@@ -84,7 +86,44 @@ func _ready():
 	# Load data and create UI
 	print("[CharacterCreation] Loading data and creating UI...")
 	load_data_and_create_ui()
+	
+	# Set up background image
+	_setup_background()
+	
 	print("[CharacterCreation] _ready() finished")
+
+func _setup_background():
+	# Create and configure the background image to match Main Menu
+	background_image = TextureRect.new()
+	background_image.name = "BackgroundImage"
+	background_image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	background_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	background_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	
+	# Load the menu background texture
+	var bg_path = "res://assets/images/menu-background.jpg"
+	if ResourceLoader.exists(bg_path):
+		var texture = load(bg_path)
+		if texture:
+			background_image.texture = texture
+			_log_info("CharacterCreation", "Background image loaded")
+	
+	# Add as first child so it's behind everything
+	add_child(background_image)
+	move_child(background_image, 0)
+	
+	# Hide the default ColorRect background from the .tscn if it exists
+	var default_bg = get_node_or_null("Background")
+	if default_bg:
+		default_bg.visible = false
+	
+	# Add a dark overlay to make text/buttons more readable
+	var overlay = ColorRect.new()
+	overlay.name = "BackgroundOverlay"
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.color = Color(0, 0, 0, 0.5) # 50% black overlay
+	add_child(overlay)
+	move_child(overlay, 1)
 
 func load_data_and_create_ui():
 	# Load class/spec data and create role selection panels
@@ -127,13 +166,20 @@ func create_role_panel(role_id: String, role_name: String):
 	v_box.add_theme_constant_override("separation", 10)
 	container.add_child(v_box)
 	
-	# Role name label
-	var role_label = Label.new()
-	role_label.text = role_name.to_upper()
-	role_label.add_theme_font_size_override("font_size", 20)
-	role_label.add_theme_color_override("font_color", UITheme.COLORS["gold"])
-	role_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	v_box.add_child(role_label)
+	# Role name label - Use UIBuilder
+	var ui_builder = get_node_or_null("/root/UIBuilder")
+	var role_label: Label
+	if ui_builder:
+		role_label = ui_builder.create_title_label(v_box, role_name.to_upper())
+		role_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	else:
+		# Fallback to manual creation
+		role_label = Label.new()
+		role_label.text = role_name.to_upper()
+		role_label.add_theme_font_size_override("font_size", 20)
+		role_label.add_theme_color_override("font_color", UITheme.COLORS["gold"])
+		role_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v_box.add_child(role_label)
 	
 	# Get eligible classes for this role
 	var base_role = role_id.replace("1", "").replace("2", "").replace("3", "")
@@ -145,12 +191,18 @@ func create_role_panel(role_id: String, role_name: String):
 		if classes_data.has(class_id):
 			valid_classes.append(class_id)
 	
-	# Class selection label
-	var class_label = Label.new()
-	class_label.text = "CLASS"
-	class_label.add_theme_font_size_override("font_size", 14)
-	class_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	v_box.add_child(class_label)
+	# Class selection label - Use UIBuilder
+	var class_label: Label
+	if ui_builder:
+		class_label = ui_builder.create_heading_label(v_box, "CLASS")
+		class_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	else:
+		# Fallback to manual creation
+		class_label = Label.new()
+		class_label.text = "CLASS"
+		class_label.add_theme_font_size_override("font_size", 14)
+		class_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v_box.add_child(class_label)
 	
 	# Create class buttons
 	class_buttons[role_id] = []
@@ -163,25 +215,40 @@ func create_role_panel(role_id: String, role_name: String):
 		else:
 			final_display_name = fallback_name
 		
-		var class_button = Button.new()
-		class_button.text = final_display_name
-		class_button.custom_minimum_size = Vector2(0, 35)
-		
-		# WoW Style Buttons
-		class_button.add_theme_stylebox_override("normal", UITheme.get_stylebox_panel(UITheme.COLORS["frame_dark"], UITheme.COLORS["gold_border"], 1))
+		# Use UIBuilder for class buttons
+		var class_button: Button
+		if ui_builder:
+			class_button = ui_builder.create_button(v_box, final_display_name, Vector2(0, 35), Vector2.ZERO, {
+				"bg_color": UITheme.COLORS["frame_dark"],
+				"border_color": UITheme.COLORS["gold_border"]
+			})
+		else:
+			# Fallback to manual creation
+			class_button = Button.new()
+			class_button.text = final_display_name
+			class_button.custom_minimum_size = Vector2(0, 35)
+			class_button.add_theme_stylebox_override("normal", UITheme.get_stylebox_panel(UITheme.COLORS["frame_dark"], UITheme.COLORS["gold_border"], 1))
+			v_box.add_child(class_button)
 		
 		class_button.pressed.connect(_on_class_selected.bind(role_id, current_class_id))
-		v_box.add_child(class_button)
 		class_buttons[role_id].append(class_button)
 	
-	# Spec selection label (initially hidden until class selected)
-	var spec_label = Label.new()
-	spec_label.name = "SpecLabel"
-	spec_label.text = "SPECIALIZATION"
-	spec_label.add_theme_font_size_override("font_size", 14)
-	spec_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	spec_label.visible = false
-	v_box.add_child(spec_label)
+	# Spec selection label (initially hidden until class selected) - Use UIBuilder
+	var spec_label: Label
+	if ui_builder:
+		spec_label = ui_builder.create_heading_label(v_box, "SPECIALIZATION")
+		spec_label.name = "SpecLabel"
+		spec_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		spec_label.visible = false
+	else:
+		# Fallback to manual creation
+		spec_label = Label.new()
+		spec_label.name = "SpecLabel"
+		spec_label.text = "SPECIALIZATION"
+		spec_label.add_theme_font_size_override("font_size", 14)
+		spec_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		spec_label.visible = false
+		v_box.add_child(spec_label)
 	
 	# Spec container (will be populated when class is selected)
 	var spec_container = VBoxContainer.new()
@@ -200,32 +267,57 @@ func _on_class_selected(role_id: String, class_id: String):
 	# Update class button visuals
 	_update_class_buttons(role_id, class_id)
 	
-	# Show and populate spec selection
-	_show_spec_selection(role_id, class_id)
-
-func _update_class_buttons(role_id: String, selected_class_id: String):
-	# Update visual state of class buttons
-	if not class_buttons.has(role_id):
-		return
+	# Auto-select spec if only one valid option for the role
+	var class_data = classes_data.get(class_id, {})
+	var available_specs = class_data.get("availableSpecs", [])
+	var role_name = role_id.replace("1", "").replace("2", "").replace("3", "")
+	var valid_specs_for_role = []
 	
-	for button in class_buttons[role_id]:
-		var button_text_lower = button.text.to_lower()
-		var is_selected = selected_class_id in button_text_lower or button_text_lower == selected_class_id.to_lower()
-		
-		var border_color = UITheme.COLORS["gold"] if is_selected else UITheme.COLORS["gold_border"]
-		var bg_color = Color(0.3, 0.3, 0.1) if is_selected else UITheme.COLORS["frame_dark"]
-		var border_width = 3 if is_selected else 1
-		
-		button.add_theme_stylebox_override("normal", UITheme.get_stylebox_panel(bg_color, border_color, border_width))
+	for s_id in available_specs:
+		var spec_key = "%s_%s" % [class_id, s_id]
+		var spec_data = specializations_data.get(spec_key, {})
+		if not spec_data.is_empty():
+			# Check if this spec matches the role we're filling
+			if spec_data.get("role") == role_name:
+				valid_specs_for_role.append(s_id)
+	
+	if valid_specs_for_role.size() == 1:
+		_log_info("CharacterCreation", "Auto-selecting spec %s for %s" % [valid_specs_for_role[0], class_id])
+		_on_spec_selected(role_id, valid_specs_for_role[0])
+		# Hide spec UI as it was automated
+		_hide_spec_selection(role_id)
+	else:
+		# Show and populate spec selection for manual choice
+		_show_spec_selection(role_id, class_id, valid_specs_for_role)
 
-func _show_spec_selection(role_id: String, class_id: String):
+func _hide_spec_selection(role_id: String):
+	var panel = role_panels[role_id]
+	if not panel: return
+	
+	# Check if child exists to avoid errors
+	if panel.get_child_count() == 0: return
+	var container = panel.get_child(0)
+	if container.get_child_count() == 0: return
+	var v_box = container.get_child(0)
+	
+	var spec_label = v_box.get_node_or_null("SpecLabel")
+	var spec_container = v_box.get_node_or_null("SpecContainer")
+	if spec_label: spec_label.visible = false
+	if spec_container: spec_container.visible = false
+
+func _show_spec_selection(role_id: String, class_id: String, filtered_specs: Array = []):
 	# Show specialization selection for selected class
 	var panel = role_panels[role_id]
 	if not panel:
 		return
 	
 	# Find spec label and container (nested in our new PanelContainer)
-	var v_box = panel.get_child(0).get_child(0)
+	# Safely access children
+	if panel.get_child_count() == 0: return
+	var container = panel.get_child(0)
+	if container.get_child_count() == 0: return
+	var v_box = container.get_child(0)
+	
 	var spec_label = v_box.get_node_or_null("SpecLabel")
 	var spec_container = v_box.get_node_or_null("SpecContainer")
 	
@@ -240,9 +332,9 @@ func _show_spec_selection(role_id: String, class_id: String):
 	spec_label.visible = true
 	spec_container.visible = true
 	
-	# Get available specs for this class
+	# Get available specs for this class (filtered by role if provided)
 	var class_data = classes_data[class_id]
-	var available_specs = class_data.get("availableSpecs", [])
+	var available_specs = filtered_specs if not filtered_specs.is_empty() else class_data.get("availableSpecs", [])
 	
 	# Create spec buttons
 	spec_buttons[role_id] = []
@@ -258,16 +350,39 @@ func _show_spec_selection(role_id: String, class_id: String):
 			spec_name = spec_data["name"]
 		else:
 			spec_name = default_spec_name
-		var spec_button = Button.new()
-		spec_button.text = spec_name
-		spec_button.custom_minimum_size = Vector2(0, 30)
-		
-		# WoW Style Buttons
-		spec_button.add_theme_stylebox_override("normal", UITheme.get_stylebox_panel(UITheme.COLORS["frame_dark"], UITheme.COLORS["gold_border"], 1))
+		# Use UIBuilder for spec buttons
+		var ui_builder = get_node_or_null("/root/UIBuilder")
+		var spec_button: Button
+		if ui_builder:
+			spec_button = ui_builder.create_button(spec_container, spec_name, Vector2(0, 30), Vector2.ZERO, {
+				"bg_color": UITheme.COLORS["frame_dark"],
+				"border_color": UITheme.COLORS["gold_border"]
+			})
+		else:
+			# Fallback to manual creation
+			spec_button = Button.new()
+			spec_button.text = spec_name
+			spec_button.custom_minimum_size = Vector2(0, 30)
+			spec_button.add_theme_stylebox_override("normal", UITheme.get_stylebox_panel(UITheme.COLORS["frame_dark"], UITheme.COLORS["gold_border"], 1))
+			spec_container.add_child(spec_button)
 		
 		spec_button.pressed.connect(_on_spec_selected.bind(role_id, spec_id))
-		spec_container.add_child(spec_button)
 		spec_buttons[role_id].append(spec_button)
+
+func _update_class_buttons(role_id: String, selected_class_id: String):
+	# Update visual state of class buttons
+	if not class_buttons.has(role_id):
+		return
+	
+	for button in class_buttons[role_id]:
+		var button_text_lower = button.text.to_lower()
+		var is_selected = selected_class_id in button_text_lower or button_text_lower == selected_class_id.to_lower()
+		
+		var border_color = UITheme.COLORS["gold"] if is_selected else UITheme.COLORS["gold_border"]
+		var bg_color = Color(0.3, 0.3, 0.1) if is_selected else UITheme.COLORS["frame_dark"]
+		var border_width = 3 if is_selected else 1
+		
+		button.add_theme_stylebox_override("normal", UITheme.get_stylebox_panel(bg_color, border_color, border_width))
 
 func _on_spec_selected(role_id: String, spec_id: String):
 	# Handle specialization selection for a role
@@ -385,26 +500,24 @@ func _create_party():
 		var class_id = selected_classes[role_id]
 		var spec_id = selected_specs[role_id]
 		
-		# Create hero
-		var hero = Hero.new()
-		hero.id = "hero_%d" % i
-		hero.name = role_names[role_id]
-		hero.role = role_id.replace("1", "").replace("2", "").replace("3", "")
-		hero.class_id = class_id
-		hero.spec_id = spec_id
-		hero.level = 1
+		# Create hero using HeroFactory
+		var hero_factory = get_node_or_null("/root/HeroFactory")
+		if not hero_factory:
+			_log_error("CharacterCreation", "HeroFactory not found")
+			continue
 		
-		# Initialize base stats (will be calculated by StatCalculator)
-		hero.base_stats = {
-			"stamina": 10,
-			"strength": 10,
-			"intellect": 10,
-			"agility": 10,
-			"spirit": 10,
-			"maxHealth": 100,
-			"attack": 10,
-			"defense": 5
-		}
+		var hero = hero_factory.create_hero(
+			class_id,
+			spec_id,
+			1,  # level
+			"hero_%d" % i,  # hero_id
+			role_names[role_id],  # name
+			role_id.replace("1", "").replace("2", "").replace("3", "")  # role
+		)
+		
+		if not hero:
+			_log_error("CharacterCreation", "Failed to create hero for role %s" % role_id)
+			continue
 		
 		# Add to party
 		_log_debug("CharacterCreation", "About to add hero %s to PartyManager" % hero.id)

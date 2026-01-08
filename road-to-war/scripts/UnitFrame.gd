@@ -6,6 +6,7 @@ extends Control
 @onready var level_label: Label = $Panel/LevelLabel
 @onready var health_bar: ProgressBar = $Panel/HealthBar
 @onready var resource_bar: ProgressBar = $Panel/ResourceBar
+@onready var resource_text: Label = $Panel/ResourceBar/ResourceText
 @onready var xp_bar: ProgressBar = $Panel/XPBar
 @onready var status_container: HBoxContainer = $Panel/StatusContainer
 @onready var casting_bar: ProgressBar = $Panel/CastingBar
@@ -63,8 +64,31 @@ func _process(_delta):
 	var stats = hero.current_stats
 	var hp = stats.get("health", 0)
 	var max_hp = stats.get("maxHealth", 100)
-	health_bar.max_value = max_hp
-	health_bar.value = hp
+	
+	# #region agent log
+	if int(Time.get_ticks_msec() / 500) % 10 == 0: # Log every ~5 seconds
+		var log_file = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
+		if log_file:
+			log_file.seek_end()
+			log_file.store_line(JSON.stringify({
+				"location": "UnitFrame.gd:68",
+				"message": "UnitFrame updating HP",
+				"data": {
+					"hero_id": hero_id,
+					"hp": hp,
+					"max_hp": max_hp,
+					"bar_value": health_bar.value if health_bar else -1
+				},
+				"timestamp": Time.get_ticks_msec(),
+				"sessionId": "debug-session",
+				"hypothesisId": "L,M,N"
+			}))
+			log_file.close()
+	# #endregion
+	
+	if health_bar:
+		health_bar.max_value = max_hp
+		health_bar.value = hp
 	
 	if level_label:
 		level_label.text = "Lv %d" % hero.level
@@ -87,11 +111,11 @@ func _process(_delta):
 	# Resource (mana/energy)
 	var rm = get_node_or_null("/root/ResourceManager")
 	if rm:
-		var type = rm.get_resource_type(hero_id)
-		var current = rm.get_resource(hero_id, type)
+		var type: String = rm.get_resource_type(hero_id)
+		var current: float = float(rm.get_resource(hero_id, type))
 		var max_res = 100.0
 		if rm.hero_resources.has(hero_id):
-			max_res = rm.hero_resources[hero_id].get("max_" + type, 100.0)
+			max_res = float(rm.hero_resources[hero_id].get("max_" + type, 100.0))
 		
 		resource_bar.max_value = max_res
 		resource_bar.value = current
@@ -101,6 +125,18 @@ func _process(_delta):
 		if ut:
 			var color = ut.COLORS.get(type, ut.COLORS["mana"])
 			resource_bar.add_theme_stylebox_override("fill", ut.get_stylebox_bar(color))
+		
+		# Visual text overlay (quick readability: RuneScape-like numbers)
+		if resource_text:
+			var short = "M"
+			if type == "energy":
+				short = "E"
+			elif type == "rage":
+				short = "R"
+			resource_text.text = "%s %d/%d" % [short, int(current), int(max_res)]
+			resource_text.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+			resource_text.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+			resource_text.add_theme_constant_override("outline_size", 1)
 	
 	_update_status_icons()
 	_update_casting_bar()
@@ -120,20 +156,32 @@ func _update_status_icons():
 		child.queue_free()
 		
 	for type in active:
-		var data = active[type]
+		var _data = active[type]
 		var def = sem.effect_types.get(type, {})
 		
 		var icon_rect = ColorRect.new()
 		icon_rect.custom_minimum_size = Vector2(14, 14)
 		icon_rect.color = Color.from_string(def.get("color", "ffffff"), Color.WHITE)
 		
-		var label = Label.new()
-		label.text = def.get("icon", "?")
+		# Use UIBuilder for status effect label
+		var ui_builder = get_node_or_null("/root/UIBuilder")
+		var label: Label
+		if ui_builder:
+			label = ui_builder.create_label(icon_rect, def.get("icon", "?"), Vector2.ZERO, {
+				"font_size": 10
+			})
+		else:
+			# Fallback to manual creation
+			label = Label.new()
+			label.text = def.get("icon", "?")
+			label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			label.add_theme_font_size_override("font_size", 10)
+			icon_rect.add_child(label)
+		
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 10)
 		label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		icon_rect.add_child(label)
 		
 		status_container.add_child(icon_rect)
 

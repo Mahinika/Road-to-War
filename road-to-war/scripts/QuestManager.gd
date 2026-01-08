@@ -41,7 +41,12 @@ func update_progress(quest_id: String, amount: int = 1):
 	if not player_quests.has(quest_id) or player_quests[quest_id].completed: return
 	
 	var dm = get_node_or_null("/root/DataManager")
-	var q_data = dm.get_data("quests").get("active_quests", {}).get(quest_id, {}) if dm else {}
+	if not dm: return
+	
+	var data = dm.get_data("quests")
+	if not data: return
+	
+	var q_data = data.get("active_quests", {}).get(quest_id, {})
 	if q_data.is_empty(): return
 	
 	player_quests[quest_id].current += amount
@@ -62,7 +67,12 @@ func _complete_quest(quest_id: String):
 	
 	# Grant rewards
 	var dm = get_node_or_null("/root/DataManager")
-	var q_data = dm.get_data("quests").get("active_quests", {}).get(quest_id, {}) if dm else {}
+	if not dm: return
+	
+	var data = dm.get_data("quests")
+	if not data: return
+	
+	var q_data = data.get("active_quests", {}).get(quest_id, {})
 	var rewards = q_data.get("rewards", {})
 	
 	var shm = get_node_or_null("/root/ShopManager")
@@ -78,16 +88,19 @@ func _complete_quest(quest_id: String):
 			hero.talent_points += rewards["talent_points"]
 			
 	# Notify visual
-	var pm = get_node_or_null("/root/ParticleManager")
-	if pm:
-		pm.create_floating_text(Vector2(960, 200), "Quest Completed: " + q_data.get("name", "Unknown"), Color.GOLD)
+	var part_m = get_node_or_null("/root/ParticleManager")
+	if part_m:
+		part_m.create_floating_text(Vector2(960, 200), "Quest Completed: " + q_data.get("name", "Unknown"), Color.GOLD)
 
 func _on_mile_changed(mile: int, _max: int, _old: int):
 	var dm = get_node_or_null("/root/DataManager")
 	if not dm: return
 	
+	var data = dm.get_data("quests")
+	if not data: return
+	
 	for q_id in player_quests:
-		var q_data = dm.get_data("quests").get("active_quests", {}).get(q_id, {})
+		var q_data = data.get("active_quests", {}).get(q_id, {})
 		if q_data.get("type") == "reach_mile":
 			update_progress(q_id, mile)
 
@@ -109,8 +122,11 @@ func _process_enemy_kill(enemy_id: String):
 	var dm = get_node_or_null("/root/DataManager")
 	if not dm: return
 	
+	var data = dm.get_data("quests")
+	if not data: return
+	
 	for q_id in player_quests:
-		var q_data = dm.get_data("quests").get("active_quests", {}).get(q_id, {})
+		var q_data = data.get("active_quests", {}).get(q_id, {})
 		if q_data.get("type") == "kill" and q_data.get("target_id") == enemy_id:
 			update_progress(q_id, 1)
 

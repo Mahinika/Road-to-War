@@ -22,14 +22,14 @@ var movement_speed: float = 200.0
 
 # Formation offsets relative to group center
 const OFFSETS = {
-	"tank": [Vector2(50, 0)], # Front center
-	"melee": [Vector2(20, -60), Vector2(20, 60)], # Flanking the tank
-	"ranged": [Vector2(-60, -40), Vector2(-60, 40)], # Behind melee
-	"healer": [Vector2(-120, 0)] # Far back
+	"tank": [Vector2(150, 0)], # Front center
+	"melee": [Vector2(60, -90), Vector2(60, 90)], # Flanking the tank
+	"ranged": [Vector2(-60, -70), Vector2(-60, 70)], # Behind melee
+	"healer": [Vector2(-180, 0)] # Far back
 }
 
 func _ready():
-	_log_info("MovementManager", "Initialized with Role-Based formations")
+	_log_info("MovementManager", "Initialized with Spaced Role-Based formations")
 
 func update_party_formation():
 	var pm = get_node_or_null("/root/PartyManager")
@@ -50,9 +50,10 @@ func update_party_formation():
 		var offset = role_list[idx]
 		
 		# If we have multiple of the same role beyond the predefined offsets, 
-		# add a slight additional offset
+		# add a significant additional offset to avoid stacking
 		if role_counts[role] >= role_list.size():
-			offset += Vector2(-20 * (role_counts[role] / role_list.size()), 0)
+			var extra_idx = int(role_counts[role] / role_list.size())
+			offset += Vector2(-100 * extra_idx, 0)
 			
 		hero_positions[hero.id] = party_center + offset
 		role_counts[role] += 1
@@ -72,7 +73,8 @@ func update_enemy_formation(enemies: Array):
 		var flipped_offset = Vector2(-offset.x, offset.y)
 		
 		if role_counts[role] >= role_list.size():
-			flipped_offset += Vector2(20 * (role_counts[role] / role_list.size()), 0)
+			var extra_idx = int(role_counts[role] / role_list.size())
+			flipped_offset += Vector2(100 * extra_idx, 0)
 			
 		enemy_positions[instance_id] = enemy_center + flipped_offset
 		role_counts[role] += 1

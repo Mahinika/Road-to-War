@@ -39,17 +39,24 @@ signal loot_spawned(loot_items)
 
 var active_loot_items: Array = []
 var inventory: Array = []
-var max_inventory_size: int = 20
+var max_inventory_size: int = 100 # Increased for testing drops
 
 var loot_filter: String = "common" # Minimum rarity to pick up
 var auto_sell_rarity: String = "none" # Automatically sell items of this rarity or lower
 
-var pickup_range: float = 50.0
+var pickup_range: float = 200.0 # Reasonable range
+
+var _last_full_message_time: int = 0
+var _last_filtered_message_time: int = 0
+const FULL_MESSAGE_COOLDOWN: int = 2000 # 2 seconds
+const FILTER_MESSAGE_COOLDOWN: int = 1000 # 1 second
 
 func _ready():
 	_log_info("LootManager", "Initialized")
+	max_inventory_size = 100 # Force 100 for testing
 
 func spawn_loot(enemy: Dictionary, loot_items: Array):
+	_log_info("LootManager", "spawn_loot called with %d items from enemy %s" % [loot_items.size(), enemy.get("id", "unknown")])
 	var enemy_x = enemy.get("x", 0)
 	var enemy_y = enemy.get("y", 0)
 	var enemy_level = enemy.get("level", 1)
@@ -63,11 +70,8 @@ func spawn_loot(enemy: Dictionary, loot_items: Array):
 		spawned_items.append(item)
 	
 	# Handle procedural drops based on enemy type/level
-	var proc_chance = 0.2 # 20% base chance for a procedural item
-	if enemy.get("type") == "elite": proc_chance = 0.5
-	if enemy.get("type") == "boss": proc_chance = 1.0
-	
-	if randf() < proc_chance:
+	# DEBUG: Every enemy drops 10 items for testing
+	for i in range(10):
 		var proc_item = roll_procedural_loot(enemy_level, enemy_x, enemy_y)
 		active_loot_items.append(proc_item)
 		spawned_items.append(proc_item)
@@ -83,12 +87,17 @@ func roll_procedural_loot(level: int, x: float, y: float) -> Dictionary:
 	# Register the instance so EquipmentManager can find it
 	var eq = get_node_or_null("/root/EquipmentManager")
 	if eq:
-		eq.item_instances[item_data.id] = item_data
+		eq.item_instances[item_data["id"]] = item_data
+	
+	var spawned_at_distance = 0.0
+	var wm = get_node_or_null("/root/WorldManager")
+	if wm: spawned_at_distance = wm.distance_traveled
 	
 	return {
-		"id": item_data.id,
+		"id": item_data["id"],
 		"x": x + randf_range(-20, 20),
 		"y": y + randf_range(-20, 20),
+		"spawn_distance": spawned_at_distance,
 		"data": item_data,
 		"quantity": 1,
 		"value": item_data.get("sellValue", 0),
@@ -99,7 +108,9 @@ func roll_procedural_loot(level: int, x: float, y: float) -> Dictionary:
 
 func create_loot_item(loot_data: Dictionary, x: float, y: float) -> Dictionary:
 	var dm = get_node_or_null("/root/DataManager")
-	var items_json = dm.get_data("items") if dm else {}
+	if not dm: return {}
+	
+	var items_json = dm.get_data("items")
 	var item_id = loot_data.get("id", "")
 	var item_data = {}
 	
@@ -110,10 +121,15 @@ func create_loot_item(loot_data: Dictionary, x: float, y: float) -> Dictionary:
 				item_data = items_json[category][item_id]
 				break
 	
+	var spawned_at_distance = 0.0
+	var wm = get_node_or_null("/root/WorldManager")
+	if wm: spawned_at_distance = wm.distance_traveled
+	
 	return {
 		"id": item_id if item_id != "" else "unknown",
 		"x": x + randf_range(-20, 20),
 		"y": y + randf_range(-20, 20),
+		"spawn_distance": spawned_at_distance,
 		"data": item_data,
 		"quantity": loot_data.get("quantity", 1),
 		"value": item_data.get("sellValue", 0),
@@ -124,10 +140,32 @@ func create_loot_item(loot_data: Dictionary, x: float, y: float) -> Dictionary:
 
 func check_loot_pickups(hero_position: Vector2) -> Array:
 	var picked_up_items = []
+	var wm = get_node_or_null("/root/WorldManager")
+	var current_dist = wm.distance_traveled if wm else 0.0
+	
+	var inv_full = inventory.size() >= max_inventory_size
 	
 	for i in range(active_loot_items.size() - 1, -1, -1):
 		var loot_item = active_loot_items[i]
-		var loot_pos = Vector2(loot_item.x, loot_item.y)
+		
+		# If inventory is full, we can only "pick up" filtered items (to clear them)
+		# but if it's not filtered and inv is full, skip range check to save CPU
+		var item_rarity = loot_item.get("quality", "common")
+		var is_filtered = should_filter_item(item_rarity)
+		
+		if inv_full and not is_filtered:
+			# Still need to show the "Full" message occasionally if they are standing on loot
+			# but we'll do that inside pickup_loot if we decide to call it.
+			# For now, let's just do the range check and let pickup_loot handle the message cooldown.
+			pass
+		
+		# Calculate current screen X position based on travel
+		var spawn_dist = loot_item.get("spawn_distance", 0.0)
+		var lx = loot_item.get("x", 0.0)
+		var ly = loot_item.get("y", 0.0)
+		var current_x = lx - (current_dist - spawn_dist)
+		
+		var loot_pos = Vector2(current_x, ly)
 		
 		if hero_position.distance_to(loot_pos) <= pickup_range:
 			if pickup_loot(loot_item):
@@ -142,14 +180,24 @@ func pickup_loot(loot_item: Dictionary) -> bool:
 	
 	# Check loot filter
 	if should_filter_item(item_rarity):
-		if loot_item.has("x") and loot_item.has("y") and pm_node:
-			pm_node.create_floating_text(Vector2(loot_item.x, loot_item.y), "Filtered", Color.GRAY)
+		var current_time = Time.get_ticks_msec()
+		if current_time - _last_filtered_message_time > FILTER_MESSAGE_COOLDOWN:
+			if loot_item.has("x") and loot_item.has("y") and pm_node:
+				var lx = loot_item.get("x", 0.0)
+				var ly = loot_item.get("y", 0.0)
+				pm_node.create_floating_text(Vector2(lx, ly), "Filtered", Color.GRAY)
+			_last_filtered_message_time = current_time
 		return true
 	
 	# Check inventory space
 	if inventory.size() >= max_inventory_size:
-		if loot_item.has("x") and loot_item.has("y") and pm_node:
-			pm_node.create_floating_text(Vector2(loot_item.x, loot_item.y), "Inventory Full!", Color.RED)
+		var current_time = Time.get_ticks_msec()
+		if current_time - _last_full_message_time > FULL_MESSAGE_COOLDOWN:
+			if loot_item.has("x") and loot_item.has("y") and pm_node:
+				var lx = loot_item.get("x", 0.0)
+				var ly = loot_item.get("y", 0.0)
+				pm_node.create_floating_text(Vector2(lx, ly), "Inventory Full!", Color.RED)
+			_last_full_message_time = current_time
 		return false
 	
 	# Add to inventory
@@ -158,11 +206,18 @@ func pickup_loot(loot_item: Dictionary) -> bool:
 	
 	if loot_item.has("x") and loot_item.has("y") and pm_node:
 		var item_name = "Item"
-		if loot_item.has("data"):
-			item_name = loot_item.data.get("name", "Item")
-		pm_node.create_floating_text(Vector2(loot_item.x, loot_item.y), "+" + item_name, Color.GREEN)
+		var item_data = loot_item.get("data", {})
+		if not item_data.is_empty():
+			item_name = item_data.get("name", "Item")
+		var lx = loot_item.get("x", 0.0)
+		var ly = loot_item.get("y", 0.0)
+		pm_node.create_floating_text(Vector2(lx, ly), "+" + item_name, Color.GREEN)
 	
-	_log_info("LootManager", "Picked up: %s" % loot_item.data.get("name", "Unknown"))
+	var final_item_name = "Unknown"
+	if loot_item.get("data"):
+		final_item_name = loot_item.get("data").get("name", "Unknown")
+		
+	_log_debug("LootManager", "Picked up: %s" % final_item_name)
 	return true
 
 func should_filter_item(rarity: String) -> bool:
@@ -176,7 +231,7 @@ func get_inventory() -> Array:
 
 func remove_from_inventory(item_id: String, _quantity: int = 1) -> bool:
 	for i in range(inventory.size()):
-		if inventory[i].id == item_id:
+		if inventory[i].get("id") == item_id:
 			inventory.remove_at(i)
 			return true
 	return false
@@ -184,7 +239,9 @@ func remove_from_inventory(item_id: String, _quantity: int = 1) -> bool:
 func use_consumable(item_id: String, hero_id: String) -> bool:
 	var item_data = {}
 	var dm = get_node_or_null("/root/DataManager")
-	var items_json = dm.get_data("items") if dm else {}
+	if not dm: return false
+	
+	var items_json = dm.get_data("items")
 	if items_json and items_json.has("consumables"):
 		item_data = items_json["consumables"].get(item_id, {})
 		
@@ -222,7 +279,9 @@ func clear_expired_loot():
 	
 	for i in range(active_loot_items.size() - 1, -1, -1):
 		var loot_item = active_loot_items[i]
-		if current_time - loot_item.spawned_at > loot_item.lifetime:
+		var spawned_at = loot_item.get("spawned_at", 0)
+		var lifetime = loot_item.get("lifetime", 30000)
+		if current_time - spawned_at > lifetime:
 			active_loot_items.remove_at(i)
 
 func get_inventory_size() -> int:

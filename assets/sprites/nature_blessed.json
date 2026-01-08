@@ -1,7 +1,8 @@
 {
-  "seed": 13349,
-  "type": "bloodline_hero",
-  "bloodline": "nature_blessed",
-  "generatedAt": "2025-12-30T01:14:44.485Z",
-  "version": "1.1.0"
+  "id": "nature_blessed",
+  "description": "Nature blessed druid",
+  "size": 64,
+  "primaryColor": "#32CD32",
+  "generator": "lpc-style",
+  "timestamp": "2026-01-07T10:14:40.416Z"
 }

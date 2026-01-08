@@ -1,7 +1,11 @@
 /**
  * Module Generator - Scaffold new managers, scenes, or utilities
+ * ⚠️ OBSOLETE: This script was for Phaser 3. Use Godot Editor to create new scripts.
  * Usage: node scripts/generate-module.js <type> <name>
  * Types: manager, scene, utility
+ * 
+ * NOTE: This script is kept for reference but generates Phaser 3 code.
+ * For Godot, create new .gd files directly in road-to-war/scripts/
  */
 
 import fs from 'fs';

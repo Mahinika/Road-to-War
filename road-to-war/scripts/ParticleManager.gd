@@ -35,13 +35,31 @@ func _log_debug(source: String, message: String):
 # Ported from the Phaser 3 implementation
 
 var floating_text_scene = preload("res://scenes/FloatingText.tscn")
+var object_pool: Node = null
 
 func _ready():
+	object_pool = get_node_or_null("/root/ObjectPool")
 	_log_info("ParticleManager", "Initialized")
 
 func create_floating_text(pos: Vector2, text: String, color: Color = Color.WHITE):
-	var instance = floating_text_scene.instantiate()
-	get_tree().root.add_child(instance)
+	var instance = null
+	
+	# Try to get from object pool first (performance optimization)
+	if object_pool:
+		instance = object_pool.acquire("floating_text")
+	
+	# Fallback to instantiation if pool doesn't have one
+	if not instance:
+		instance = floating_text_scene.instantiate()
+		get_tree().root.add_child(instance)
+	else:
+		# Re-parent if needed (pooled instances are removed from tree)
+		if instance.get_parent():
+			instance.get_parent().remove_child(instance)
+		get_tree().root.add_child(instance)
+		# Reset state when acquiring from pool (ensures clean state)
+		if instance.has_method("reset"):
+			instance.reset()
 	
 	# Fan-out logic to prevent overlapping text
 	var spread_x = randf_range(-40, 40)
@@ -129,6 +147,11 @@ func create_heal_effect(pos: Vector2):
 func create_level_up_effect(pos: Vector2):
 	_log_info("ParticleManager", "Level-up effect at %s" % str(pos))
 	
+	# Trigger screen bloom via World scene if possible
+	var world = get_tree().current_scene
+	if world and world.has_method("trigger_bloom"):
+		world.trigger_bloom(1.0, 1.5)
+	
 	# 1. Main burst
 	var particles = CPUParticles2D.new()
 	get_tree().root.add_child(particles)
@@ -172,6 +195,69 @@ func create_level_up_effect(pos: Vector2):
 	stars.color = Color.WHITE
 	stars.emitting = true
 	get_tree().create_timer(2.5).timeout.connect(stars.queue_free)
+
+func create_combat_start_effect():
+	# Compatibility hook: called by CombatHandler
+	# Keep it asset-free and safe; create a subtle flash/burst near screen center.
+	var view_size := get_viewport().get_visible_rect().size
+	var pos := view_size * 0.5
+	
+	_log_debug("ParticleManager", "Combat start effect")
+	
+	var particles := CPUParticles2D.new()
+	get_tree().root.add_child(particles)
+	particles.position = pos
+	particles.amount = 20
+	particles.lifetime = 0.6
+	particles.one_shot = true
+	particles.explosiveness = 1.0
+	particles.spread = 180.0
+	particles.gravity = Vector2(0, 50)
+	particles.initial_velocity_min = 80.0
+	particles.initial_velocity_max = 140.0
+	particles.scale_amount_min = 4.0
+	particles.scale_amount_max = 10.0
+	
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color.WHITE)
+	gradient.add_point(0.3, Color(1.0, 0.9, 0.6, 1.0))
+	gradient.set_color(1, Color(1.0, 0.9, 0.6, 0.0))
+	particles.color_ramp = gradient
+	
+	particles.emitting = true
+	get_tree().create_timer(1.0).timeout.connect(particles.queue_free)
+
+func create_victory_effect():
+	# Compatibility hook: called by CombatHandler when combat ends in victory.
+	var view_size := get_viewport().get_visible_rect().size
+	var pos := view_size * 0.5 + Vector2(0, -60)
+	
+	_log_info("ParticleManager", "Victory effect")
+	create_floating_text(pos, "VICTORY!", Color.GOLD)
+	
+	var particles := CPUParticles2D.new()
+	get_tree().root.add_child(particles)
+	particles.position = pos
+	particles.amount = 35
+	particles.lifetime = 1.0
+	particles.one_shot = true
+	particles.explosiveness = 0.9
+	particles.spread = 180.0
+	particles.gravity = Vector2(0, 120)
+	particles.initial_velocity_min = 120.0
+	particles.initial_velocity_max = 260.0
+	particles.scale_amount_min = 6.0
+	particles.scale_amount_max = 14.0
+	
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color.WHITE)
+	gradient.add_point(0.2, Color.GOLD)
+	gradient.add_point(0.7, Color.ORANGE)
+	gradient.set_color(1, Color(1, 0.8, 0, 0))
+	particles.color_ramp = gradient
+	
+	particles.emitting = true
+	get_tree().create_timer(1.6).timeout.connect(particles.queue_free)
 
 func create_crit_effect(pos: Vector2, spec_color: Color = Color.WHITE):
 	_log_debug("ParticleManager", "Crit effect at %s" % str(pos))
@@ -263,12 +349,70 @@ func create_stun_effect(pos: Vector2):
 	particles.emitting = true
 	get_tree().create_timer(1.2).timeout.connect(particles.queue_free)
 
+func create_cast_effect(pos: Vector2, color: Color = Color.CYAN):
+	# Quick "cast" burst around the caster (school-colored).
+	var particles = CPUParticles2D.new()
+	get_tree().root.add_child(particles)
+	particles.position = pos + Vector2(0, -20)
+	particles.amount = 10
+	particles.lifetime = 0.55
+	particles.one_shot = true
+	particles.explosiveness = 0.8
+	particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	particles.emission_sphere_radius = 10.0
+	particles.direction = Vector2(0, -1)
+	particles.spread = 45.0
+	particles.gravity = Vector2(0, -60)
+	particles.initial_velocity_min = 30.0
+	particles.initial_velocity_max = 70.0
+	particles.scale_amount_min = 2.0
+	particles.scale_amount_max = 5.0
+	
+	var gradient = Gradient.new()
+	gradient.set_color(0, Color.WHITE)
+	gradient.add_point(0.25, color)
+	gradient.set_color(1, Color(color.r, color.g, color.b, 0.0))
+	particles.color_ramp = gradient
+	
+	particles.emitting = true
+	get_tree().create_timer(0.9).timeout.connect(particles.queue_free)
+
+func create_magic_impact_effect(pos: Vector2, color: Color = Color.CYAN):
+	# Quick impact burst (school-colored). Avoid the red/blood bias of create_hit_effect().
+	var particles = CPUParticles2D.new()
+	get_tree().root.add_child(particles)
+	particles.position = pos
+	particles.amount = 12
+	particles.lifetime = 0.6
+	particles.one_shot = true
+	particles.explosiveness = 1.0
+	particles.spread = 180.0
+	particles.gravity = Vector2(0, 180)
+	particles.initial_velocity_min = 80.0
+	particles.initial_velocity_max = 160.0
+	particles.scale_amount_min = 3.0
+	particles.scale_amount_max = 7.0
+	
+	var gradient = Gradient.new()
+	gradient.set_color(0, Color.WHITE)
+	gradient.add_point(0.2, color)
+	gradient.set_color(1, Color(color.r, color.g, color.b, 0.0))
+	particles.color_ramp = gradient
+	
+	particles.emitting = true
+	get_tree().create_timer(1.0).timeout.connect(particles.queue_free)
+
 func create_boss_finisher_effect(pos: Vector2):
 	_log_info("ParticleManager", "BOSS FINISHER at %s" % str(pos))
 	
+	# Trigger screen bloom
+	var world = get_tree().current_scene
+	if world and world.has_method("trigger_bloom"):
+		world.trigger_bloom(2.0, 3.0)
+	
 	# Heavy slow motion (Engine.time_scale)
 	Engine.time_scale = 0.2
-	get_tree().create_timer(0.5, true, false, true).timeout.connect(func(): Engine.time_scale = 1.0)
+	get_tree().create_timer(0.5, true, false, true).timeout.connect(_reset_time_scale)
 	
 	# Massive golden explosion
 	var particles = CPUParticles2D.new()
@@ -298,3 +442,6 @@ func create_boss_finisher_effect(pos: Vector2):
 	var cam = get_node_or_null("/root/CameraManager")
 	if cam:
 		cam.shake(30.0, 1.5)
+	
+func _reset_time_scale():
+	Engine.time_scale = 1.0

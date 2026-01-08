@@ -5,6 +5,8 @@
 
 import { PixelDrawer } from '../utils/pixel-drawer.js';
 import { PaletteManager } from '../utils/palette-manager.js';
+import { MaterialShader } from '../utils/material-shader.js';
+import { ProportionManager } from '../utils/proportion-manager.js';
 
 export class HumanoidGenerator {
     constructor(canvas, rng, options = {}) {
@@ -24,9 +26,16 @@ export class HumanoidGenerator {
         
         this.palette = this.paletteManager.getPalette(this.paletteName) || this.paletteManager.getPalette('warm');
         
+        // Initialize MaterialShader for 5-level cel-shading
+        this.materialShader = new MaterialShader();
+        
         // Match Paladin generator size: 48×48 pixels
         this.width = 48;
         this.height = 48;
+        
+        // Initialize ProportionManager for strict chibi proportions
+        this.proportionManager = new ProportionManager(this.height);
+        
         this.drawer = new PixelDrawer(this.ctx, this.width, this.height);
     }
 
@@ -40,23 +49,23 @@ export class HumanoidGenerator {
         const centerX = Math.floor(this.width / 2);
         const centerY = Math.floor(this.height / 2);
 
-        // Draw basic body
+        // Draw basic body - Order matters for layering
         this.drawLegs(centerX, centerY);
-        this.drawTorso(centerX, centerY);
         this.drawArms(centerX, centerY);
+        this.drawTorso(centerX, centerY);
         this.drawHead(centerX, centerY);
-
-        // Draw Bloodline Enhancements
-        if (this.bloodline) {
-            this.drawBloodlineDetails(centerX, centerY);
-        }
 
         // Apply symmetry
         this.drawer.mirrorHorizontal(centerX);
 
-        // Apply outline (thicker for important characters)
+        // Draw Bloodline Enhancements (some may need to be after mirror)
+        if (this.bloodline) {
+            this.drawBloodlineDetails(centerX, centerY);
+        }
+
+        // Apply outline (stronger 2px outline for main characters)
         const outlineColor = 0x000000;
-        this.drawer.drawOutline(outlineColor, 1);
+        this.drawer.drawOutline(outlineColor, 2);
 
         // Final application to canvas
         this.drawer.apply();
@@ -67,7 +76,8 @@ export class HumanoidGenerator {
             centerX,
             centerY,
             palette: this.paletteName,
-            bloodline: this.bloodline
+            bloodline: this.bloodline,
+            canvas: this.canvas // Ensure canvas is returned
         };
     }
 
@@ -127,15 +137,24 @@ export class HumanoidGenerator {
      * Draw head
      */
     drawHead(centerX, centerY) {
-        const headY = centerY - 20;
-        const headSize = 8;
+        // Use ProportionManager for head bounds
+        const headBounds = this.proportionManager.getHeadBounds(centerX, centerY);
+        const headRadius = Math.floor(headBounds.width / 2);
         const skinColor = this.paletteManager.getColor('warm', 'skin', this.rng);
 
-        // Head circle
-        this.drawer.drawCircle(centerX, headY, headSize / 2, skinColor);
+        // Use MaterialShader for 5-level cel-shading on skin
+        const skinPalette = this.materialShader.generatePalette(skinColor, 'skin');
+        this.materialShader.applyCelShadeCircle(
+            this.drawer,
+            headBounds.centerX,
+            headBounds.centerY,
+            headRadius,
+            skinPalette,
+            'top-left'
+        );
 
         // Eyes (default)
-        const eyeY = headY - 1;
+        const eyeY = headBounds.centerY - 1;
         this.drawer.setPixel(centerX - 2, eyeY, 0x000000);
         this.drawer.setPixel(centerX + 2, eyeY, 0x000000);
     }
@@ -144,17 +163,20 @@ export class HumanoidGenerator {
      * Draw torso
      */
     drawTorso(centerX, centerY) {
-        const torsoY = centerY - 5;
-        const torsoWidth = 14;
-        const torsoHeight = 18;
+        // Use ProportionManager for torso bounds
+        const torsoBounds = this.proportionManager.getTorsoBounds(centerX, centerY);
         const clothColor = this.palette.cloth ? this.rng.randomChoice(this.palette.cloth) : this.paletteManager.getColor('warm', 'cloth', this.rng);
 
-        this.drawer.drawRect(
-            centerX - torsoWidth / 2,
-            torsoY - torsoHeight / 2,
-            torsoWidth,
-            torsoHeight,
-            clothColor
+        // Use MaterialShader for 5-level cel-shading on cloth
+        const clothPalette = this.materialShader.generatePalette(clothColor, 'cloth');
+        this.materialShader.applyCelShade(
+            this.drawer,
+            torsoBounds.x,
+            torsoBounds.y,
+            torsoBounds.width,
+            torsoBounds.height,
+            clothPalette,
+            'top-left'
         );
     }
 
@@ -162,18 +184,20 @@ export class HumanoidGenerator {
      * Draw arms
      */
     drawArms(centerX, centerY) {
-        const armY = centerY - 2;
-        const armLength = 14;
-        const armWidth = 4;
+        // Use ProportionManager for arm bounds (left side only, will be mirrored)
+        const armBounds = this.proportionManager.getArmBounds(centerX, centerY, 'left');
         const skinColor = this.paletteManager.getColor('warm', 'skin', this.rng);
 
-        // Arms (simplified for mirroring)
-        this.drawer.drawRect(
-            centerX - 10,
-            armY - armLength / 2,
-            armWidth,
-            armLength,
-            skinColor
+        // Use MaterialShader for 5-level cel-shading on skin
+        const skinPalette = this.materialShader.generatePalette(skinColor, 'skin');
+        this.materialShader.applyCelShade(
+            this.drawer,
+            armBounds.x,
+            armBounds.y,
+            armBounds.width,
+            armBounds.height,
+            skinPalette,
+            'top-left'
         );
     }
 
@@ -181,18 +205,20 @@ export class HumanoidGenerator {
      * Draw legs
      */
     drawLegs(centerX, centerY) {
-        const legY = centerY + 12;
-        const legLength = 14;
-        const legWidth = 6;
+        // Use ProportionManager for leg bounds (left side only, will be mirrored)
+        const legBounds = this.proportionManager.getLegBounds(centerX, centerY, 'left');
         const clothColor = this.palette.cloth ? this.rng.randomChoice(this.palette.cloth) : this.paletteManager.getColor('warm', 'cloth', this.rng);
 
-        // Legs (simplified for mirroring)
-        this.drawer.drawRect(
-            centerX - 6,
-            legY - legLength / 2,
-            legWidth,
-            legLength,
-            clothColor
+        // Use MaterialShader for 5-level cel-shading on cloth
+        const clothPalette = this.materialShader.generatePalette(clothColor, 'cloth');
+        this.materialShader.applyCelShade(
+            this.drawer,
+            legBounds.x,
+            legBounds.y,
+            legBounds.width,
+            legBounds.height,
+            clothPalette,
+            'top-left'
         );
     }
 }

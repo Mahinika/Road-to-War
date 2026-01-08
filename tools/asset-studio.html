@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Studio - Sprite Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffd700;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+
+        .controls-panel {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .preview-panel {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        select, input[type="number"], input[type="text"], input[type="color"] {
+            width: 100%;
+            padding: 8px;
+            background: #2a2a3e;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+            border: none;
+            border-radius: 4px;
+            color: #1e1e2e;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(255, 215, 0, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #4169E1 0%, #2E4DB8 100%);
+            color: white;
+            margin-top: 5px;
+        }
+
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .preview-canvas {
+            background: 
+                linear-gradient(45deg, #333 25%, transparent 25%),
+                linear-gradient(-45deg, #333 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #333 75%),
+                linear-gradient(-45deg, transparent 75%, #333 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            padding: 20px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .preview-canvas img {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .metadata {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .metadata pre {
+            color: #a0a0a0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .saved-sprites {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+        }
+
+        .sprite-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .sprite-item {
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 5px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sprite-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .status.success {
+            background: rgba(0, 255, 0, 0.2);
+            color: #90ee90;
+            display: block;
+        }
+
+        .status.error {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff6b6b;
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #ffd700;
+            margin-top: 10px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .enemy-options {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            display: none;
+        }
+
+        .enemy-options.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Asset Studio - Sprite Generator</h1>
+        
+        <div class="main-grid">
+            <div class="controls-panel">
+                <div class="control-group">
+                    <label for="spriteType">Sprite Type</label>
+                    <select id="spriteType">
+                        <option value="paladin">Paladin (Hero)</option>
+                        <option value="humanoid">Humanoid (Generic)</option>
+                        <option value="enemy:dragon">Enemy: Dragon</option>
+                        <option value="enemy:undead">Enemy: Undead</option>
+                        <option value="enemy:beast">Enemy: Beast</option>
+                        <option value="enemy:demon">Enemy: Demon</option>
+                        <option value="enemy:elemental">Enemy: Elemental</option>
+                    </select>
+                </div>
+
+                <div class="control-group" id="enemyOptions">
+                    <div class="enemy-options" id="elementalOptions">
+                        <label for="elementType">Element Type</label>
+                        <select id="elementType">
+                            <option value="fire">Fire</option>
+                            <option value="water">Water</option>
+                            <option value="earth">Earth</option>
+                            <option value="air">Air</option>
+                        </select>
+                    </div>
+                    <div class="enemy-options" id="colorOptions">
+                        <label for="enemyColor">Color (Hex)</label>
+                        <input type="color" id="enemyColor" value="#B71C1C">
+                    </div>
+                    <div class="enemy-options" id="fireEffectOptions">
+                        <label>
+                            <input type="checkbox" id="fireEffect" checked> Fire Effect
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="seed">Seed</label>
+                    <input type="number" id="seed" value="12345" min="0">
+                    <button onclick="randomSeed()">Random Seed</button>
+                </div>
+
+                <div class="control-group">
+                    <label for="palette">Palette (for Humanoid)</label>
+                    <select id="palette">
+                        <option value="warm">Warm</option>
+                        <option value="cool">Cool</option>
+                        <option value="ancient_warrior">Ancient Warrior</option>
+                        <option value="arcane_scholar">Arcane Scholar</option>
+                        <option value="shadow_assassin">Shadow Assassin</option>
+                        <option value="dragon_born">Dragon Born</option>
+                        <option value="nature_blessed">Nature Blessed</option>
+                    </select>
+                </div>
+
+                <button onclick="generateSprite()">Generate Sprite</button>
+                <button onclick="saveSprite()" class="secondary">Save Sprite</button>
+                <button onclick="loadSavedSprites()" class="secondary">Refresh Saved List</button>
+
+                <div class="status" id="status"></div>
+                <div class="loading" id="loading">Generating...</div>
+
+                <div class="saved-sprites">
+                    <h3>Saved Sprites</h3>
+                    <div class="sprite-list" id="spriteList">
+                        <div style="color: #888; text-align: center; padding: 20px;">
+                            Click "Refresh Saved List" to load saved sprites
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-panel">
+                <div class="preview-container">
+                    <div class="preview-canvas" id="previewCanvas">
+                        <div style="color: #888; padding: 100px; text-align: center;">
+                            Click "Generate Sprite" to create a sprite
+                        </div>
+                    </div>
+                    <div class="metadata" id="metadata">
+                        <pre>No sprite generated yet</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentImageData = null;
+        let currentMetadata = null;
+
+        function randomSeed() {
+            document.getElementById('seed').value = Math.floor(Math.random() * 1000000);
+        }
+
+        function updateEnemyOptions() {
+            const spriteType = document.getElementById('spriteType').value;
+            const enemyOptions = document.getElementById('enemyOptions');
+            const elementalOptions = document.getElementById('elementalOptions');
+            const colorOptions = document.getElementById('colorOptions');
+            const fireEffectOptions = document.getElementById('fireEffectOptions');
+
+            if (spriteType.startsWith('enemy:')) {
+                enemyOptions.style.display = 'block';
+                const enemyType = spriteType.split(':')[1];
+                
+                elementalOptions.classList.toggle('active', enemyType === 'elemental');
+                colorOptions.classList.toggle('active', ['dragon', 'undead', 'beast', 'demon'].includes(enemyType));
+                fireEffectOptions.classList.toggle('active', enemyType === 'dragon');
+            } else {
+                enemyOptions.style.display = 'none';
+            }
+        }
+
+        document.getElementById('spriteType').addEventListener('change', updateEnemyOptions);
+        updateEnemyOptions();
+
+        async function generateSprite() {
+            const spriteType = document.getElementById('spriteType').value;
+            const seed = parseInt(document.getElementById('seed').value) || Date.now();
+            const palette = document.getElementById('palette').value;
+            
+            const loading = document.getElementById('loading');
+            const status = document.getElementById('status');
+            loading.classList.add('active');
+            status.classList.remove('success', 'error');
+            status.style.display = 'none';
+
+            const options = {};
+            
+            if (spriteType === 'humanoid') {
+                options.paletteName = palette;
+            }
+            
+            if (spriteType.startsWith('enemy:')) {
+                const enemyType = spriteType.split(':')[1];
+                if (enemyType === 'elemental') {
+                    options.element = document.getElementById('elementType').value;
+                } else {
+                    const colorInput = document.getElementById('enemyColor');
+                    if (colorInput) {
+                        options.color = parseInt(colorInput.value.replace('#', ''), 16);
+                    }
+                    if (enemyType === 'dragon') {
+                        options.fireEffect = document.getElementById('fireEffect').checked;
+                    }
+                }
+            }
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: spriteType, seed, options })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentImageData = data.image;
+                    currentMetadata = data.metadata;
+                    
+                    const previewCanvas = document.getElementById('previewCanvas');
+                    previewCanvas.innerHTML = `<img src="${data.image}" alt="Generated Sprite" style="max-width: 400px;">`;
+                    
+                    const metadataDiv = document.getElementById('metadata');
+                    metadataDiv.innerHTML = `<pre>${JSON.stringify(data.metadata, null, 2)}</pre>`;
+                    
+                    status.textContent = 'Sprite generated successfully!';
+                    status.classList.add('success');
+                    status.style.display = 'block';
+                } else {
+                    throw new Error(data.error || 'Generation failed');
+                }
+            } catch (error) {
+                status.textContent = `Error: ${error.message}`;
+                status.classList.add('error');
+                status.style.display = 'block';
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        async function saveSprite() {
+            if (!currentImageData) {
+                alert('Please generate a sprite first!');
+                return;
+            }
+
+            const spriteType = document.getElementById('spriteType').value;
+            const seed = document.getElementById('seed').value;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const filename = `${spriteType.replace(':', '_')}_${seed}_${timestamp}.png`;
+
+            try {
+                const response = await fetch('/api/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageData: currentImageData, filename })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    const status = document.getElementById('status');
+                    status.textContent = `Saved: ${data.filename}`;
+                    status.classList.add('success');
+                    status.style.display = 'block';
+                    
+                    loadSavedSprites();
+                } else {
+                    throw new Error(data.error || 'Save failed');
+                }
+            } catch (error) {
+                const status = document.getElementById('status');
+                status.textContent = `Error: ${error.message}`;
+                status.classList.add('error');
+                status.style.display = 'block';
+            }
+        }
+
+        async function loadSavedSprites() {
+            try {
+                const response = await fetch('/api/list');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const spriteList = document.getElementById('spriteList');
+                    
+                    if (data.files.length === 0) {
+                        spriteList.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">No saved sprites yet</div>';
+                        return;
+                    }
+                    
+                    spriteList.innerHTML = data.files.map(file => `
+                        <div class="sprite-item">
+                            <span>${file.filename}</span>
+                            <button onclick="downloadSprite('${file.filename}')" style="padding: 4px 8px; font-size: 12px;">Download</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load saved sprites:', error);
+            }
+        }
+
+        function downloadSprite(filename) {
+            window.open(`/api/download?file=${encodeURIComponent(filename)}`, '_blank');
+        }
+
+        // Generate on page load with default settings
+        window.addEventListener('load', () => {
+            // Auto-generate after a short delay
+            setTimeout(() => {
+                generateSprite();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
+

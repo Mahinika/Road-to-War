@@ -1,5 +1,37 @@
 extends CharacterBody2D
 
+# Logging helpers
+func _get_logger():
+	return get_node_or_null("/root/Logger")
+
+func _log_info(source: String, message: String):
+	var logger = _get_logger()
+	if logger:
+		logger.info(source, message)
+	else:
+		print("[%s] [INFO] %s" % [source, message])
+
+func _log_debug(source: String, message: String):
+	var logger = _get_logger()
+	if logger:
+		logger.debug(source, message)
+	else:
+		print("[%s] [DEBUG] %s" % [source, message])
+
+func _log_warn(source: String, message: String):
+	var logger = _get_logger()
+	if logger:
+		logger.warn(source, message)
+	else:
+		print("[%s] [WARN] %s" % [source, message])
+
+func _log_error(source: String, message: String):
+	var logger = _get_logger()
+	if logger:
+		logger.error(source, message)
+	else:
+		print("[%s] [ERROR] %s" % [source, message])
+
 # EnemySprite.gd - Visual representation of an enemy
 
 var enemy_data
@@ -10,6 +42,7 @@ var status_container
 var casting_bar
 var fallback_shape
 var anim_player: AnimationPlayer
+var _death_animation_played: bool = false
 
 # var transparency_material = preload("res://scripts/SpriteTransparency.gdshader")
 
@@ -39,18 +72,13 @@ func _ready():
 	add_child(anim_player)
 	_setup_animations()
 	
-	# Fallback shape setup
-	fallback_shape = ColorRect.new()
-	fallback_shape.size = Vector2(100, 100) # Bigger
-	fallback_shape.color = Color(1.0, 0.0, 0.0, 1.0) # Full red
-	fallback_shape.position = Vector2(-50, -50)
-	add_child(fallback_shape)
-	fallback_shape.z_index = -1
+	# Fallback shape setup (hidden by default, only shown if sprite load fails)
+	# fallback_shape = ColorRect.new()
+	# ...
 	
-	# Pulsing animation for the fallback square
-	var tween = create_tween().set_loops()
-	tween.tween_property(fallback_shape, "scale", Vector2(1.2, 1.2), 0.5)
-	tween.tween_property(fallback_shape, "scale", Vector2(1.0, 1.0), 0.5)
+	# Pulsing animation for the fallback (optional)
+	# var tween = create_tween().set_loops()
+	# ...
 
 func _setup_animations():
 	var library = AnimationLibrary.new()
@@ -97,8 +125,13 @@ func _trigger_death_particles():
 		pm.create_death_effect(global_position)
 
 func play_animation(anim_name: String):
+	if anim_name == "death" and _death_animation_played:
+		return
+		
 	if anim_player and anim_player.has_animation(anim_name):
 		anim_player.play(anim_name)
+		if anim_name == "death":
+			_death_animation_played = true
 
 func setup(p_enemy_data):
 	enemy_data = p_enemy_data
@@ -134,12 +167,18 @@ func _apply_visual_style():
 		var tex = load(full_path)
 		if tex:
 			sprite.texture = tex
-			if tex.get_size().x < 64:
-				sprite.scale = Vector2(4, 4)
+			sprite.centered = true
+			sprite.offset = Vector2(0, -tex.get_height() / 2.0)
+			sprite.scale = Vector2(1, 1) # Consistent scale of 1
 			sprite.flip_h = true
-			if fallback_shape: fallback_shape.visible = false
+			
+			# Temporary: Disable outlines to debug solid boxes issue
+			if false and sprite.material and sprite.material is ShaderMaterial:
+				var mat = sprite.material as ShaderMaterial
+				mat.set_shader_parameter("outline_color", Color(0.8, 0.2, 0.2)) # Enemy Red
+				mat.set_shader_parameter("outline_width", 1.0)
 	else:
-		if fallback_shape: fallback_shape.visible = true
+		_log_warn("EnemySprite", "Texture file not found: " + full_path)
 
 func _process(_delta):
 	if enemy_data and health_bar:
@@ -151,6 +190,8 @@ func _process(_delta):
 	_update_status_icons()
 	_update_casting_bar()
 
+var _last_effects: Dictionary = {}
+
 func _update_status_icons():
 	if not status_container or not enemy_data: return
 	
@@ -159,6 +200,12 @@ func _update_status_icons():
 	
 	var instance_id = enemy_data.get("instance_id", "")
 	var active = sem.get_active_effects(instance_id)
+	
+	# Only update if effects changed (Dictionary comparison)
+	if active.hash() == _last_effects.hash():
+		return
+	
+	_last_effects = active.duplicate(true)
 	
 	for child in status_container.get_children():
 		child.queue_free()
@@ -177,29 +224,29 @@ func _update_casting_bar():
 
 func play_hit_flash():
 	var tween = create_tween()
-	var target_node = sprite if (sprite and sprite.texture) else fallback_shape
+	var target_node = sprite
 	if not target_node: return
 	
-	var original_color = target_node.modulate if sprite else target_node.color
-	if sprite:
-		target_node.modulate = Color(5, 5, 5, 1)
-		tween.tween_property(target_node, "modulate", original_color, 0.1)
-	else:
-		target_node.color = Color(5, 5, 5, 1)
-		tween.tween_property(target_node, "color", original_color, 0.1)
+	var original_color = target_node.modulate
+	target_node.modulate = Color(5, 5, 5, 1)
+	tween.tween_property(target_node, "modulate", original_color, 0.1)
 		
 	# Hit stop effect
 	var original_speed = anim_player.speed_scale if anim_player else 1.0
 	if anim_player:
 		anim_player.speed_scale = 0.0
-		get_tree().create_timer(0.05).timeout.connect(func(): anim_player.speed_scale = original_speed)
+		get_tree().create_timer(0.05).timeout.connect(_reset_anim_speed.bind(original_speed))
 	
-	play_squash_and_stretch(0.8, 1.2, 0.1)
+	# play_squash_and_stretch() disabled - maintaining consistent scale of 1
 
-func play_squash_and_stretch(sx: float, sy: float, duration: float):
-	var node_to_scale = sprite if (sprite and sprite.texture) else fallback_shape
+func _reset_anim_speed(speed: float):
+	if is_instance_valid(anim_player):
+		anim_player.speed_scale = speed
+
+func play_squash_and_stretch(_sx: float, _sy: float, _duration: float):
+	var node_to_scale = sprite
 	if not node_to_scale: return
 	
-	var tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(node_to_scale, "scale", Vector2(sx, sy), duration)
-	tween.tween_property(node_to_scale, "scale", Vector2(1.0, 1.0), duration)
+	# DISABLED: Maintaining consistent scale of 1 throughout combat
+	# var tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	# tween.tween_property(node_to_scale, "scale", Vector2(sx, sy), duration)

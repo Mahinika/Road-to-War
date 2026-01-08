@@ -1,8 +1,9 @@
 {
-  "seed": 12351,
-  "type": "humanoid",
-  "palette": "warm",
-  "equipment": {},
-  "generatedAt": "2025-12-25T01:58:34.578Z",
-  "version": "1.0.0"
+  "id": "humanoid_6",
+  "tier": 1,
+  "tierName": "Apprentice",
+  "size": 64,
+  "primaryColor": "#ae7c01",
+  "generator": "lpc-style",
+  "timestamp": "2026-01-07T10:14:40.430Z"
 }

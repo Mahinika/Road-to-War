@@ -43,7 +43,8 @@ var effect_types = {
 	"shield": { "name": "Shield", "duration": 3, "absorb_amount": 20, "icon": "🛡", "color": "0088ff", "stackable": false },
 	"regeneration": { "name": "Regeneration", "duration": 3, "heal_per_turn": 10, "icon": "✨", "color": "00ff88", "stackable": false },
 	"buff_attack": { "name": "Attack Buff", "duration": 3, "stat_modifier": 0.25, "icon": "⚔", "color": "ff8800", "stackable": false },
-	"buff_defense": { "name": "Defense Buff", "duration": 3, "stat_modifier": 0.25, "icon": "🛡", "color": "0088ff", "stackable": false }
+	"buff_defense": { "name": "Defense Buff", "duration": 3, "stat_modifier": 0.25, "icon": "🛡", "color": "0088ff", "stackable": false },
+	"berserk": { "name": "Berserk", "duration": 5, "stat_modifier": 0.5, "icon": "💢", "color": "ff0000", "stackable": false }
 }
 
 # Map<combatant_id, Map<effect_type, {turns_remaining: int, stacks: int, custom_data: Dictionary}>>

@@ -71,6 +71,11 @@ func add_hero(hero) -> bool:
 	
 	var ability_m = get_node_or_null("/root/AbilityManager")
 	if ability_m: ability_m.initialize_hero_cooldowns(hero.id)
+
+	# Initialize resources (mana/energy/rage) for this hero immediately.
+	# Without this, UnitFrames will show 0/100 until a save-load path calls initialization.
+	var rm = get_node_or_null("/root/ResourceManager")
+	if rm: rm.initialize_hero_resources(hero.id)
 	
 	hero_added.emit(hero)
 	_log_info("PartyManager", "Added hero %s to party" % hero.id)
@@ -176,30 +181,32 @@ func load_data(save_data: Dictionary) -> bool:
 		return false
 		
 	heroes.clear()
+	var hero_factory = get_node_or_null("/root/HeroFactory")
+	if not hero_factory:
+		_log_error("PartyManager", "HeroFactory not found")
+		return false
+	
 	for h_data in save_data["heroes"]:
-		# Use ClassDB to instantiate or just create the script
-		var hero = load("res://scripts/Hero.gd").new()
-		hero.id = h_data.get("id", "")
-		hero.name = h_data.get("name", "")
-		hero.class_id = h_data.get("class_id", h_data.get("class", ""))
-		hero.spec_id = h_data.get("spec_id", h_data.get("specialization", ""))
-		hero.bloodline_id = h_data.get("bloodline_id", "")
-		hero.role = h_data.get("role", "")
-		hero.level = h_data.get("level", 1)
-		hero.experience = h_data.get("experience", 0)
-		hero.stats = h_data.get("stats", {})
-		hero.base_stats = h_data.get("base_stats", {})
-		hero.current_stats = h_data.get("current_stats", {})
-		hero.talent_tree = h_data.get("talent_tree", {})
-		hero.spent_talent_points = h_data.get("spent_talent_points", 0)
-		hero.available_talent_points = h_data.get("available_talent_points", 0)
-		hero.equipment_slots = h_data.get("equipment_slots", {})
-		hero.abilities = h_data.get("abilities", [])
+		# Use HeroFactory to create hero from save data
+		var hero = hero_factory.create_hero_from_save(h_data)
+		if not hero:
+			_log_warn("PartyManager", "Failed to create hero from save data: %s" % h_data.get("id", "unknown"))
+			continue
+		
+		# Restore additional save data that HeroFactory might not handle
+		if h_data.has("stats"):
+			hero.stats = h_data.stats
+		if h_data.has("current_stats"):
+			hero.current_stats = h_data.current_stats
+		if h_data.has("abilities"):
+			hero.abilities = h_data.abilities
+		
 		heroes.append(hero)
 		
 		# Ensure Resource Manager initializes this hero
-		if has_node("/root/ResourceManager"):
-			ResourceManager.initialize_hero_resources(hero.id)
+		var rm = get_node_or_null("/root/ResourceManager")
+		if rm:
+			rm.initialize_hero_resources(hero.id)
 		
 	_log_info("PartyManager", "Loaded party with %d heroes" % heroes.size())
 	return true

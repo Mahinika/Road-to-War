@@ -19,6 +19,11 @@ func _log_info(source: String, message: String):
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	
+	# Initialize Cursor logging if available
+	if has_node("/root/CursorLogManager"):
+		get_node("/root/CursorLogManager").debug_log("GameManager initialized")
+	
 	_log_info("GameManager", "System started")
 	
 	# Run tests in debug mode

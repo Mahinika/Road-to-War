@@ -72,23 +72,42 @@ func _populate_upgrades():
 	
 	var upgrades = config.get("upgrades", [])
 	for up_data in upgrades:
-		var btn = Button.new()
-		btn.custom_minimum_size = Vector2(250, 100)
-		btn.text = "%s\nCost: %d\n%s" % [up_data.get("name"), up_data.get("cost"), up_data.get("description")]
-		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		
-		# Check if purchased
+		# Use UIBuilder for upgrade buttons
+		var ui_builder = get_node_or_null("/root/UIBuilder")
+		var btn: Button
 		var up_id = up_data.get("id")
 		var is_purchased = prem.has_upgrade(up_id)
 		
+		if ui_builder:
+			var bg_color = ut.COLORS["frame"] if is_purchased else ut.COLORS["frame_dark"]
+			var border_color = Color.GREEN if is_purchased else ut.COLORS["gold_border"]
+			var border_width = 2 if is_purchased else 1
+			
+			btn = ui_builder.create_button(upgrade_grid, "%s\nCost: %d\n%s" % [up_data.get("name"), up_data.get("cost"), up_data.get("description")], Vector2(250, 100), Vector2.ZERO, {
+				"bg_color": bg_color,
+				"border_color": border_color
+			})
+		else:
+			# Fallback to manual creation
+			btn = Button.new()
+			btn.custom_minimum_size = Vector2(250, 100)
+			btn.text = "%s\nCost: %d\n%s" % [up_data.get("name"), up_data.get("cost"), up_data.get("description")]
+			upgrade_grid.add_child(btn)
+		
+		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		
+		# Check if purchased
 		if is_purchased:
-			btn.add_theme_stylebox_override("normal", ut.get_stylebox_panel(ut.COLORS["frame"], Color.GREEN, 2))
+			if not ui_builder:
+				btn.add_theme_stylebox_override("normal", ut.get_stylebox_panel(ut.COLORS["frame"], Color.GREEN, 2))
 			btn.disabled = true
 		else:
-			btn.add_theme_stylebox_override("normal", ut.get_stylebox_panel(ut.COLORS["frame_dark"], ut.COLORS["gold_border"], 1))
-			btn.pressed.connect(func(): _on_upgrade_purchased(up_id))
-			
-		upgrade_grid.add_child(btn)
+			if not ui_builder:
+				btn.add_theme_stylebox_override("normal", ut.get_stylebox_panel(ut.COLORS["frame_dark"], ut.COLORS["gold_border"], 1))
+			btn.pressed.connect(_on_upgrade_button_pressed.bind(up_id))
+
+func _on_upgrade_button_pressed(upgrade_id: String):
+	_on_upgrade_purchased(upgrade_id)
 
 func _update_display():
 	"""Update prestige display"""

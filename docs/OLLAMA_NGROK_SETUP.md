@@ -154,3 +154,10 @@ Once set up, you should be able to use `qwen2.5-coder:7b` in Cursor without SSRF
 
 
 
+
+
+
+
+
+
+

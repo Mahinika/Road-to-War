@@ -9,6 +9,8 @@ import { EquipmentGenerator } from './equipment-generator.js';
 import { PixelDrawer } from '../utils/pixel-drawer.js';
 import { PaletteManager } from '../utils/palette-manager.js';
 import { SeededRNG } from '../utils/seeded-rng.js';
+import { MaterialShader } from '../utils/material-shader.js';
+import { ProportionManager } from '../utils/proportion-manager.js';
 
 export class PaladinGenerator {
     constructor(seed = 12345, styleConfig = null) {
@@ -46,9 +48,16 @@ export class PaladinGenerator {
         if (!this.style.outlineColor) this.style.outlineColor = 0x000000;
         if (!this.style.outlineThickness) this.style.outlineThickness = 2; // 1-3px per spec
         
+        // Initialize MaterialShader for 5-level cel-shading
+        this.materialShader = new MaterialShader();
+        
         // Recommended size: 48×48 pixels (optimal balance of detail and performance)
         this.width = 48;
         this.height = 48;
+        
+        // Initialize ProportionManager for strict chibi proportions
+        this.proportionManager = new ProportionManager(this.height);
+        
         this.canvas = createCanvas(this.width, this.height);
         this.ctx = this.canvas.getContext('2d');
     }
@@ -61,9 +70,9 @@ export class PaladinGenerator {
         // Clear canvas
         this.ctx.clearRect(0, 0, this.width, this.height);
 
-        // Use proportions from config if available, otherwise use center
-        const centerX = this.proportions.centerX || Math.floor(this.width / 2);
-        const centerY = this.proportions.centerY || Math.floor(this.height / 2);
+        // Use ProportionManager for consistent proportions
+        const centerX = Math.floor(this.width / 2);
+        const centerY = Math.floor(this.height / 2);
         const drawer = new PixelDrawer(this.ctx, this.width, this.height);
         drawer.clear(0x00000000); // Transparent background
 
@@ -114,8 +123,17 @@ export class PaladinGenerator {
         this.drawLegsLeft(drawer, centerX, centerY, clothColor);
         this.drawTorsoBase(drawer, centerX, centerY, clothColor);
 
-        // Layer 2: Chest armor (centered, will be mirrored)
-        this.drawChestArmor(drawer, centerX, centerY, armorColor, accentColor);
+        // Layer 2: Chest armor with detailed segmentation and decorations
+        const torsoBounds = this.proportionManager.getTorsoBounds(centerX, centerY);
+        this.drawDetailedChestArmor(
+            drawer,
+            torsoBounds.centerX,
+            torsoBounds.centerY,
+            torsoBounds.width - 1,
+            torsoBounds.height - 1,
+            armorColor,
+            accentColor
+        );
 
         // Layer 3: Shoulder pads - left side only (scaled for 48×48)
         this.drawShoulderPadLeft(drawer, centerX, centerY - 6, armorColor, accentColor);
@@ -123,10 +141,10 @@ export class PaladinGenerator {
         // Layer 4: Arms - left side only
         this.drawArmLeft(drawer, centerX, centerY, clothColor, armorColor);
 
-        // Layer 5: Head and helmet (use proportions from config)
-        const headY = this.proportions.headY || 9; // Positioned around Y≈9 (per spec)
-        this.drawHead(drawer, centerX, headY, skinColor);
-        this.drawHelmet(drawer, centerX, headY, armorColor, accentColor);
+        // Layer 5: Head and helmet (use ProportionManager)
+        const headBounds = this.proportionManager.getHeadBounds(centerX, centerY);
+        this.drawHead(drawer, centerX, centerY, skinColor);
+        this.drawHelmet(drawer, headBounds.centerX, headBounds.centerY, armorColor, accentColor);
 
         // Layer 6: Holy light effects (eye glow is in helmet, this is for additional effects)
         // Note: Eye glow is handled in drawHelmet, so this is for additional effects if needed
@@ -169,37 +187,19 @@ export class PaladinGenerator {
      * Draw legs (left side only, will be mirrored)
      */
     drawLegsLeft(drawer, centerX, centerY, clothColor) {
-        const legLength = this.proportions.legLength || 9; // ~9px long (per spec)
-        const legWidth = this.proportions.legWidth || 4; // ~4px wide (per spec)
-        const torsoY = this.proportions.torsoY || 21;
-        const torsoHeight = this.proportions.torsoHeight || 12;
-        const legY = torsoY + torsoHeight / 2; // Legs start below torso
+        // Use ProportionManager for leg bounds
+        const legBounds = this.proportionManager.getLegBounds(centerX, centerY, 'left');
 
-        // Left leg only (right will be mirrored) with cel-shading
-        drawer.drawRect(
-            centerX - 4 - legWidth / 2,
-            legY - legLength / 2,
-            legWidth,
-            legLength,
-            clothColor
-        );
-        // Cel-shading: darker inner side (softer for cloth - low contrast)
-        const darkerCloth = this.darkenColor(clothColor, 0.25);
-        drawer.drawRect(
-            centerX - 4 - legWidth / 2,
-            legY - legLength / 2 + 2,
-            legWidth - 1,
-            legLength - 2,
-            darkerCloth
-        );
-        // Cel-shading: lighter outer side (softer for cloth)
-        const lighterCloth = this.lightenColor(clothColor, 0.15);
-        drawer.drawRect(
-            centerX - 4 - legWidth / 2 + 1,
-            legY - legLength / 2,
-            legWidth - 2,
-            legLength - 2,
-            lighterCloth
+        // Use MaterialShader for 5-level cel-shading on cloth
+        const clothPalette = this.materialShader.generatePalette(clothColor, 'cloth');
+        this.materialShader.applyCelShade(
+            drawer,
+            legBounds.x,
+            legBounds.y,
+            legBounds.width,
+            legBounds.height,
+            clothPalette,
+            'top-left'
         );
     }
 
@@ -207,85 +207,64 @@ export class PaladinGenerator {
      * Draw base torso
      */
     drawTorsoBase(drawer, centerX, centerY, clothColor) {
-        const torsoWidth = this.proportions.torsoWidth || 9; // ~9px wide (per spec)
-        const torsoHeight = this.proportions.torsoHeight || 12; // ~12px tall (per spec)
-        const torsoY = this.proportions.torsoY || 21; // Centered around Y≈21 (per spec)
+        // Use ProportionManager for torso bounds
+        const torsoBounds = this.proportionManager.getTorsoBounds(centerX, centerY);
         
-        // Draw torso base (cloth under armor)
-        drawer.drawRect(
-            centerX - torsoWidth / 2,
-            torsoY - torsoHeight / 2,
-            torsoWidth,
-            torsoHeight,
-            clothColor
-        );
-        
-        // Shadows under torso (per spec: shadows under helmet rim, pauldrons, and inner limbs)
-        const darkerCloth = this.darkenColor(clothColor, 0.2); // Softer for cloth
-        drawer.drawRect(
-            centerX - torsoWidth / 2,
-            torsoY + torsoHeight / 2 - 2,
-            torsoWidth,
-            2,
-            darkerCloth
+        // Use MaterialShader for 5-level cel-shading on cloth
+        const clothPalette = this.materialShader.generatePalette(clothColor, 'cloth');
+        this.materialShader.applyCelShade(
+            drawer,
+            torsoBounds.x,
+            torsoBounds.y,
+            torsoBounds.width,
+            torsoBounds.height,
+            clothPalette,
+            'top-left'
         );
     }
 
     /**
-     * Draw chest armor
+     * Draw detailed chest armor with segmentation, buckles, and engravings
      */
-    drawChestArmor(drawer, centerX, centerY, armorColor, accentColor) {
-        const armorWidth = this.proportions.torsoWidth ? this.proportions.torsoWidth - 1 : 8; // ~9px wide (per spec)
-        const armorHeight = this.proportions.torsoHeight ? this.proportions.torsoHeight - 1 : 11; // ~12px tall (per spec)
-        const armorY = this.proportions.torsoY || 21; // Centered around Y≈21 (per spec)
-
-        // Main chest plate with professional shading
-        // Base armor color (mid-tone per spec)
-        drawer.drawRect(
-            centerX - armorWidth / 2,
-            armorY - armorHeight / 2,
-            armorWidth,
-            armorHeight,
-            0xD0D0D0 // Mid-tone silver (per spec) - use exact color, not variable
+    drawDetailedChestArmor(drawer, centerX, centerY, width, height, armorColor, accentColor) {
+        // Use MaterialShader for 5-level cel-shading on metal armor
+        const metalPalette = this.materialShader.generatePalette(armorColor, 'metal');
+        this.materialShader.applyCelShade(
+            drawer,
+            centerX - width / 2,
+            centerY - height / 2,
+            width,
+            height,
+            metalPalette,
+            'top-left'
         );
 
-        // Professional shading: #A0A0A0 shadow, #D0D0D0 mid, #FFFFFF highlight (per spec)
-        // Shadow (darker bottom/underside)
-        drawer.drawRect(
-            centerX - armorWidth / 2,
-            armorY + armorHeight / 2 - 3,
-            armorWidth,
-            3,
-            0xA0A0A0 // Shadow color (per spec)
-        );
+        // Create EquipmentGenerator for detailed methods
+        const equipmentGen = new EquipmentGenerator(this.canvas, this.rng, 'metallic');
+        equipmentGen.drawer = drawer; // Use existing drawer
 
-        // Highlight (lighter top)
-        drawer.drawRect(
-            centerX - armorWidth / 2,
-            armorY - armorHeight / 2,
-            armorWidth,
-            3,
-            0xFFFFFF // Highlight color (per spec)
+        // Draw detailed chest armor with all features
+        equipmentGen.drawDetailedChestArmor(
+            centerX,
+            centerY,
+            width,
+            height,
+            armorColor,
+            {
+                segmentation: true,
+                segments: 3,
+                buckle: true,
+                buckleSize: 4,
+                buckleColor: this.styleConfig && this.palette.gold && this.palette.gold.length > 0
+                    ? this.palette.gold[0]
+                    : 0xFFD700,
+                engravings: true,
+                pattern: 'ornate'
+            }
         );
 
         // Vertical decorative stripe down center (per spec)
-        drawer.drawLine(centerX, armorY - armorHeight / 2, centerX, armorY + armorHeight / 2, accentColor);
-        
-        // Clear plate segmentation lines (internal outlines per spec)
-        drawer.drawLine(centerX - armorWidth / 2 + 2, armorY - armorHeight / 2, centerX - armorWidth / 2 + 2, armorY + armorHeight / 2, 0x000000);
-        drawer.drawLine(centerX + armorWidth / 2 - 2, armorY - armorHeight / 2, centerX + armorWidth / 2 - 2, armorY + armorHeight / 2, 0x000000);
-
-        // Gold belt buckle/emblem at bottom center (optional decorative element)
-        const goldColor = this.styleConfig && this.palette.gold && this.palette.gold.length > 0
-            ? this.palette.gold[0]
-            : 0xFFD700;
-        drawer.drawRect(
-            centerX - 2,
-            armorY + armorHeight / 2 - 2,
-            4,
-            2,
-            goldColor
-        );
+        drawer.drawLine(centerX, centerY - height / 2, centerX, centerY + height / 2, accentColor);
     }
 
     /**
@@ -298,32 +277,16 @@ export class PaladinGenerator {
         const padX = centerX - 6;
         const padY = centerY - 2; // Slightly above center
 
-        // Left shoulder pad only (right will be mirrored)
-        // Main pauldron plate
-        drawer.drawRect(
+        // Use MaterialShader for 5-level cel-shading on metal armor
+        const metalPalette = this.materialShader.generatePalette(armorColor, 'metal');
+        this.materialShader.applyCelShade(
+            drawer,
             padX - padWidth / 2,
             padY - padHeight / 2,
             padWidth,
             padHeight,
-            0xD0D0D0 // ALWAYS mid-tone (per spec) - ignore style config
-        );
-
-        // Professional shading: #A0A0A0 shadow, #FFFFFF highlight (per spec)
-        // Shadow (darker bottom/underside)
-        drawer.drawRect(
-            padX - padWidth / 2,
-            padY + padHeight / 2 - 2,
-            padWidth,
-            2,
-            0xA0A0A0 // Shadow
-        );
-        // Highlight (lighter top)
-        drawer.drawRect(
-            padX - padWidth / 2,
-            padY - padHeight / 2,
-            padWidth,
-            2,
-            0xFFFFFF // Highlight
+            metalPalette,
+            'top-left'
         );
 
         // Segmented plate divisions (internal outlines per spec)
@@ -335,43 +298,32 @@ export class PaladinGenerator {
      * Draw arm (left side only, will be mirrored)
      */
     drawArmLeft(drawer, centerX, centerY, clothColor, armorColor) {
-        const armY = centerY - 1; // Scaled for 48×48
-        const armLength = this.proportions.armLength || 9;
-        const armWidth = this.proportions.armWidth || 3;
+        // Use ProportionManager for arm bounds
+        const armBounds = this.proportionManager.getArmBounds(centerX, centerY, 'left');
 
-        // Left arm (cloth base)
-        drawer.drawRect(
-            centerX - 6 - armWidth / 2, // Scaled from -8 to -6
-            armY - armLength / 2,
-            armWidth,
-            armLength,
-            clothColor
+        // Left arm (cloth base) with MaterialShader
+        const clothPalette = this.materialShader.generatePalette(clothColor, 'cloth');
+        this.materialShader.applyCelShade(
+            drawer,
+            armBounds.x,
+            armBounds.y,
+            armBounds.width,
+            armBounds.height,
+            clothPalette,
+            'top-left'
         );
 
-        // Left arm armor (gauntlet) with cel-shading
-        drawer.drawRect(
-            centerX - 6 - armWidth / 2, // Scaled from -8 to -6
-            armY - armLength / 2,
-            armWidth,
-            3, // Scaled from 4 to 3
-            0xD0D0D0 // ALWAYS mid-tone (per spec) - ignore style config
-        );
-        // Professional shading: #A0A0A0 shadow, #FFFFFF highlight (per spec)
-        // Shadow (darker bottom)
-        drawer.drawRect(
-            centerX - 6 - armWidth / 2,
-            armY - armLength / 2 + 2,
-            armWidth,
-            2,
-            0xA0A0A0 // Shadow
-        );
-        // Highlight (lighter top)
-        drawer.drawRect(
-            centerX - 6 - armWidth / 2,
-            armY - armLength / 2,
-            armWidth,
-            1,
-            0xFFFFFF // Highlight
+        // Left arm armor (gauntlet) with MaterialShader
+        const metalPalette = this.materialShader.generatePalette(armorColor, 'metal');
+        const gauntletHeight = Math.floor(armBounds.height * 0.3); // 30% of arm length
+        this.materialShader.applyCelShade(
+            drawer,
+            armBounds.x,
+            armBounds.y,
+            armBounds.width,
+            gauntletHeight,
+            metalPalette,
+            'top-left'
         );
     }
 
@@ -379,79 +331,64 @@ export class PaladinGenerator {
      * Draw head
      */
     drawHead(drawer, centerX, centerY, skinColor) {
-        const headSize = this.proportions.headSize || 6; // ~6px diameter (per spec)
-        // Use headY from proportions, but ensure it's reasonable (around Y≈9 per spec)
-        let headY = this.proportions.headY;
-        if (!headY || headY < 5 || headY > 15) {
-            // Default: 9 pixels from top (per spec)
-            headY = 9;
-        }
-        drawer.drawCircle(centerX, headY, headSize / 2, skinColor);
+        // Use ProportionManager for head bounds
+        const headBounds = this.proportionManager.getHeadBounds(centerX, centerY);
+        const headRadius = Math.floor(headBounds.width / 2);
+        
+        // Use MaterialShader for 5-level cel-shading on skin
+        const skinPalette = this.materialShader.generatePalette(skinColor, 'skin');
+        this.materialShader.applyCelShadeCircle(
+            drawer,
+            headBounds.centerX,
+            headBounds.centerY,
+            headRadius,
+            skinPalette,
+            'top-left'
+        );
     }
 
     /**
      * Draw helmet (draws over head)
      */
     drawHelmet(drawer, centerX, centerY, armorColor, accentColor) {
-        const headSize = this.proportions.headSize || 6; // ~6px diameter (per spec)
-        const headY = this.proportions.headY || 9; // Positioned around Y≈9 (per spec)
-        const helmetHeight = headSize + 4; // Full-cover knight helmet
-        const helmetWidth = headSize + 3;
-
-        // Helmet base (rounded top, full-cover knight helmet shape per spec)
-        // Draw rounded top using circle
-        drawer.drawCircle(centerX, headY - headSize / 2, helmetWidth / 2, 0xD0D0D0); // Mid-tone (per spec)
-        // Draw rectangular body
-        drawer.drawRect(
+        // Use ProportionManager for head bounds to size helmet
+        const headBounds = this.proportionManager.getHeadBounds(centerX, centerY);
+        const headSize = headBounds.width;
+        const headY = headBounds.centerY;
+        const helmetHeight = headSize + 2; // Tighter knight helmet
+        const helmetWidth = headSize + 2;
+        
+        // Use MaterialShader for 5-level cel-shading on metal helmet
+        const metalPalette = this.materialShader.generatePalette(armorColor, 'metal');
+        
+        // Draw rectangular body with cel-shading
+        this.materialShader.applyCelShade(
+            drawer,
             centerX - helmetWidth / 2,
             headY - headSize / 2,
             helmetWidth,
             helmetHeight,
-            0xD0D0D0 // Mid-tone (per spec)
-        );
-
-        // Professional shading: #A0A0A0 shadow, #FFFFFF highlight (per spec)
-        // Top highlight (lighter center ridge - subtle metallic highlights)
-        drawer.drawRect(
-            centerX - 2,
-            headY - headSize / 2 - 1,
-            4,
-            Math.max(2, helmetHeight / 3),
-            0xFFFFFF // Highlight (per spec)
-        );
-        // Shadow under helmet rim
-        drawer.drawRect(
-            centerX - helmetWidth / 2,
-            headY - headSize / 2 + helmetHeight - 2,
-            helmetWidth,
-            2,
-            0xA0A0A0 // Shadow (per spec)
+            metalPalette,
+            'top-left'
         );
 
         // T-shaped visor opening (proper cutout, not just black rectangles)
-        const visorY = headY + 1;
+        const visorY = headY - 1;
         // Carve out horizontal slit (remove pixels to create opening)
         for (let x = centerX - helmetWidth / 2 + 1; x < centerX + helmetWidth / 2; x++) {
             drawer.setPixel(x, visorY, 0x000000); // Black interior
-            drawer.setPixel(x, visorY + 1, 0x000000); // Black interior
         }
         // Carve out vertical slit (center of T)
-        drawer.setPixel(centerX - 1, visorY, 0x000000);
-        drawer.setPixel(centerX, visorY, 0x000000);
-        drawer.setPixel(centerX + 1, visorY, 0x000000);
-        drawer.setPixel(centerX - 1, visorY + 2, 0x000000);
+        drawer.setPixel(centerX, visorY + 1, 0x000000);
         drawer.setPixel(centerX, visorY + 2, 0x000000);
-        drawer.setPixel(centerX + 1, visorY + 2, 0x000000);
 
         // Eye glow: white core with yellow outer pixels (per spec)
         // White core (restrained and readable, not overpowering)
-        drawer.setPixel(centerX - 2, visorY + 1, 0xFFFFFF); // White core
-        drawer.setPixel(centerX + 2, visorY + 1, 0xFFFFFF); // White core
+        drawer.setPixel(centerX - 2, visorY, 0xFFFFFF); // White core
+        drawer.setPixel(centerX + 2, visorY, 0xFFFFFF); // White core
         // Yellow outer pixels (subtle glow)
-        drawer.setPixel(centerX - 3, visorY + 1, 0xFFFF00); // Yellow outer
-        drawer.setPixel(centerX + 3, visorY + 1, 0xFFFF00); // Yellow outer
-        drawer.setPixel(centerX - 2, visorY, 0xFFFF00); // Yellow outer
-        drawer.setPixel(centerX + 2, visorY, 0xFFFF00); // Yellow outer
+        drawer.setPixel(centerX - 2, visorY - 1, 0xFFFF00); // Yellow outer
+        drawer.setPixel(centerX + 2, visorY - 1, 0xFFFF00); // Yellow outer
     }
 
     /**

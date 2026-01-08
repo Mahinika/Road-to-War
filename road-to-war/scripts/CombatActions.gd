@@ -39,13 +39,27 @@ func _ready():
 	_log_info("CombatActions", "Initialized with Multi-Target and Range support")
 
 func execute_party_turn(enemies: Array):
+	var party_state = []
+	for h in PartyManager.heroes:
+		party_state.append({
+			"id": h.id,
+			"current_health": h.current_stats.get("health", 0),
+			"max_health": h.current_stats.get("maxHealth", 100)
+		})
+		
 	for hero in PartyManager.heroes:
 		if hero.current_stats.get("health", 0) <= 0: continue
 		
 		var target_enemy = _select_optimal_target(enemies)
 		if target_enemy.is_empty(): break
 		
-		var ability_name = AbilityManager.select_ability(hero, {"enemies": enemies, "target": target_enemy})
+		var context = {
+			"enemies": enemies, 
+			"target": target_enemy,
+			"party_state": party_state
+		}
+		
+		var ability_name = AbilityManager.select_ability(hero, context)
 		_execute_hero_action(hero, ability_name, target_enemy)
 
 func _execute_hero_action(hero, ability_name: String, enemy: Dictionary):
@@ -67,6 +81,11 @@ func _execute_hero_action(hero, ability_name: String, enemy: Dictionary):
 	
 	var distance = hero_node.global_position.distance_to(enemy_node.global_position)
 	
+	# #region agent log
+	var log_file = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
+	if log_file: log_file.seek_end(); log_file.store_line(JSON.stringify({"location":"CombatActions.gd:82","message":"Hero action distance check","data":{"hero_id":hero.id,"distance":distance,"ability_range":ability_range,"will_charge":distance > ability_range},"timestamp":Time.get_ticks_msec(),"sessionId":"debug-session","hypothesisId":"L"})); log_file.close()
+	# #endregion
+	
 	if distance > ability_range:
 		# Melee Charge
 		var original_pos = hero_node.position
@@ -74,7 +93,7 @@ func _execute_hero_action(hero, ability_name: String, enemy: Dictionary):
 		
 		var tween = get_tree().create_tween().set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
 		tween.tween_property(hero_node, "position", charge_pos, 0.3)
-		tween.tween_callback(func(): _execute_hero_ability_logic(hero, ability_name, enemy))
+		tween.tween_callback(_execute_hero_ability_logic.bind(hero, ability_name, enemy))
 		tween.tween_interval(0.2)
 		tween.tween_property(hero_node, "position", original_pos, 0.3)
 	else:
@@ -84,6 +103,11 @@ func _execute_hero_action(hero, ability_name: String, enemy: Dictionary):
 func _execute_hero_ability_logic(hero, ability_name: String, enemy: Dictionary):
 	var ability_def = AbilityManager.get_ability_definition(hero.id, ability_name)
 	var enemy_instance_id = enemy.get("instance_id", "enemy_1")
+	
+	# #region agent log
+	var log_file = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
+	if log_file: log_file.seek_end(); log_file.store_line(JSON.stringify({"location":"CombatActions.gd:99","message":"Hero attacking","data":{"hero_id":hero.id,"hero_name":hero.name,"hero_attack":hero.current_stats.get("attack",0),"ability":ability_name,"enemy_id":enemy_instance_id,"enemy_health_before":enemy.get("current_health",0),"enemy_max_health":enemy.get("stats",{}).get("maxHealth",0),"enemy_defense":enemy.get("stats",{}).get("defense",0)},"timestamp":Time.get_ticks_msec(),"sessionId":"debug-session","hypothesisId":"M,N"})); log_file.close()
+	# #endregion
 	
 	# Resource Consumption
 	var rm = get_node_or_null("/root/ResourceManager")
@@ -103,8 +127,19 @@ func _execute_hero_ability_logic(hero, ability_name: String, enemy: Dictionary):
 
 	var result = DamageCalculator.calculate_damage(hero.current_stats, enemy.get("stats", {}), hero, enemy)
 	
+	# #region agent log
+	var log_file2 = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
+	if log_file2: log_file2.seek_end(); log_file2.store_line(JSON.stringify({"location":"CombatActions.gd:119","message":"Damage calculated","data":{"damage":result.get("damage",0),"is_crit":result.get("is_crit",false),"miss":result.get("miss",false)},"timestamp":Time.get_ticks_msec(),"sessionId":"debug-session","hypothesisId":"M"})); log_file2.close()
+	# #endregion
+	
 	if not result.get("miss", false):
-		DamageCalculator.deal_damage(hero.get_stats_dict(), enemy, result.get("damage", 0.0), result.get("is_crit", false))
+		# CRITICAL FIX: Pass the hero object directly as attacker for correct statistics tracking
+		DamageCalculator.deal_damage(hero, enemy, result.get("damage", 0.0), result.get("is_crit", false))
+		
+		# #region agent log
+		var log_file3 = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
+		if log_file3: log_file3.seek_end(); log_file3.store_line(JSON.stringify({"location":"CombatActions.gd:122","message":"Damage dealt","data":{"enemy_health_after":enemy.get("current_health",0),"enemy_killed":enemy.get("current_health",0) <= 0},"timestamp":Time.get_ticks_msec(),"sessionId":"debug-session","hypothesisId":"N"})); log_file3.close()
+		# #endregion
 		
 		if result.get("is_crit", false):
 			AudioManager.play_crit_sfx()
@@ -118,6 +153,14 @@ func _execute_hero_ability_logic(hero, ability_name: String, enemy: Dictionary):
 		_log_debug("CombatActions", "%s MISSED %s!" % [hero.name, enemy_instance_id])
 
 func execute_enemy_turn(enemies: Array):
+	# #region agent log
+	var alive_count = 0
+	for e in enemies:
+		if e.get("current_health", 0) > 0: alive_count += 1
+	var log_file = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
+	if log_file: log_file.seek_end(); log_file.store_line(JSON.stringify({"location":"CombatActions.gd:134","message":"Enemy turn starting","data":{"total_enemies":enemies.size(),"alive_enemies":alive_count},"timestamp":Time.get_ticks_msec(),"sessionId":"debug-session","hypothesisId":"O,P"})); log_file.close()
+	# #endregion
+	
 	for enemy in enemies:
 		if enemy.get("current_health", 0) <= 0: continue
 		_execute_enemy_action(enemy)
@@ -154,7 +197,7 @@ func _execute_enemy_action(enemy: Dictionary):
 		
 		var tween = get_tree().create_tween().set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
 		tween.tween_property(enemy_node, "position", charge_pos, 0.3)
-		tween.tween_callback(func(): _execute_enemy_ability_logic(enemy, target_hero, ability_data))
+		tween.tween_callback(_execute_enemy_ability_logic.bind(enemy, target_hero, ability_data))
 		tween.tween_interval(0.2)
 		tween.tween_property(enemy_node, "position", original_pos, 0.3)
 	else:
@@ -169,7 +212,8 @@ func _execute_enemy_ability_logic(enemy: Dictionary, target_hero, ability_data: 
 		result["damage"] *= dmg_mult
 	
 	if not result.get("miss", false):
-		DamageCalculator.deal_damage(enemy, target_hero.get_stats_dict(), result.get("damage", 0.0), result.get("is_crit", false))
+		# CRITICAL FIX: Pass the hero object directly as target so stats are updated on the object, not a copy
+		DamageCalculator.deal_damage(enemy, target_hero, result.get("damage", 0.0), result.get("is_crit", false))
 		AudioManager.play_sfx("hit_enemy")
 		
 		# Visual ability feedback for enemies

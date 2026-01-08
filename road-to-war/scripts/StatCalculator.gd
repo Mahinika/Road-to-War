@@ -7,8 +7,10 @@ var stats_config = {}
 func _ready():
 	print("StatCalculator: Initialized")
 	var dm = get_node_or_null("/root/DataManager")
-	stats_config = dm.get_data("stats-config") if dm else {}
-	if not stats_config:
+	if dm:
+		stats_config = dm.get_data("stats-config")
+	
+	if not stats_config or stats_config.is_empty():
 		stats_config = get_default_stats_config()
 
 func recalculate_hero_stats(hero):
@@ -18,10 +20,7 @@ func recalculate_hero_stats(hero):
 	if hero is Dictionary:
 		hero_id = hero.get("id", "")
 	else:
-		if "id" in hero:
-			hero_id = hero.id
-		else:
-			hero_id = ""
+		hero_id = hero.id if "id" in hero else ""
 		
 	if hero_id == "": return
 	
@@ -108,8 +107,8 @@ func calculate_final_stats(hero, equipment_stats: Dictionary = {}, talent_bonuse
 		else:
 			final_stats[stat] = derived[stat]
 			
-	final_stats["hitChance"] = convert_rating_to_percentage(equipment_stats.get("hitRating", 0), "hitRating")
-	final_stats["critChance"] = convert_rating_to_percentage(equipment_stats.get("critRating", 0), "critRating")
+	final_stats["hitChance"] = convert_rating_to_percentage(final_stats.get("hitRating", 0), "hitRating")
+	final_stats["critChance"] = convert_rating_to_percentage(final_stats.get("critRating", 0), "critRating")
 	
 	var hero_current_stats = {}
 	if hero is Dictionary:

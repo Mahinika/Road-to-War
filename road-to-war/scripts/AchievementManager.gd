@@ -124,10 +124,18 @@ func unlock_achievement(id: String):
 			var pm = get_node_or_null("/root/PartyManager")
 			if pm:
 				for hero in pm.heroes:
-					hero.gain_experience(exp_amt)
+					if hero.has_method("gain_experience"):
+						hero.gain_experience(exp_amt)
 
 func is_unlocked(id: String) -> bool:
 	return achievements.has(id) and achievements[id]["unlocked"]
+
+func get_unlocked_count() -> int:
+	var count = 0
+	for id in achievements:
+		if achievements[id]["unlocked"]:
+			count += 1
+	return count
 
 func get_all_achievements() -> Dictionary:
 	"""Return achievements combined with data for UI"""

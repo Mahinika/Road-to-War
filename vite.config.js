@@ -43,10 +43,8 @@ export default defineConfig({
         '..',
         __dirname,
         resolve(__dirname, '..'),
-        resolve(__dirname, 'src'),
         resolve(__dirname, 'public'),
-        // Explicitly allow the parent directory for src access
-        resolve(__dirname, '../src')
+        resolve(__dirname, 'road-to-war')
       ],
       // Strict mode disabled to allow accessing files outside root
       strict: false
@@ -59,14 +57,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src')
+      '@': resolve(__dirname, 'road-to-war')
     },
     // Better handling of file extensions
-    extensions: ['.js', '.json', '.mjs']
+    extensions: ['.js', '.json', '.mjs', '.gd']
   },
-  // Optimize dependencies to avoid processing issues
+  // Optimize dependencies
   optimizeDeps: {
-    include: ['phaser'],
+    include: [],
     exclude: []
   },
   build: {

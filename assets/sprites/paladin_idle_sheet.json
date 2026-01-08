@@ -1,0 +1,46 @@
+{
+  "width": 96,
+  "height": 96,
+  "frameWidth": 48,
+  "frameHeight": 48,
+  "frames": [
+    {
+      "index": 0,
+      "x": 0,
+      "y": 0,
+      "width": 48,
+      "height": 48,
+      "offsetX": 0,
+      "offsetY": 0
+    },
+    {
+      "index": 1,
+      "x": 48,
+      "y": 0,
+      "width": 48,
+      "height": 48,
+      "offsetX": 0,
+      "offsetY": 5
+    },
+    {
+      "index": 2,
+      "x": 0,
+      "y": 48,
+      "width": 48,
+      "height": 48,
+      "offsetX": 0,
+      "offsetY": 0
+    },
+    {
+      "index": 3,
+      "x": 48,
+      "y": 48,
+      "width": 48,
+      "height": 48,
+      "offsetX": 0,
+      "offsetY": -5
+    }
+  ],
+  "columns": 2,
+  "rows": 2
+}

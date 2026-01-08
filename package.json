@@ -6,6 +6,11 @@
   "type": "module",
   "scripts": {
     "generate-assets": "node tools/generate-assets.js",
+    "asset-studio": "node tools/asset-studio.js",
+    "extract-sprites": "node tools/extract-spritesheet.js",
+    "fetch-lpc": "node tools/fetch-lpc-bases.js",
+    "lpc-assets": "node tools/download-lpc-assets.js",
+    "analyze-sprite": "node tools/analyze-sprite.js",
     "prebuild": "npm run generate-assets",
     "dev": "vite",
     "test:e2e": "node scripts/e2e-runner.js",
@@ -27,9 +32,9 @@
     "test:ultimate:unit": "vitest run tests/ultimate-test-suite.js --unit-only",
     "test:ultimate:e2e": "node tests/ultimate-test-suite.js --e2e-only",
     "test:all": "npm run test:ultimate",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
-    "format": "prettier --write src/**/*.{js,json,css,md}",
+    "lint": "eslint road-to-war/scripts",
+    "lint:fix": "eslint road-to-war/scripts --fix",
+    "format": "prettier --write road-to-war/**/*.{gd,json,md}",
     "manager": "node tools/start-manager-tool.js",
     "agent:prep": "node tools/agent-manager.js prep",
     "agent:ingest": "node tools/agent-manager.js ingest",
@@ -46,13 +51,12 @@
     "rpg",
     "incremental",
     "idle",
-    "phaser",
-    "javascript"
+    "godot",
+    "gdscript"
   ],
   "author": "Road of War Development Team",
   "license": "MIT",
   "dependencies": {
-    "phaser": "^3.90.0"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.28.5",
@@ -60,6 +64,7 @@
     "@modelcontextprotocol/sdk": "^1.0.0",
     "@playwright/test": "^1.57.0",
     "@snowfort/circuit-electron": "^0.0.18",
+    "canvas": "^2.11.2",
     "cross-env": "^10.1.0",
     "electron": "^39.2.7",
     "electron-builder": "^26.0.12",

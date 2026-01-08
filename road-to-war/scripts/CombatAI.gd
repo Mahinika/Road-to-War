@@ -209,30 +209,33 @@ func update_ai_state(enemy_id: String, enemy_data: Dictionary, combat_time_ms: i
 	
 	if static_data.has("bossMechanics") and static_data["bossMechanics"].has("phases"):
 		var phases = static_data["bossMechanics"]["phases"]
-		var current_phase_index = -1
 		
-		# Find the current phase based on health threshold
-		for i in range(phases.size()):
-			if hp_pct <= phases[i].get("healthThreshold", 0):
-				current_phase_index = i
-		
-		if current_phase_index != -1 and current_phase_index != state["current_phase_index"]:
-			state["current_phase_index"] = current_phase_index
-			var phase_info = phases[current_phase_index]
-			var phase_name = phase_info.get("name", "Phase %d" % (current_phase_index + 1))
+		# Ensure phases is an array before trying to get size/iterate
+		if phases is Array:
+			var current_phase_index = -1
 			
-			if state["phase"] != phase_name:
-				state["phase"] = phase_name
-				_log_info("CombatAI", "Enemy %s entering %s" % [enemy_id, phase_name])
+			# Find the current phase based on health threshold
+			for i in range(phases.size()):
+				if hp_pct <= phases[i].get("healthThreshold", 0):
+					current_phase_index = i
+			
+			if current_phase_index != -1 and current_phase_index != state["current_phase_index"]:
+				state["current_phase_index"] = current_phase_index
+				var phase_info = phases[current_phase_index]
+				var phase_name = phase_info.get("name", "Phase %d" % (current_phase_index + 1))
 				
-				# Trigger visual feedback for phase change
-				var pm = get_node_or_null("/root/ParticleManager")
-				if pm:
-					var world = get_node_or_null("/root/World")
-					if world:
-						var enemy_node = world._find_unit_node(enemy_id)
-						if enemy_node:
-							pm.create_floating_text(enemy_node.global_position + Vector2(0, -60), phase_name, Color.RED)
+				if state["phase"] != phase_name:
+					state["phase"] = phase_name
+					_log_info("CombatAI", "Enemy %s entering %s" % [enemy_id, phase_name])
+					
+					# Trigger visual feedback for phase change
+					var pm = get_node_or_null("/root/ParticleManager")
+					if pm:
+						var world = get_node_or_null("/root/World")
+						if world:
+							var enemy_node = world._find_unit_node(enemy_id)
+							if enemy_node:
+								pm.create_floating_text(enemy_node.global_position + Vector2(0, -60), phase_name, Color.RED)
 	
 	# Handle generic enrage
 	if hp_pct < 0.25 and not state["enraged"]:

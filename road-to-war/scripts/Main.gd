@@ -55,28 +55,40 @@ func _setup_game():
 func _create_test_party():
 	_log_info("Main", "Creating test party...")
 	
+	var hero_factory = get_node_or_null("/root/HeroFactory")
+	if not hero_factory:
+		_log_error("Main", "HeroFactory not found")
+		return
+	
 	var roles = ["tank", "healer", "dps", "dps", "dps"]
 	var classes = ["paladin", "priest", "mage", "rogue", "warlock"]
+	var specs = ["protection", "holy", "frost", "assassination", "affliction"]
 	
 	for i in range(5):
-		var hero = Hero.new()
-		hero.id = "hero_%d" % i
-		hero.name = "Hero %d" % (i + 1)
-		hero.role = roles[i]
-		hero.class_id = classes[i]
-		hero.level = 10 # Start at 10 for talent points
+		var hero = hero_factory.create_hero(
+			classes[i],
+			specs[i],
+			10,  # level (start at 10 for talent points)
+			"hero_%d" % i,  # hero_id
+			"Hero %d" % (i + 1),  # name
+			roles[i]  # role
+		)
 		
-		# Initial stats
-		hero.base_stats = {
-			"stamina": 15,
-			"strength": 12,
-			"intellect": 10,
-			"agility": 10,
-			"spirit": 10,
-			"maxHealth": 150,
-			"attack": 15,
-			"defense": 8
-		}
+		if not hero:
+			_log_error("Main", "Failed to create hero %d" % i)
+			continue
+		
+		# Initial stats are set by HeroFactory, but we can override if needed
+		# hero.base_stats = {
+		# 	"stamina": 15,
+		# 	"strength": 12,
+		# 	"intellect": 10,
+		# 	"agility": 10,
+		# 	"spirit": 10,
+		# 	"maxHealth": 150,
+		# 	"attack": 15,
+		# 	"defense": 8
+		# }
 		
 		PartyManager.add_hero(hero)
 		StatCalculator.recalculate_hero_stats(hero)

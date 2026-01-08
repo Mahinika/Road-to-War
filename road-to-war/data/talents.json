@@ -13,7 +13,10 @@
             "column": 1,
             "prerequisite": null,
             "synergies": {
-              "enhances": ["crusader_strike", "divine_storm"],
+              "enhances": [
+                "crusader_strike",
+                "divine_storm"
+              ],
               "bonus_multiplier": 1.5
             },
             "effects": {
@@ -43,11 +46,14 @@
             "column": 1,
             "prerequisite": null,
             "synergies": {
-              "enhances": ["holy_light", "flash_of_light"],
+              "enhances": [
+                "holy_light",
+                "flash_of_light"
+              ],
               "bonus_multiplier": 1.25
             },
             "effects": {
-              "healingSpellPushbackReduction": 0.10,
+              "healingSpellPushbackReduction": 0.1,
               "manaRegenMultiplier": 0.15,
               "spellCriticalChance": 0.01
             },
@@ -392,7 +398,11 @@
               "treePointsRequired": 40
             },
             "synergies": {
-              "enhances": ["holy_light", "flash_of_light", "holy_shock"],
+              "enhances": [
+                "holy_light",
+                "flash_of_light",
+                "holy_shock"
+              ],
               "bonus_multiplier": 1.3
             },
             "effects": {
@@ -447,7 +457,9 @@
               "treePointsRequired": 51
             },
             "synergies": {
-              "enhances": ["all_holy_talents"],
+              "enhances": [
+                "all_holy_talents"
+              ],
               "bonus_multiplier": 1.5
             },
             "effects": {
@@ -483,7 +495,10 @@
             "column": 2,
             "prerequisite": null,
             "synergies": {
-              "enhances": ["holy_shield", "avengers_shield"],
+              "enhances": [
+                "holy_shield",
+                "avengers_shield"
+              ],
               "bonus_multiplier": 1.3
             },
             "effects": {
@@ -632,9 +647,6 @@
             "prerequisite": {
               "talentId": "shield_of_the_templar",
               "pointsRequired": 3
-            },
-            "effects": {
-              "damageReduction": 0.3
             },
             "description": "Reduces damage taken by 30% when below 35% health per point"
           },
@@ -819,7 +831,11 @@
               "treePointsRequired": 40
             },
             "synergies": {
-              "enhances": ["shield_block", "shield_wall", "ardent_defender"],
+              "enhances": [
+                "shield_block",
+                "shield_wall",
+                "ardent_defender"
+              ],
               "bonus_multiplier": 1.4
             },
             "effects": {
@@ -875,13 +891,15 @@
               "treePointsRequired": 51
             },
             "synergies": {
-              "enhances": ["all_protection_talents"],
+              "enhances": [
+                "all_protection_talents"
+              ],
               "bonus_multiplier": 1.6
             },
             "effects": {
               "defenseBonus": 0.4,
               "damageReduction": 0.3,
-              "threatMultiplier": 2.0,
+              "threatMultiplier": 2,
               "cannotBeKnockedBack": true
             },
             "description": "CAPSTONE: Increases defense by 40%, damage reduction by 30%, threat by 100%, and prevents knockback. Enhances all Protection talents."
@@ -912,7 +930,10 @@
             "column": 2,
             "prerequisite": null,
             "synergies": {
-              "enhances": ["crusader_strike", "divine_storm"],
+              "enhances": [
+                "crusader_strike",
+                "divine_storm"
+              ],
               "bonus_multiplier": 1.2
             },
             "effects": {
@@ -1090,10 +1111,7 @@
             "maxPoints": 2,
             "row": 5,
             "column": 3,
-            "prerequisite": {
-              "talentId": "improved_retribution_aura",
-              "pointsRequired": 2
-            },
+            "prerequisite": null,
             "effects": {
               "damageBonus": 0.02
             },
@@ -1135,10 +1153,7 @@
             "maxPoints": 3,
             "row": 7,
             "column": 2,
-            "prerequisite": {
-              "talentId": "vengeance",
-              "pointsRequired": 5
-            },
+            "prerequisite": null,
             "effects": {
               "damageBonus": 0.03
             },
@@ -1180,15 +1195,13 @@
             "maxPoints": 1,
             "row": 9,
             "column": 2,
-            "prerequisite": {
-              "talentId": "repentance",
-              "pointsRequired": 1
-            },
+            "prerequisite": null,
             "effects": {
               "damage": 1.1,
-              "aoe": true
+              "targets": 4,
+              "heal": 0.25
             },
-            "description": "A whirlwind attack dealing 110% weapon damage to nearby enemies"
+            "description": "An instant weapon attack that deals 110% weapon damage to up to 4 enemies and heals up to 3 party members"
           },
           "sanctified_wrath_2": {
             "id": "sanctified_wrath_2",
@@ -1232,7 +1245,11 @@
               "treePointsRequired": 40
             },
             "synergies": {
-              "enhances": ["crusader_strike", "divine_storm", "templar_s_verdict"],
+              "enhances": [
+                "crusader_strike",
+                "divine_storm",
+                "templar_s_verdict"
+              ],
               "bonus_multiplier": 1.4
             },
             "effects": {
@@ -1288,7 +1305,9 @@
               "treePointsRequired": 51
             },
             "synergies": {
-              "enhances": ["all_retribution_talents"],
+              "enhances": [
+                "all_retribution_talents"
+              ],
               "bonus_multiplier": 1.6
             },
             "effects": {
@@ -1339,15 +1358,12 @@
             "maxPoints": 1,
             "row": 5,
             "column": 2,
-            "prerequisite": {
-              "talentId": "tactical_mastery",
-              "pointsRequired": 3
-            },
+            "prerequisite": null,
             "effects": {
-              "damageMultiplier": 2,
+              "damage": 1.1,
               "healingReduction": 0.5
             },
-            "description": "A vicious strike dealing weapon damage and reducing healing by 50%"
+            "description": "A strike that deals 110% weapon damage and reduces healing received by 50%"
           },
           "deflection": {
             "id": "deflection",
@@ -1647,20 +1663,20 @@
           },
           "blade_storm": {
             "id": "blade_storm",
-            "name": "Blade Storm",
+            "name": "Bladestorm",
             "maxPoints": 1,
-            "row": 10,
+            "row": 9,
             "column": 2,
             "prerequisite": {
-              "talentId": "sudden_death",
-              "pointsRequired": 1
+              "talentId": "improved_mortal_strike",
+              "pointsRequired": 2
             },
             "effects": {
-              "damage": 1,
-              "aoe": true,
+              "damage": 1.5,
+              "radius": 8,
               "duration": 6
             },
-            "description": "Whirlwind dealing 100% weapon damage to all nearby enemies for 6 seconds"
+            "description": "Become an unstoppable whirlwind, dealing 150% weapon damage to all nearby enemies for 6 seconds"
           },
           "weapon_mastery_2": {
             "id": "weapon_mastery_2",
@@ -1691,6 +1707,22 @@
               "attackSpeedBonus": 0.03
             },
             "description": "Increases attack speed by 3% per point"
+          },
+          "sweeping_strikes": {
+            "id": "sweeping_strikes",
+            "name": "Sweeping Strikes",
+            "maxPoints": 1,
+            "row": 6,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "mortal_strike",
+              "pointsRequired": 1
+            },
+            "effects": {
+              "extraTarget": 1,
+              "duration": 10
+            },
+            "description": "Your melee attacks strike an additional nearby opponent for 10 seconds"
           }
         }
       },
@@ -1892,12 +1924,9 @@
             "id": "death_wish",
             "name": "Death Wish",
             "maxPoints": 1,
-            "row": 6,
-            "column": 3,
-            "prerequisite": {
-              "talentId": "improved_execute",
-              "pointsRequired": 2
-            },
+            "row": 5,
+            "column": 2,
+            "prerequisite": null,
             "effects": {
               "damageBonus": 0.2,
               "damageTaken": 0.05,
@@ -1970,17 +1999,16 @@
             "id": "titan_s_grip",
             "name": "Titan's Grip",
             "maxPoints": 1,
-            "row": 10,
+            "row": 9,
             "column": 2,
             "prerequisite": {
-              "talentId": "bloodthirst",
+              "talentId": "rampage",
               "pointsRequired": 1
             },
             "effects": {
-              "twoHandedDualWield": true,
-              "damagePenalty": 0.1
+              "allowTwoHandInOneHand": true
             },
-            "description": "Allows dual wielding two-handed weapons with 10% damage penalty"
+            "description": "Allows you to equip two-handed axes, maces and swords in one hand"
           },
           "rampage_2": {
             "id": "rampage_2",
@@ -2373,10 +2401,7 @@
             "maxPoints": 1,
             "row": 7,
             "column": 2,
-            "prerequisite": {
-              "talentId": "mental_strength",
-              "pointsRequired": 5
-            },
+            "prerequisite": null,
             "effects": {
               "hasteBonus": 0.2,
               "manaCostReduction": 0.2,
@@ -2616,10 +2641,7 @@
             "maxPoints": 1,
             "row": 8,
             "column": 2,
-            "prerequisite": {
-              "talentId": "power_infusion",
-              "pointsRequired": 1
-            },
+            "prerequisite": null,
             "effects": {
               "damageReduction": 0.4,
               "duration": 8
@@ -2662,10 +2684,7 @@
             "maxPoints": 1,
             "row": 9,
             "column": 2,
-            "prerequisite": {
-              "talentId": "pain_suppression",
-              "pointsRequired": 1
-            },
+            "prerequisite": null,
             "effects": {
               "damage": 0.6,
               "healing": 0.6
@@ -2741,10 +2760,7 @@
             "maxPoints": 1,
             "row": 8,
             "column": 2,
-            "prerequisite": {
-              "talentId": "lightwell",
-              "pointsRequired": 1
-            },
+            "prerequisite": null,
             "effects": {
               "healAmount": 0.3
             },
@@ -3041,10 +3057,7 @@
             "maxPoints": 1,
             "row": 9,
             "column": 2,
-            "prerequisite": {
-              "talentId": "circle_of_healing",
-              "pointsRequired": 1
-            },
+            "prerequisite": null,
             "effects": {
               "healingBonus": 0.4,
               "duration": 10
@@ -3123,10 +3136,7 @@
             "maxPoints": 1,
             "row": 7,
             "column": 3,
-            "prerequisite": {
-              "talentId": "misery",
-              "pointsRequired": 5
-            },
+            "prerequisite": null,
             "effects": {
               "shadowDamageBonus": 0.15,
               "damageReduction": 0.15
@@ -3367,10 +3377,7 @@
             "maxPoints": 1,
             "row": 9,
             "column": 2,
-            "prerequisite": {
-              "talentId": "shadowfiend",
-              "pointsRequired": 1
-            },
+            "prerequisite": null,
             "effects": {
               "damage": 0.5,
               "duration": 15,
@@ -3414,10 +3421,7 @@
             "maxPoints": 1,
             "row": 10,
             "column": 2,
-            "prerequisite": {
-              "talentId": "vampiric_touch",
-              "pointsRequired": 1
-            },
+            "prerequisite": null,
             "effects": {
               "damageReduction": 0.9,
               "manaRegenBonus": 0.06,
@@ -3488,7 +3492,9 @@
             "maxPoints": 2,
             "row": 1,
             "column": 1,
-            "effects": { "threatReduction": 0.2 },
+            "effects": {
+              "threatReduction": 0.2
+            },
             "description": "Reduces threat generated by Arcane spells by 20% per point"
           },
           "arcane_focus": {
@@ -3497,7 +3503,9 @@
             "maxPoints": 3,
             "row": 1,
             "column": 2,
-            "effects": { "hitChance": 0.01 },
+            "effects": {
+              "hitChance": 0.01
+            },
             "description": "Increases hit chance with Arcane spells by 1% per point"
           },
           "arcane_concentration": {
@@ -3506,8 +3514,70 @@
             "maxPoints": 5,
             "row": 2,
             "column": 2,
-            "effects": { "clearcastChance": 0.02 },
+            "effects": {
+              "clearcastChance": 0.02
+            },
             "description": "Gives a 2% chance per point to enter a Clearcasting state after a spell hits"
+          },
+          "arcane_impact": {
+            "id": "arcane_impact",
+            "name": "Arcane Impact",
+            "maxPoints": 3,
+            "row": 2,
+            "column": 3,
+            "prerequisite": null,
+            "effects": {
+              "critChanceBonus": 0.02
+            },
+            "description": "Increases critical strike chance of Arcane Blast and Arcane Explosion by 2% per point"
+          },
+          "arcane_meditation": {
+            "id": "arcane_meditation",
+            "name": "Arcane Meditation",
+            "maxPoints": 3,
+            "row": 3,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "arcane_concentration",
+              "pointsRequired": 5
+            },
+            "effects": {
+              "manaRegenBonus": 0.1
+            },
+            "description": "Allows 10% of mana regeneration to continue while casting per point"
+          },
+          "presence_of_mind": {
+            "id": "presence_of_mind",
+            "name": "Presence of Mind",
+            "maxPoints": 1,
+            "row": 5,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "arcane_meditation",
+              "pointsRequired": 3
+            },
+            "effects": {
+              "instantCast": true,
+              "duration": 15
+            },
+            "description": "When activated, your next spell with a cast time less than 10 seconds becomes instant cast"
+          },
+          "arcane_power": {
+            "id": "arcane_power",
+            "name": "Arcane Power",
+            "maxPoints": 1,
+            "row": 7,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "presence_of_mind",
+              "pointsRequired": 1
+            },
+            "effects": {
+              "damageBonus": 0.3,
+              "manaCostIncrease": 0.3,
+              "duration": 15
+            },
+            "description": "When activated, you deal 30% more spell damage but all spells cost 30% more mana"
           }
         }
       },
@@ -3521,7 +3591,9 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "castTimeReduction": 0.1 },
+            "effects": {
+              "castTimeReduction": 0.1
+            },
             "description": "Reduces cast time of Fireball by 0.1s per point"
           },
           "ignite": {
@@ -3530,8 +3602,70 @@
             "maxPoints": 5,
             "row": 2,
             "column": 2,
-            "effects": { "dotDamage": 0.08 },
+            "effects": {
+              "dotDamage": 0.08
+            },
             "description": "Your critical strikes with Fire spells deal an additional 8% damage over 4 seconds per point"
+          },
+          "flame_throwing": {
+            "id": "flame_throwing",
+            "name": "Flame Throwing",
+            "maxPoints": 2,
+            "row": 2,
+            "column": 1,
+            "prerequisite": null,
+            "effects": {
+              "rangeBonus": 3
+            },
+            "description": "Increases range of Fire spells by 3 yards per point"
+          },
+          "pyroblast": {
+            "id": "pyroblast",
+            "name": "Pyroblast",
+            "maxPoints": 1,
+            "row": 5,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "ignite",
+              "pointsRequired": 5
+            },
+            "effects": {
+              "damage": 2.5,
+              "dotDamage": 0.4
+            },
+            "description": "Hurls an immense fiery boulder dealing massive damage and additional fire damage over 12 seconds"
+          },
+          "blast_wave": {
+            "id": "blast_wave",
+            "name": "Blast Wave",
+            "maxPoints": 1,
+            "row": 7,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "pyroblast",
+              "pointsRequired": 1
+            },
+            "effects": {
+              "damage": 0.6,
+              "slowAmount": 0.5,
+              "duration": 6
+            },
+            "description": "A wave of flame radiates from the caster, dealing fire damage and slowing enemies by 50% for 6 seconds"
+          },
+          "combustion": {
+            "id": "combustion",
+            "name": "Combustion",
+            "maxPoints": 1,
+            "row": 9,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "blast_wave",
+              "pointsRequired": 1
+            },
+            "effects": {
+              "critChanceIncreasePerSpell": 0.1
+            },
+            "description": "When activated, each fire damage spell you cast increases your critical strike chance with Fire spells by 10%"
           }
         }
       },
@@ -3545,7 +3679,9 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "castTimeReduction": 0.1 },
+            "effects": {
+              "castTimeReduction": 0.1
+            },
             "description": "Reduces cast time of Frostbolt by 0.1s per point"
           },
           "ice_shards": {
@@ -3554,8 +3690,71 @@
             "maxPoints": 3,
             "row": 2,
             "column": 2,
-            "effects": { "critDamage": 0.33 },
+            "effects": {
+              "critDamage": 0.33
+            },
             "description": "Increases critical strike damage of Frost spells by 33% per point"
+          },
+          "piercing_ice": {
+            "id": "piercing_ice",
+            "name": "Piercing Ice",
+            "maxPoints": 3,
+            "row": 2,
+            "column": 1,
+            "prerequisite": null,
+            "effects": {
+              "damageBonus": 0.02
+            },
+            "description": "Increases the damage of your Frost spells by 2% per point"
+          },
+          "icy_veins": {
+            "id": "icy_veins",
+            "name": "Icy Veins",
+            "maxPoints": 1,
+            "row": 3,
+            "column": 1,
+            "prerequisite": {
+              "talentId": "improved_frostbolt",
+              "pointsRequired": 5
+            },
+            "effects": {
+              "hasteBonus": 0.2,
+              "pushbackReduction": 1,
+              "duration": 20
+            },
+            "description": "Increases spell casting speed by 20% and prevents pushback for 20 seconds"
+          },
+          "ice_block": {
+            "id": "ice_block",
+            "name": "Ice Block",
+            "maxPoints": 1,
+            "row": 5,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "icy_veins",
+              "pointsRequired": 1
+            },
+            "effects": {
+              "immunity": true,
+              "duration": 10
+            },
+            "description": "You become encased in a block of ice, protecting you from all physical and spell damage for 10 seconds"
+          },
+          "ice_barrier": {
+            "id": "ice_barrier",
+            "name": "Ice Barrier",
+            "maxPoints": 1,
+            "row": 7,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "ice_block",
+              "pointsRequired": 1
+            },
+            "effects": {
+              "absorbAmount": 0.5,
+              "duration": 60
+            },
+            "description": "Shields you from damage, absorbing a large amount of physical and spell damage"
           }
         }
       }
@@ -3573,7 +3772,9 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "critChance": 0.01 },
+            "effects": {
+              "critChance": 0.01
+            },
             "description": "Increases critical strike chance by 1% per point"
           },
           "lethality": {
@@ -3581,10 +3782,42 @@
             "name": "Lethality",
             "maxPoints": 5,
             "row": 2,
+            "column": 3,
+            "prerequisite": {
+              "talentId": "malice",
+              "pointsRequired": 5
+            },
+            "effects": {
+              "critDamageBonus": 0.06
+            },
+            "description": "Increases the critical strike damage bonus of your Sinister Strike, Backstab, and Mutilate by 6% per point"
+          },
+          "cold_blood": {
+            "id": "cold_blood",
+            "name": "Cold Blood",
+            "maxPoints": 1,
+            "row": 5,
             "column": 2,
-            "prerequisite": { "talentId": "malice", "pointsRequired": 5 },
-            "effects": { "critDamage": 0.06 },
-            "description": "Increases critical strike damage of your abilities by 6% per point"
+            "prerequisite": null,
+            "effects": {
+              "guaranteedCrit": true
+            },
+            "description": "When activated, increases the critical strike chance of your next offensive ability by 100%"
+          },
+          "mutilate": {
+            "id": "mutilate",
+            "name": "Mutilate",
+            "maxPoints": 1,
+            "row": 9,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "cold_blood",
+              "pointsRequired": 1
+            },
+            "effects": {
+              "damage": 1.2
+            },
+            "description": "Instantly attacks with both weapons, dealing 120% weapon damage"
           }
         }
       },
@@ -3598,7 +3831,9 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "dodgeChance": 0.01 },
+            "effects": {
+              "dodgeChance": 0.01
+            },
             "description": "Increases dodge chance by 1% per point"
           },
           "deflection": {
@@ -3607,8 +3842,72 @@
             "maxPoints": 5,
             "row": 2,
             "column": 2,
-            "effects": { "parryChance": 0.01 },
+            "effects": {
+              "parryChance": 0.01
+            },
             "description": "Increases parry chance by 1% per point"
+          },
+          "riposte": {
+            "id": "riposte",
+            "name": "Riposte",
+            "maxPoints": 1,
+            "row": 3,
+            "column": 3,
+            "prerequisite": {
+              "talentId": "deflection",
+              "pointsRequired": 5
+            },
+            "effects": {
+              "damage": 1,
+              "disarm": 6
+            },
+            "description": "A strike that deals 100% weapon damage and disarms the target for 6 seconds after parrying"
+          },
+          "blade_flurry": {
+            "id": "blade_flurry",
+            "name": "Blade Flurry",
+            "maxPoints": 1,
+            "row": 5,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "attackSpeed": 0.2,
+              "extraTarget": 1,
+              "duration": 15
+            },
+            "description": "Increases attack speed by 20% and attacks strike an additional nearby opponent for 15 seconds"
+          },
+          "adrenaline_rush": {
+            "id": "adrenaline_rush",
+            "name": "Adrenaline Rush",
+            "maxPoints": 1,
+            "row": 7,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "blade_flurry",
+              "pointsRequired": 1
+            },
+            "effects": {
+              "energyRegen": 1,
+              "duration": 15
+            },
+            "description": "Increases your Energy regeneration rate by 100% for 15 seconds"
+          },
+          "killing_spree": {
+            "id": "killing_spree",
+            "name": "Killing Spree",
+            "maxPoints": 1,
+            "row": 9,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "adrenaline_rush",
+              "pointsRequired": 1
+            },
+            "effects": {
+              "damage": 1,
+              "attacks": 5
+            },
+            "description": "Step through the shadows from enemy to enemy, attacking 5 times for 100% weapon damage"
           }
         }
       },
@@ -3622,7 +3921,9 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "stealthLevel": 1 },
+            "effects": {
+              "stealthLevel": 1
+            },
             "description": "Reduces the chance enemies have to detect you while Stealthed"
           },
           "opportunity": {
@@ -3631,7 +3932,9 @@
             "maxPoints": 5,
             "row": 2,
             "column": 2,
-            "effects": { "backstabDamage": 0.04 },
+            "effects": {
+              "backstabDamage": 0.04
+            },
             "description": "Increases damage of Backstab and Garrote by 4% per point"
           }
         }
@@ -3650,7 +3953,10 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "castTimeReduction": 0.4 },
+            "prerequisite": null,
+            "effects": {
+              "castTimeReduction": 0.4
+            },
             "description": "Reduces cast time of Corruption by 0.4s per point"
           },
           "suppression": {
@@ -3659,8 +3965,50 @@
             "maxPoints": 3,
             "row": 1,
             "column": 3,
-            "effects": { "hitChance": 0.01 },
+            "effects": {
+              "hitChance": 0.01
+            },
             "description": "Increases hit chance with Affliction spells by 1% per point"
+          },
+          "siphon_life": {
+            "id": "siphon_life",
+            "name": "Siphon Life",
+            "maxPoints": 1,
+            "row": 4,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "damage": 0.2,
+              "heal": 1
+            },
+            "description": "Transfers health from the enemy to the warlock every 3 seconds"
+          },
+          "unstable_affliction": {
+            "id": "unstable_affliction",
+            "name": "Unstable Affliction",
+            "maxPoints": 1,
+            "row": 7,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "damage": 0.6,
+              "dispelPenalty": 1.5
+            },
+            "description": "Shadow energy slowly destroys the target, dealing damage over 15 seconds. If dispelled, causes massive damage and silences"
+          },
+          "haunt": {
+            "id": "haunt",
+            "name": "Haunt",
+            "maxPoints": 1,
+            "row": 9,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "damage": 0.4,
+              "heal": 1,
+              "dotBonus": 0.2
+            },
+            "description": "Sends a ghost to haunt the target, dealing damage and increasing all DoT damage on the target by 20%"
           }
         }
       },
@@ -3674,7 +4022,9 @@
             "maxPoints": 3,
             "row": 1,
             "column": 1,
-            "effects": { "petDamage": 0.1 },
+            "effects": {
+              "petDamage": 0.1
+            },
             "description": "Increases damage and effects of your Imp by 10% per point"
           },
           "demonic_embrace": {
@@ -3682,9 +4032,38 @@
             "name": "Demonic Embrace",
             "maxPoints": 5,
             "row": 1,
+            "column": 3,
+            "prerequisite": null,
+            "effects": {
+              "staminaBonus": 0.03
+            },
+            "description": "Increases Stamina by 3% per point"
+          },
+          "fel_guard": {
+            "id": "fel_guard",
+            "name": "Summon Felguard",
+            "maxPoints": 1,
+            "row": 7,
             "column": 2,
-            "effects": { "staminaBonus": 0.03, "spiritReduction": 0.01 },
-            "description": "Increases Stamina by 3% but reduces Spirit by 1% per point"
+            "prerequisite": null,
+            "effects": {
+              "summonFelguard": true
+            },
+            "description": "Summons a powerful Felguard to aid the Warlock"
+          },
+          "metamorphosis": {
+            "id": "metamorphosis",
+            "name": "Metamorphosis",
+            "maxPoints": 1,
+            "row": 9,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "damageBonus": 0.2,
+              "armorBonus": 6,
+              "duration": 30
+            },
+            "description": "Transforms into a Demon for 30 seconds, increasing damage by 20% and armor by 600%"
           }
         }
       },
@@ -3698,7 +4077,9 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "shadowDamageBonus": 0.04 },
+            "effects": {
+              "shadowDamageBonus": 0.04
+            },
             "description": "Your Shadow Bolt critical strikes increase shadow damage taken by the target by 4% for 12s"
           },
           "cataclysm": {
@@ -3707,8 +4088,47 @@
             "maxPoints": 5,
             "row": 1,
             "column": 3,
-            "effects": { "manaCostReduction": 0.01 },
+            "effects": {
+              "manaCostReduction": 0.01
+            },
             "description": "Reduces mana cost of Destruction spells by 1% per point"
+          },
+          "shadow_burn": {
+            "id": "shadow_burn",
+            "name": "Shadowburn",
+            "maxPoints": 1,
+            "row": 3,
+            "column": 3,
+            "prerequisite": null,
+            "effects": {
+              "damage": 0.8
+            },
+            "description": "Instantly blasts the target for shadow damage"
+          },
+          "conflagrate": {
+            "id": "conflagrate",
+            "name": "Conflagrate",
+            "maxPoints": 1,
+            "row": 7,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "damage": 1
+            },
+            "description": "Ignites an Immolate or Unstable Affliction effect on the enemy, dealing instant fire damage"
+          },
+          "chaos_bolt": {
+            "id": "chaos_bolt",
+            "name": "Chaos Bolt",
+            "maxPoints": 1,
+            "row": 9,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "damage": 1.4,
+              "bypassResistance": true
+            },
+            "description": "Sends a bolt of chaotic fire that deals massive damage and cannot be resisted"
           }
         }
       }
@@ -3726,7 +4146,9 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "hasteProcChance": 0.1 },
+            "effects": {
+              "hasteProcChance": 0.1
+            },
             "description": "While Aspect of the Hawk is active, ranged attacks have a 10% chance to increase ranged haste by 15% for 12s"
           },
           "endurance_training": {
@@ -3735,8 +4157,70 @@
             "maxPoints": 5,
             "row": 1,
             "column": 3,
-            "effects": { "petHealth": 0.02, "healthBonus": 0.01 },
+            "effects": {
+              "petHealth": 0.02,
+              "healthBonus": 0.01
+            },
             "description": "Increases Pet health by 2% and your health by 1% per point"
+          },
+          "unleashed_fury": {
+            "id": "unleashed_fury",
+            "name": "Unleashed Fury",
+            "maxPoints": 5,
+            "row": 2,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "petDamage": 0.04
+            },
+            "description": "Increases the damage dealt by your pets by 4% per point"
+          },
+          "ferocity": {
+            "id": "ferocity",
+            "name": "Ferocity",
+            "maxPoints": 5,
+            "row": 3,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "unleashed_fury",
+              "pointsRequired": 5
+            },
+            "effects": {
+              "petCritChance": 0.02
+            },
+            "description": "Increases the critical strike chance of your pets by 2% per point"
+          },
+          "intimidation": {
+            "id": "intimidation",
+            "name": "Intimidation",
+            "maxPoints": 1,
+            "row": 5,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "ferocity",
+              "pointsRequired": 5
+            },
+            "effects": {
+              "petStun": true,
+              "duration": 3
+            },
+            "description": "Command your pet to intimidate the target, stunning it for 3 seconds"
+          },
+          "bestial_wrath": {
+            "id": "bestial_wrath",
+            "name": "Bestial Wrath",
+            "maxPoints": 1,
+            "row": 7,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "intimidation",
+              "pointsRequired": 1
+            },
+            "effects": {
+              "petDamage": 0.5,
+              "duration": 10
+            },
+            "description": "Send your pet into a rage, increasing damage by 50% for 10 seconds"
           }
         }
       },
@@ -3750,7 +4234,9 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "rangedCritChance": 0.01 },
+            "effects": {
+              "rangedCritChance": 0.01
+            },
             "description": "Increases ranged critical strike chance by 1% per point"
           },
           "efficiency": {
@@ -3759,8 +4245,56 @@
             "maxPoints": 5,
             "row": 1,
             "column": 3,
-            "effects": { "manaCostReduction": 0.02 },
+            "effects": {
+              "manaCostReduction": 0.02
+            },
             "description": "Reduces mana cost of shots and stings by 2% per point"
+          },
+          "mortal_shots": {
+            "id": "mortal_shots",
+            "name": "Mortal Shots",
+            "maxPoints": 5,
+            "row": 3,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "lethal_shots",
+              "pointsRequired": 5
+            },
+            "effects": {
+              "rangedCritDamage": 0.06
+            },
+            "description": "Increases the critical strike damage bonus of your ranged weapons by 6% per point"
+          },
+          "aimed_shot": {
+            "id": "aimed_shot",
+            "name": "Aimed Shot",
+            "maxPoints": 1,
+            "row": 5,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "mortal_shots",
+              "pointsRequired": 5
+            },
+            "effects": {
+              "damage": 1.5,
+              "castTime": 3
+            },
+            "description": "An aimed shot that deals 150% ranged weapon damage"
+          },
+          "trueshot_aura": {
+            "id": "trueshot_aura",
+            "name": "Trueshot Aura",
+            "maxPoints": 1,
+            "row": 7,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "aimed_shot",
+              "pointsRequired": 1
+            },
+            "effects": {
+              "attackPowerBonus": 50
+            },
+            "description": "Increases the attack power of party members by 50"
           }
         }
       },
@@ -3774,7 +4308,9 @@
             "maxPoints": 3,
             "row": 1,
             "column": 1,
-            "effects": { "damageBonus": 0.01 },
+            "effects": {
+              "damageBonus": 0.01
+            },
             "description": "Increases damage and crit damage against beasts, giants, and dragonkin by 1% per point"
           },
           "humanoid_slaying": {
@@ -3783,8 +4319,53 @@
             "maxPoints": 3,
             "row": 1,
             "column": 2,
-            "effects": { "damageBonus": 0.01 },
+            "effects": {
+              "damageBonus": 0.01
+            },
             "description": "Increases damage and crit damage against humanoids by 1% per point"
+          },
+          "surefooted": {
+            "id": "surefooted",
+            "name": "Surefooted",
+            "maxPoints": 3,
+            "row": 2,
+            "column": 3,
+            "prerequisite": null,
+            "effects": {
+              "hitChance": 0.01,
+              "resistSnareChance": 0.05
+            },
+            "description": "Increases hit chance by 1% and chance to resist movement impairing effects by 5% per point"
+          },
+          "deterrence": {
+            "id": "deterrence",
+            "name": "Deterrence",
+            "maxPoints": 1,
+            "row": 3,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "dodgeChance": 0.25,
+              "parryChance": 0.25,
+              "duration": 10
+            },
+            "description": "Increases your Dodge and Parry chance by 25% for 10 seconds"
+          },
+          "wyvern_sting": {
+            "id": "wyvern_sting",
+            "name": "Wyvern Sting",
+            "maxPoints": 1,
+            "row": 7,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "deterrence",
+              "pointsRequired": 1
+            },
+            "effects": {
+              "sleepDuration": 12,
+              "dotDamage": 0.2
+            },
+            "description": "Stings the target, putting it to sleep for 12 seconds. After the sleep, deals poison damage over 6 seconds"
           }
         }
       }
@@ -3802,7 +4383,9 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "manaCostReduction": 0.02 },
+            "effects": {
+              "manaCostReduction": 0.02
+            },
             "description": "Reduces mana cost of Lightning Bolt, Chain Lightning, and Shocks by 2% per point"
           },
           "concussion": {
@@ -3811,8 +4394,49 @@
             "maxPoints": 5,
             "row": 1,
             "column": 3,
-            "effects": { "damageBonus": 0.01 },
+            "effects": {
+              "damageBonus": 0.01
+            },
             "description": "Increases damage of Lightning Bolt, Chain Lightning, and Shocks by 1% per point"
+          },
+          "call_of_flame": {
+            "id": "call_of_flame",
+            "name": "Call of Flame",
+            "maxPoints": 3,
+            "row": 3,
+            "column": 1,
+            "prerequisite": null,
+            "effects": {
+              "damageBonus": 0.15
+            },
+            "description": "Increases damage of Fire Totems and Fire spells by 15% per point"
+          },
+          "elemental_mastery": {
+            "id": "elemental_mastery",
+            "name": "Elemental Mastery",
+            "maxPoints": 1,
+            "row": 5,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "instantCast": true,
+              "critChance": 1
+            },
+            "description": "When activated, your next Fire, Frost, or Nature damage spell becomes instant and has a 100% crit chance"
+          },
+          "thunderstorm": {
+            "id": "thunderstorm",
+            "name": "Thunderstorm",
+            "maxPoints": 1,
+            "row": 9,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "damage": 0.6,
+              "knockback": true,
+              "manaReturn": 0.08
+            },
+            "description": "Calls down a bolt of lightning, dealing damage, knocking back enemies and returning 8% mana"
           }
         }
       },
@@ -3826,7 +4450,9 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "manaBonus": 0.01 },
+            "effects": {
+              "manaBonus": 0.01
+            },
             "description": "Increases maximum mana by 1% per point"
           },
           "shield_specialization": {
@@ -3835,8 +4461,48 @@
             "maxPoints": 5,
             "row": 1,
             "column": 3,
-            "effects": { "blockChance": 0.01, "blockValue": 0.05 },
+            "effects": {
+              "blockChance": 0.01,
+              "blockValue": 0.05
+            },
             "description": "Increases block chance by 1% and block value by 5% per point"
+          },
+          "flurry": {
+            "id": "flurry",
+            "name": "Flurry",
+            "maxPoints": 5,
+            "row": 4,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "attackSpeed": 0.3
+            },
+            "description": "Increases attack speed by 30% for 3 swings after critical hit"
+          },
+          "dual_wield": {
+            "id": "dual_wield",
+            "name": "Dual Wield",
+            "maxPoints": 1,
+            "row": 5,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "allowOffhandWeapon": true
+            },
+            "description": "Allows one-handed and off-hand weapons to be equipped in the off-hand slot"
+          },
+          "feral_spirit": {
+            "id": "feral_spirit",
+            "name": "Feral Spirit",
+            "maxPoints": 1,
+            "row": 9,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "summonWolves": 2,
+              "duration": 30
+            },
+            "description": "Summons two Spirit Wolves to aid the Shaman for 30 seconds"
           }
         }
       },
@@ -3850,7 +4516,9 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "castTimeReduction": 0.1 },
+            "effects": {
+              "castTimeReduction": 0.1
+            },
             "description": "Reduces cast time of Healing Wave by 0.1s per point"
           },
           "tidal_focus": {
@@ -3859,8 +4527,48 @@
             "maxPoints": 5,
             "row": 1,
             "column": 3,
-            "effects": { "manaCostReduction": 0.01 },
+            "effects": {
+              "manaCostReduction": 0.01
+            },
             "description": "Reduces mana cost of healing spells by 1% per point"
+          },
+          "healing_way": {
+            "id": "healing_way",
+            "name": "Healing Way",
+            "maxPoints": 3,
+            "row": 3,
+            "column": 1,
+            "prerequisite": null,
+            "effects": {
+              "healingBonus": 0.25
+            },
+            "description": "Increases amount healed by Healing Wave by 25% per point"
+          },
+          "mana_tide_totem": {
+            "id": "mana_tide_totem",
+            "name": "Mana Tide Totem",
+            "maxPoints": 1,
+            "row": 5,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "manaRegen": 0.06,
+              "duration": 12
+            },
+            "description": "Summons a Mana Tide Totem that restores 6% of total mana every 3 seconds to the party"
+          },
+          "riptide": {
+            "id": "riptide",
+            "name": "Riptide",
+            "maxPoints": 1,
+            "row": 9,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "healing": 0.4,
+              "hot": 0.6
+            },
+            "description": "Instantly heals the target and additional healing over 15 seconds"
           }
         }
       }
@@ -3878,7 +4586,9 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "castTimeReduction": 0.1 },
+            "effects": {
+              "castTimeReduction": 0.1
+            },
             "description": "Reduces cast time of Wrath by 0.1s per point"
           },
           "nature_grasp": {
@@ -3887,8 +4597,79 @@
             "maxPoints": 1,
             "row": 1,
             "column": 1,
-            "effects": { "rootChance": 0.35 },
+            "effects": {
+              "rootChance": 0.35
+            },
             "description": "While active, any enemy hitting the caster has a 35% chance to be rooted"
+          },
+          "nature_s_grasp": {
+            "id": "nature_s_grasp",
+            "name": "Nature's Grasp",
+            "maxPoints": 1,
+            "row": 1,
+            "column": 1,
+            "prerequisite": null,
+            "effects": {
+              "entangleChance": 1
+            },
+            "description": "Gives a 100% chance to entangle enemies that strike the caster"
+          },
+          "improved_moonfire": {
+            "id": "improved_moonfire",
+            "name": "Improved Moonfire",
+            "maxPoints": 2,
+            "row": 2,
+            "column": 3,
+            "prerequisite": null,
+            "effects": {
+              "damageBonus": 0.1
+            },
+            "description": "Increases damage and critical strike chance of Moonfire by 10% per point"
+          },
+          "moonfury": {
+            "id": "moonfury",
+            "name": "Moonfury",
+            "maxPoints": 5,
+            "row": 5,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "damageBonus": 0.1
+            },
+            "description": "Increases damage dealt by Starfire, Moonfire and Wrath by 10% per point"
+          },
+          "moonkin_form": {
+            "id": "moonkin_form",
+            "name": "Moonkin Form",
+            "maxPoints": 1,
+            "row": 7,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "moonfury",
+              "pointsRequired": 5
+            },
+            "effects": {
+              "armorBonus": 4,
+              "spellCritBonus": 0.05
+            },
+            "description": "Transforms the Druid into Moonkin Form, increasing armor by 400% and spell critical strike chance by 5%"
+          },
+          "starfall": {
+            "id": "starfall",
+            "name": "Starfall",
+            "maxPoints": 1,
+            "row": 9,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "moonkin_form",
+              "pointsRequired": 1
+            },
+            "effects": {
+              "damage": 0.8,
+              "targets": 5,
+              "duration": 10
+            },
+            "description": "Calls down stars from the sky, dealing arcane damage to all nearby enemies over 10 seconds"
           }
         }
       },
@@ -3902,7 +4683,9 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "costReduction": 1 },
+            "effects": {
+              "costReduction": 1
+            },
             "description": "Reduces rage/energy cost of Maul, Swipe, Claw, and Rake by 1 per point"
           },
           "feral_aggression": {
@@ -3911,8 +4694,47 @@
             "maxPoints": 5,
             "row": 1,
             "column": 3,
-            "effects": { "damageBonus": 0.03 },
+            "effects": {
+              "damageBonus": 0.03
+            },
             "description": "Increases damage of Ferocious Bite and Demoralizing Roar effect by 3% per point"
+          },
+          "feral_instinct": {
+            "id": "feral_instinct",
+            "name": "Feral Instinct",
+            "maxPoints": 3,
+            "row": 2,
+            "column": 1,
+            "prerequisite": null,
+            "effects": {
+              "threatBonus": 0.15
+            },
+            "description": "Increases threat generated in Bear form by 15% per point"
+          },
+          "feral_swiftness": {
+            "id": "feral_swiftness",
+            "name": "Feral Instinct",
+            "maxPoints": 2,
+            "row": 3,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "movementSpeed": 0.3
+            },
+            "description": "Increases movement speed in Cat form by 30%"
+          },
+          "mangle": {
+            "id": "mangle",
+            "name": "Mangle",
+            "maxPoints": 1,
+            "row": 7,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "damage": 1.15,
+              "bleedBonus": 0.3
+            },
+            "description": "Mangle the target for 115% weapon damage and increases bleed damage by 30%"
           }
         }
       },
@@ -3926,8 +4748,11 @@
             "maxPoints": 5,
             "row": 1,
             "column": 2,
-            "effects": { "buffBonus": 0.04 },
-            "description": "Increases effects of Mark of the Wild by 4% per point"
+            "prerequisite": null,
+            "effects": {
+              "statBonus": 0.1
+            },
+            "description": "Increases effect of Mark of the Wild by 10% per point"
           },
           "furor": {
             "id": "furor",
@@ -3935,8 +4760,51 @@
             "maxPoints": 5,
             "row": 1,
             "column": 3,
-            "effects": { "rageOnShapeshift": 2 },
+            "effects": {
+              "rageOnShapeshift": 2
+            },
             "description": "Gives a 20% chance per point to gain 10 Rage when shifting to Bear or 40 Energy when shifting to Cat"
+          },
+          "nature_s_swiftness": {
+            "id": "nature_s_swiftness",
+            "name": "Nature's Swiftness",
+            "maxPoints": 1,
+            "row": 5,
+            "column": 3,
+            "prerequisite": null,
+            "effects": {
+              "instantCast": true
+            },
+            "description": "When activated, your next Nature spell becomes an instant cast"
+          },
+          "tree_of_life": {
+            "id": "tree_of_life",
+            "name": "Tree of Life",
+            "maxPoints": 1,
+            "row": 7,
+            "column": 2,
+            "prerequisite": null,
+            "effects": {
+              "healingBonus": 0.15,
+              "manaReduction": 0.2
+            },
+            "description": "Transforms the Druid into a Tree of Life, increasing healing by 15% and reducing mana cost by 20%"
+          },
+          "wild_growth": {
+            "id": "wild_growth",
+            "name": "Wild Growth",
+            "maxPoints": 1,
+            "row": 9,
+            "column": 2,
+            "prerequisite": {
+              "talentId": "tree_of_life",
+              "pointsRequired": 1
+            },
+            "effects": {
+              "healing": 0.5,
+              "targets": 5
+            },
+            "description": "Heals up to 5 party members over 7 seconds"
           }
         }
       }

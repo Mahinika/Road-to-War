@@ -38,17 +38,18 @@ func _log_debug(source: String, message: String):
 func _ready():
 	if CombatManager.has_signal("damage_dealt"):
 		CombatManager.damage_dealt.connect(_on_damage_dealt)
+
+	# Style the existing panel from the scene (avoid double-panels)
+	var ut = get_node_or_null("/root/UITheme")
+	var panel = get_node_or_null("Panel")
+	if ut and panel and panel is Panel:
+		panel.add_theme_stylebox_override("panel", ut.get_stylebox_panel(Color(0, 0, 0, 0.45), ut.COLORS["gold_border"], 1))
 	
-	# Add WoW-style background panel
-	var panel = Panel.new()
-	panel.name = "Background"
-	panel.show_behind_parent = true
-	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(panel)
-	
-	# Move RichTextLabel to be a child of a margin container for better padding
-	# but for now just style the panel
-	panel.add_theme_stylebox_override("panel", UITheme.get_stylebox_panel(Color(0, 0, 0, 0.4), UITheme.COLORS["gold_border"], 1))
+	if rich_text:
+		rich_text.add_theme_color_override("default_color", Color(0.95, 0.95, 0.95))
+		rich_text.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		rich_text.add_theme_constant_override("outline_size", 1)
+		rich_text.add_theme_font_size_override("normal_font_size", 12)
 	
 	_log_info("CombatLog", "Initialized")
 

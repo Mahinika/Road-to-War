@@ -29,8 +29,11 @@
       "auto_attack",
       "charge",
       "rend",
-      "taunt",
-      "battle_shout"
+      "shield_slam",
+      "shield_block",
+      "thunder_clap",
+      "mortal_strike",
+      "bloodthirst"
     ],
     "availableSpecs": [
       "protection",
@@ -51,9 +54,10 @@
     "coreAbilities": [
       "auto_attack",
       "smite",
-      "dispel",
-      "power_word_shield",
-      "fade"
+      "holy_fire",
+      "greater_heal",
+      "renew",
+      "power_word_shield"
     ],
     "availableSpecs": [
       "holy",
@@ -75,8 +79,10 @@
       "auto_attack",
       "fireball",
       "frostbolt",
-      "arcane_missiles",
-      "polymorph"
+      "arcane_blast",
+      "counterspell",
+      "pyroblast",
+      "arcane_explosion"
     ],
     "availableSpecs": [
       "arcane",
@@ -97,9 +103,10 @@
     "coreAbilities": [
       "auto_attack",
       "sinister_strike",
-      "evasion",
-      "stealth",
-      "kick"
+      "mutilate",
+      "eviscerate",
+      "kick",
+      "evasion"
     ],
     "availableSpecs": [
       "assassination",
@@ -120,9 +127,9 @@
     "coreAbilities": [
       "auto_attack",
       "shadow_bolt",
-      "drain_life",
-      "fear",
-      "summon_pet"
+      "corruption",
+      "unstable_affliction",
+      "seed_of_corruption"
     ],
     "availableSpecs": [
       "affliction",
@@ -143,9 +150,8 @@
     "coreAbilities": [
       "auto_attack",
       "aimed_shot",
-      "tracking",
-      "trap",
-      "aspect_of_the_hawk"
+      "steady_shot",
+      "explosive_trap"
     ],
     "availableSpecs": [
       "beast_mastery",
@@ -166,8 +172,8 @@
     "coreAbilities": [
       "auto_attack",
       "lightning_bolt",
+      "lava_burst",
       "earth_shock",
-      "totem",
       "chain_heal"
     ],
     "availableSpecs": [
@@ -189,9 +195,9 @@
     "coreAbilities": [
       "auto_attack",
       "wrath",
-      "moonfire",
-      "shapeshift",
-      "rejuvenation"
+      "starfire",
+      "rejuvenation",
+      "feral_bite"
     ],
     "availableSpecs": [
       "balance",

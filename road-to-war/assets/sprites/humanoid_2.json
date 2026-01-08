@@ -1,8 +1,9 @@
 {
-  "seed": 12347,
-  "type": "humanoid",
-  "palette": "warm",
-  "equipment": {},
-  "generatedAt": "2025-12-30T01:13:28.792Z",
-  "version": "1.1.0"
+  "id": "humanoid_2",
+  "tier": 0,
+  "tierName": "Ragged Traveler",
+  "size": 64,
+  "primaryColor": "#a0a0a0",
+  "generator": "lpc-style",
+  "timestamp": "2026-01-07T10:14:40.422Z"
 }

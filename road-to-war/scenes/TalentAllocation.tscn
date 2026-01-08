@@ -11,7 +11,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_oodo1")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="TalentAllocation"]
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -19,18 +19,18 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="HeroSelectContainer" type="HBoxContainer" parent="TalentAllocation/VBoxContainer"]
+[node name="HeroSelectContainer" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 
-[node name="HeroInfoLabel" type="Label" parent="TalentAllocation/VBoxContainer"]
+[node name="HeroInfoLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 
-[node name="PointsLabel" type="Label" parent="TalentAllocation/VBoxContainer"]
+[node name="PointsLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 
-[node name="TreesContainer" type="HBoxContainer" parent="TalentAllocation/VBoxContainer"]
+[node name="TreesContainer" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 
-[node name="BackButton" type="Button" parent="TalentAllocation/VBoxContainer"]
+[node name="BackButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 text = "BACK"

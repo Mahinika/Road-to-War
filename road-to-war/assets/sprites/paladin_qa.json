@@ -1,0 +1,54 @@
+{
+  "valid": false,
+  "issues": [
+    "Total proportion 75.0% is outside acceptable range (95-100%)",
+    "Color count 102 exceeds maximum 16",
+    "Detected 54 shading levels, expected 5 (±1)"
+  ],
+  "details": {
+    "proportions": {
+      "valid": false,
+      "issues": [
+        "Total proportion 75.0% is outside acceptable range (95-100%)"
+      ],
+      "actual": {
+        "head": 31.25,
+        "torso": 25,
+        "limbs": 18.75,
+        "total": 75
+      },
+      "expected": {
+        "head": {
+          "min": 0.3,
+          "max": 0.36
+        },
+        "torso": {
+          "min": 0.22,
+          "max": 0.28
+        },
+        "limbs": {
+          "min": 0.18,
+          "max": 0.22
+        }
+      }
+    },
+    "colorCount": 102,
+    "outline": {
+      "valid": true,
+      "issues": [],
+      "outerOutlineDetected": true
+    },
+    "shading": {
+      "valid": false,
+      "issues": [
+        "Detected 54 shading levels, expected 5 (±1)"
+      ],
+      "detectedLevels": 54,
+      "expectedLevels": 5
+    },
+    "clipping": {
+      "valid": true,
+      "issues": []
+    }
+  }
+}

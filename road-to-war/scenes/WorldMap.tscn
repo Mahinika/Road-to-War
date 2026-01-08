@@ -113,3 +113,10 @@ text = "X"
 [connection signal="pressed" from="MapPanel/CloseButton" to="." method="_on_close_pressed"]
 
 
+
+
+
+
+
+
+
