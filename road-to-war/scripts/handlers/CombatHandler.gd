@@ -21,6 +21,10 @@ var camera_manager: Node = null
 var ui_theme: Node = null
 var ability_manager: Node = null
 
+# Track spell projectiles so we can delay damage VFX until the projectile hits.
+# Keyed by "source_id->target_id".
+var _pending_projectiles_by_pair: Dictionary = {}
+
 const SCHOOL_COLORS := {
 	"arcane": Color(0.6, 0.4, 1.0),
 	"fire": Color(1.0, 0.4, 0.1),
@@ -108,6 +112,26 @@ func _on_combat_ended(victory: bool):
 func _on_damage_dealt(source_id: String, target_id: String, amount: int, is_crit: bool):
 	if not world_scene:
 		return
+
+	# If a projectile is in-flight for this pair, defer damage VFX until it arrives.
+	var pair_key := "%s->%s" % [source_id, target_id]
+	if _pending_projectiles_by_pair.has(pair_key):
+		var pending: Dictionary = _pending_projectiles_by_pair.get(pair_key, {})
+		if pending and str(pending.get("delivery", "")) == "projectile":
+			if not bool(pending.get("arrived", false)):
+				pending["pending_damage"] = {
+					"source_id": source_id,
+					"target_id": target_id,
+					"amount": amount,
+					"is_crit": is_crit
+				}
+				_pending_projectiles_by_pair[pair_key] = pending
+				return
+			else:
+				# Projectile already arrived but damage came after (edge case). Render as spell hit now.
+				_render_damage_event(source_id, target_id, amount, is_crit, str(pending.get("school", "physical")))
+				_pending_projectiles_by_pair.erase(pair_key)
+				return
 	
 	var target_node = world_scene._find_unit_node(target_id) if world_scene.has_method("_find_unit_node") else null
 	var source_node = world_scene._find_unit_node(source_id) if world_scene.has_method("_find_unit_node") else null
@@ -125,57 +149,7 @@ func _on_damage_dealt(source_id: String, target_id: String, amount: int, is_crit
 			tween.tween_property(source_node, "position:x", original_x, 0.2).set_ease(Tween.EASE_IN)
 	
 	if target_node:
-		var pos = target_node.global_position + Vector2(0, -40)
-		var spec_color = Color.WHITE
-		
-		var pm_node = get_node_or_null("/root/PartyManager")
-		var hero = pm_node.get_hero_by_id(source_id) if pm_node else null
-		if hero and ui_theme:
-			spec_color = ui_theme.get_spec_color(hero.class_id)
-		
-		if target_node.has_method("play_hit_flash"):
-			target_node.play_hit_flash()
-		
-		# Screen shake for big hits
-		if is_crit or amount > 100:
-			if camera_manager:
-				camera_manager.shake(5.0 if is_crit else 2.0, 0.2)
-		
-		# Particle effects
-		if particle_manager:
-			if is_crit:
-				particle_manager.create_crit_effect(target_node.global_position, spec_color)
-				particle_manager.create_hit_effect(target_node.global_position + Vector2(20, -20), spec_color)
-				particle_manager.create_hit_effect(target_node.global_position + Vector2(-20, -20), spec_color)
-			else:
-				particle_manager.create_hit_effect(target_node.global_position, spec_color)
-		
-		# Audio feedback
-		if audio_manager:
-			if is_crit:
-				audio_manager.play_crit_sfx()
-			else:
-				audio_manager.play_hit_sfx()
-		
-		# Floating damage text
-		var float_color = Color.YELLOW
-		if "hero" in target_id.to_lower():
-			float_color = Color.RED
-		
-		var text = str(amount)
-		if is_crit:
-			text = "CRIT! " + text
-			float_color = Color.ORANGE
-		
-		if particle_manager:
-			particle_manager.create_floating_text(pos, text, float_color)
-		
-		# Check for death
-		var combatant: Dictionary = combat_manager._get_combatant_by_id(target_id) if combat_manager else {}
-		var current_health = combatant.get("current_health") if combatant.has("current_health") else 0
-		if not combatant.is_empty() and current_health <= 0:
-			var is_hero_unit = "hero" in target_id.to_lower()
-			_handle_unit_death(target_id, target_node, is_hero_unit)
+		_render_damage_event(source_id, target_id, amount, is_crit, "physical")
 
 func _on_healing_applied(healer_id: String, target_id: String, amount: float):
 	if not world_scene:
@@ -213,31 +187,180 @@ func _on_combat_action_executed(data: Dictionary):
 	if actor_node.has_method("play_animation"):
 		var anim_to_play = "attack"
 		var school: String = "physical"
+		var delivery: String = "instant" # "instant" | "projectile"
+		var projectile_style: String = "bolt" # "bolt" | "orb" (we also accept legacy style strings from data)
+		var projectile_speed: float = 1400.0
+		var ability_type: String = "attack"
+		var ability_range: float = 0.0
 		if ability_manager and actor_id.begins_with("hero"):
-			var def = ability_manager.get_ability_definition(actor_id, action)
-			var typ = str(def.get("type")) if def.has("type") else "attack"
-			if typ in ["heal", "buff"]:
+			var def: Dictionary = ability_manager.get_ability_definition(actor_id, action)
+			ability_type = str(def.get("type")) if def.has("type") else "attack"
+			ability_range = float(def.get("range", 0.0))
+			if ability_type in ["heal", "buff", "aoe_heal", "hot", "shield"]:
 				anim_to_play = "cast"
 			school = _infer_school(action, def)
+			
+			# Optional data-driven visuals
+			if def.has("visuals") and def.get("visuals") is Dictionary:
+				var visuals: Dictionary = def.get("visuals")
+				var d := str(visuals.get("delivery", ""))
+				if d != "":
+					delivery = d
+				var s := str(visuals.get("style", ""))
+				if s != "":
+					projectile_style = s
+				projectile_speed = float(visuals.get("speed", projectile_speed))
+			
+			# Default: ranged non-physical damage spells become projectiles
+			if delivery == "instant" and school != "physical" and ability_range >= 300.0 and ability_type not in ["heal", "buff", "aoe_heal", "hot", "shield"]:
+				delivery = "projectile"
 		actor_node.play_animation(anim_to_play)
 		
 		# Cast + impact VFX (spell schools)
 		var school_color: Color = SCHOOL_COLORS.get(school, Color.CYAN)
+		
 		# Cast effect: show for any non-auto action
 		if action != "auto_attack" and particle_manager.has_method("create_cast_effect"):
 			particle_manager.create_cast_effect(actor_node.global_position, school_color)
 		
-		# Impact effect: target spells (damage). Heals already have their own green effect.
-		if target_node and particle_manager.has_method("create_magic_impact_effect"):
-			if String(action).find("heal") == -1:
-				particle_manager.create_magic_impact_effect(target_node.global_position, school_color)
-		elif target_id == "aoe":
-			# AOE: small impact on each visible enemy
-			var enemy_group = world_scene.get_node_or_null("EnemyGroup") if world_scene.has_method("get_node_or_null") else null
-			if enemy_group:
-				for node in enemy_group.get_children():
-					if node and node.visible and particle_manager.has_method("create_magic_impact_effect"):
-						particle_manager.create_magic_impact_effect(node.global_position, school_color)
+		# Normalize style strings coming from data (we only support "bolt" and "orb" at runtime).
+		# Convention: anything lightning-like becomes a bolt; everything else becomes an orb.
+		var style_l := projectile_style.to_lower()
+		if style_l.find("lightning") != -1 or style_l == "bolt":
+			projectile_style = "bolt"
+		else:
+			projectile_style = "orb"
+		
+		# Choose a default projectile style by school unless overridden by data.
+		if projectile_style == "bolt" and school != "nature":
+			projectile_style = "orb"
+		
+		# Projectile: travel from caster -> target, then delay damage VFX until it "hits"
+		if target_node and delivery == "projectile" and school != "physical" and particle_manager.has_method("create_spell_projectile"):
+			var pair_key := "%s->%s" % [actor_id, target_id]
+			_pending_projectiles_by_pair[pair_key] = {
+				"delivery": "projectile",
+				"arrived": false,
+				"school": school,
+				"school_color": school_color,
+				"pending_damage": null
+			}
+			particle_manager.create_spell_projectile(
+				actor_node.global_position + Vector2(0, -40),
+				target_node.global_position + Vector2(0, -40),
+				school_color,
+				projectile_style,
+				projectile_speed,
+				func():
+					_on_projectile_arrived(actor_id, target_id)
+			)
+		else:
+			# Instant Impact effect: target spells (damage). Heals already have their own green effect.
+			if target_node and particle_manager.has_method("create_magic_impact_effect"):
+				if ability_type not in ["heal", "buff", "aoe_heal", "hot", "shield"] and school != "physical":
+					particle_manager.create_magic_impact_effect(target_node.global_position, school_color)
+			elif target_id == "aoe":
+				# AOE: small impact on each visible enemy (no timing sync for now)
+				var enemy_group = world_scene.get_node_or_null("EnemyGroup") if world_scene.has_method("get_node_or_null") else null
+				if enemy_group:
+					for node in enemy_group.get_children():
+						if node and node.visible and particle_manager.has_method("create_magic_impact_effect"):
+							particle_manager.create_magic_impact_effect(node.global_position, school_color)
+
+func _on_projectile_arrived(source_id: String, target_id: String) -> void:
+	if not world_scene:
+		return
+	var pair_key := "%s->%s" % [source_id, target_id]
+	if not _pending_projectiles_by_pair.has(pair_key):
+		return
+	var pending: Dictionary = _pending_projectiles_by_pair.get(pair_key, {})
+	pending["arrived"] = true
+	_pending_projectiles_by_pair[pair_key] = pending
+	
+	# If we already received damage, render it now.
+	var dmg = pending.get("pending_damage")
+	if dmg and dmg is Dictionary:
+		_render_damage_event(
+			str(dmg.get("source_id", source_id)),
+			str(dmg.get("target_id", target_id)),
+			int(dmg.get("amount", 0)),
+			bool(dmg.get("is_crit", false)),
+			str(pending.get("school", "physical"))
+		)
+		_pending_projectiles_by_pair.erase(pair_key)
+	else:
+		# No damage yet (rare). Still show a small impact, and keep pending until damage arrives.
+		var target_node = world_scene._find_unit_node(target_id) if world_scene.has_method("_find_unit_node") else null
+		if target_node and particle_manager and particle_manager.has_method("create_magic_impact_effect"):
+			var school_color: Color = pending.get("school_color", Color.CYAN)
+			particle_manager.create_magic_impact_effect(target_node.global_position, school_color)
+
+func _render_damage_event(source_id: String, target_id: String, amount: int, is_crit: bool, school: String) -> void:
+	if not world_scene:
+		return
+	var target_node = world_scene._find_unit_node(target_id) if world_scene.has_method("_find_unit_node") else null
+	if not target_node:
+		return
+	
+	var pos = target_node.global_position + Vector2(0, -40)
+	var impact_color: Color = SCHOOL_COLORS.get(school, Color.WHITE)
+	
+	# If the source is a hero, prefer spec tint for physical hits; spells use school tint.
+	var pm_node = get_node_or_null("/root/PartyManager")
+	var hero = pm_node.get_hero_by_id(source_id) if pm_node else null
+	if hero and ui_theme and school == "physical":
+		impact_color = ui_theme.get_spec_color(hero.class_id)
+	
+	if target_node.has_method("play_hit_flash"):
+		target_node.play_hit_flash()
+	
+	# Screen shake for big hits
+	if is_crit or amount > 100:
+		if camera_manager:
+			camera_manager.shake(5.0 if is_crit else 2.0, 0.2)
+	
+	# Particle effects
+	if particle_manager:
+		if school == "physical":
+			if is_crit:
+				particle_manager.create_crit_effect(target_node.global_position, impact_color)
+				particle_manager.create_hit_effect(target_node.global_position + Vector2(20, -20), impact_color)
+				particle_manager.create_hit_effect(target_node.global_position + Vector2(-20, -20), impact_color)
+			else:
+				particle_manager.create_hit_effect(target_node.global_position, impact_color)
+		else:
+			# Spell hit: school-colored impact + optional crit sparkle
+			if is_crit and particle_manager.has_method("create_crit_effect"):
+				particle_manager.create_crit_effect(target_node.global_position, impact_color)
+			if particle_manager.has_method("create_magic_impact_effect"):
+				particle_manager.create_magic_impact_effect(target_node.global_position, impact_color)
+	
+	# Audio feedback
+	if audio_manager:
+		if is_crit:
+			audio_manager.play_crit_sfx()
+		else:
+			audio_manager.play_hit_sfx()
+	
+	# Floating damage text
+	var float_color = Color.YELLOW
+	if "hero" in target_id.to_lower():
+		float_color = Color.RED
+	
+	var text = str(amount)
+	if is_crit:
+		text = "CRIT! " + text
+		float_color = Color.ORANGE
+	
+	if particle_manager:
+		particle_manager.create_floating_text(pos, text, float_color)
+	
+	# Check for death
+	var combatant: Dictionary = combat_manager._get_combatant_by_id(target_id) if combat_manager else {}
+	var current_health = combatant.get("current_health") if combatant.has("current_health") else 0
+	if not combatant.is_empty() and current_health <= 0:
+		var is_hero_unit = "hero" in target_id.to_lower()
+		_handle_unit_death(target_id, target_node, is_hero_unit)
 
 func _infer_school(ability_id: String, def: Dictionary) -> String:
 	# Data-driven if present

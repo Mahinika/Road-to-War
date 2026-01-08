@@ -321,14 +321,15 @@ func _execute_hero_attack(hero):
 				var base_power = float(hero.current_stats.get("spellPower", hero.current_stats.get("attack", 10)))
 				amount = base_power * heal_mult
 			
-			dc.deal_healing(hero, chosen_target, amount)
-			am.set_cooldown(hero.id, ability_name)
+			# Emit action BEFORE applying healing so visuals (cast/projectile) can start first.
 			combat_action_executed.emit({
 				"actor": hero.id,
 				"action": ability_name,
 				"target": chosen_target.id,
 				"healing": amount
 			})
+			dc.deal_healing(hero, chosen_target, amount)
+			am.set_cooldown(hero.id, ability_name)
 			# GCD / attack pacing (keep existing attack_speed pacing)
 			var attack_speed = hero.current_stats.get("attackSpeed", 1.5)
 			hero_attack_cooldowns[hero.id] = attack_speed
@@ -337,6 +338,13 @@ func _execute_hero_attack(hero):
 	# Damage targeting
 	if ability_type == "aoe":
 		var dmg_mult = float(ability_def.get("damageMultiplier", 1.0))
+		# Emit action BEFORE damage so visuals can start first.
+		combat_action_executed.emit({
+			"actor": hero.id,
+			"action": ability_name,
+			"target": "aoe",
+			"damageMultiplier": dmg_mult
+		})
 		for enemy in alive_enemies:
 			if enemy.get("current_health", 0) <= 0:
 				continue
@@ -346,20 +354,13 @@ func _execute_hero_attack(hero):
 			var dmg = float(result.get("damage", 0)) * dmg_mult
 			dc.deal_damage(hero, enemy, dmg, bool(result.get("is_crit", false)))
 		am.set_cooldown(hero.id, ability_name)
-		combat_action_executed.emit({
-			"actor": hero.id,
-			"action": ability_name,
-			"target": "aoe",
-			"damageMultiplier": dmg_mult
-		})
 	else:
 		# Single target damage (attack/dot/buff fallback treated as attack for now)
 		var dmg_mult = float(ability_def.get("damageMultiplier", 1.0))
 		var result = dc.calculate_damage(hero.current_stats, target_enemy.get("stats", {}), hero, target_enemy)
 		if not result.get("miss", false):
 			var dmg = float(result.get("damage", 0)) * dmg_mult
-			dc.deal_damage(hero, target_enemy, dmg, bool(result.get("is_crit", false)))
-			am.set_cooldown(hero.id, ability_name)
+			# Emit action BEFORE damage so visuals (cast/projectile) can start first.
 			combat_action_executed.emit({
 				"actor": hero.id,
 				"action": ability_name,
@@ -367,6 +368,8 @@ func _execute_hero_attack(hero):
 				"damage": dmg,
 				"is_crit": result.get("is_crit", false)
 			})
+			dc.deal_damage(hero, target_enemy, dmg, bool(result.get("is_crit", false)))
+			am.set_cooldown(hero.id, ability_name)
 	
 	# Reset cooldown based on attack speed
 	var attack_speed = hero.current_stats.get("attackSpeed", 1.5)  # seconds between attacks
@@ -415,10 +418,7 @@ func _execute_enemy_attack(enemy: Dictionary):
 		if is_crit:
 			damage *= enemy.get("stats", {}).get("critMultiplier", 1.5)
 		
-		# CRITICAL FIX: Pass the hero object directly to deal_damage so stats are updated on the object, not a copy
-		dc.deal_damage(enemy, target, int(damage), is_crit)
-		
-		# Trigger attack animation
+		# Emit action BEFORE damage so visuals can start first.
 		combat_action_executed.emit({
 			"actor": enemy["instance_id"],
 			"action": "attack",
@@ -426,6 +426,9 @@ func _execute_enemy_attack(enemy: Dictionary):
 			"damage": damage,
 			"is_crit": is_crit
 		})
+		
+		# CRITICAL FIX: Pass the hero object directly to deal_damage so stats are updated on the object, not a copy
+		dc.deal_damage(enemy, target, int(damage), is_crit)
 	
 	# Reset cooldown based on attack speed
 	var attack_speed = enemy.get("stats", {}).get("attackSpeed", 2.0)

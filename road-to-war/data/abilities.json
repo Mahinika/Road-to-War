@@ -480,7 +480,12 @@
             "type": "attack",
             "damageMultiplier": 2.0,
             "scaling": "intellect",
-            "range": 800
+            "range": 800,
+            "visuals": {
+                "delivery": "projectile",
+                "style": "fire",
+                "speed": 1000
+            }
         },
         "frostbolt": {
             "name": "Frostbolt",
@@ -491,7 +496,12 @@
             "damageMultiplier": 1.6,
             "slowPercent": 0.4,
             "scaling": "intellect",
-            "range": 800
+            "range": 800,
+            "visuals": {
+                "delivery": "projectile",
+                "style": "frost",
+                "speed": 1100
+            }
         },
         "arcane_blast": {
             "name": "Arcane Blast",
@@ -502,7 +512,12 @@
             "damageMultiplier": 1.8,
             "stackingCost": true,
             "scaling": "intellect",
-            "range": 800
+            "range": 800,
+            "visuals": {
+                "delivery": "projectile",
+                "style": "arcane",
+                "speed": 1400
+            }
         },
         "counterspell": {
             "name": "Counterspell",
@@ -520,7 +535,12 @@
             "type": "attack",
             "damageMultiplier": 3.5,
             "scaling": "intellect",
-            "range": 800
+            "range": 800,
+            "visuals": {
+                "delivery": "projectile",
+                "style": "fire_heavy",
+                "speed": 800
+            }
         },
         "arcane_explosion": {
             "name": "Arcane Explosion",
@@ -629,7 +649,12 @@
             "type": "attack",
             "damageMultiplier": 1.4,
             "scaling": "intellect",
-            "range": 800
+            "range": 800,
+            "visuals": {
+                "delivery": "projectile",
+                "style": "holy",
+                "speed": 1200
+            }
         },
         "holy_fire": {
             "name": "Holy Fire",
@@ -641,7 +666,12 @@
             "dotMultiplier": 0.4,
             "duration": 7,
             "scaling": "intellect",
-            "range": 800
+            "range": 800,
+            "visuals": {
+                "delivery": "projectile",
+                "style": "holy_heavy",
+                "speed": 900
+            }
         },
         "greater_heal": {
             "name": "Greater Heal",
@@ -703,7 +733,12 @@
             "type": "attack",
             "range": 600,
             "damageMultiplier": 1.3,
-            "scaling": "intellect"
+            "scaling": "intellect",
+            "visuals": {
+                "delivery": "projectile",
+                "style": "shadow",
+                "speed": 1100
+            }
         },
         "pain_suppression": {
             "name": "Pain Suppression",
@@ -786,7 +821,12 @@
             "type": "attack",
             "damageMultiplier": 1.8,
             "scaling": "intellect",
-            "range": 800
+            "range": 800,
+            "visuals": {
+                "delivery": "projectile",
+                "style": "shadow",
+                "speed": 1000
+            }
         },
         "corruption": {
             "name": "Corruption",
@@ -829,7 +869,12 @@
             "type": "attack",
             "range": 600,
             "damageMultiplier": 1.3,
-            "scaling": "intellect"
+            "scaling": "intellect",
+            "visuals": {
+                "delivery": "projectile",
+                "style": "chaos",
+                "speed": 900
+            }
         },
         "demonbolt": {
             "name": "Demonbolt",
@@ -839,7 +884,12 @@
             "type": "attack",
             "range": 600,
             "damageMultiplier": 1.3,
-            "scaling": "intellect"
+            "scaling": "intellect",
+            "visuals": {
+                "delivery": "projectile",
+                "style": "shadow_heavy",
+                "speed": 1100
+            }
         },
         "drain_soul": {
             "name": "Drain Soul",
@@ -891,7 +941,12 @@
             "type": "attack",
             "range": 600,
             "damageMultiplier": 1.3,
-            "scaling": "intellect"
+            "scaling": "intellect",
+            "visuals": {
+                "delivery": "projectile",
+                "style": "fire_trail",
+                "speed": 1300
+            }
         },
         "inferno": {
             "name": "Inferno",
@@ -1059,7 +1114,12 @@
             "type": "attack",
             "damageMultiplier": 1.6,
             "scaling": "intellect",
-            "range": 800
+            "range": 800,
+            "visuals": {
+                "delivery": "projectile",
+                "style": "lightning",
+                "speed": 1800
+            }
         },
         "lava_burst": {
             "name": "Lava Burst",
@@ -1069,7 +1129,12 @@
             "type": "attack",
             "damageMultiplier": 2.2,
             "scaling": "intellect",
-            "range": 800
+            "range": 800,
+            "visuals": {
+                "delivery": "projectile",
+                "style": "lava",
+                "speed": 900
+            }
         },
         "earth_shock": {
             "name": "Earth Shock",
@@ -1202,7 +1267,12 @@
             "type": "attack",
             "damageMultiplier": 1.3,
             "scaling": "intellect",
-            "range": 800
+            "range": 800,
+            "visuals": {
+                "delivery": "projectile",
+                "style": "nature",
+                "speed": 1300
+            }
         },
         "starfire": {
             "name": "Starfire",
@@ -1212,7 +1282,12 @@
             "type": "attack",
             "damageMultiplier": 2.4,
             "scaling": "intellect",
-            "range": 800
+            "range": 800,
+            "visuals": {
+                "delivery": "projectile",
+                "style": "arcane_heavy",
+                "speed": 800
+            }
         },
         "rejuvenation": {
             "name": "Rejuvenation",
