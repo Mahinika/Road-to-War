@@ -473,7 +473,7 @@ func create_spell_projectile(from_pos: Vector2, to_pos: Vector2, color: Color = 
 		tint.default_color = Color(color.r, color.g, color.b, 0.85)
 		tint.antialiased = true
 		
-		func _regen_bolt_points():
+		var regen_bolt_points: Callable = func() -> void:
 			var p0 := Vector2.ZERO
 			var p3 := Vector2(-bolt_len, 0)
 			var jitter: float = max(4.0, bolt_len * 0.18)
@@ -484,10 +484,10 @@ func create_spell_projectile(from_pos: Vector2, to_pos: Vector2, color: Color = 
 			core.points = pts
 			tint.points = pts
 		
-		_regen_bolt_points()
+		regen_bolt_points.call()
 		# Flicker a few times to feel alive (timers are short; safe to let them die when node frees)
 		for i in range(3):
-			get_tree().create_timer(duration * (0.25 + float(i) * 0.2)).timeout.connect(_regen_bolt_points)
+			get_tree().create_timer(duration * (0.25 + float(i) * 0.2)).timeout.connect(regen_bolt_points)
 	
 	var tween := get_tree().create_tween()
 	tween.tween_property(projectile, "global_position", to_pos, duration).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
