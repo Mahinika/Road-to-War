@@ -498,13 +498,15 @@ CursorLogManager (Autoload)
 
 ## Testing Framework
 
+**AUTOMATED TESTING REQUIREMENT**: All tests MUST be automated - no manual execution required. User should be able to run via npm scripts, Godot CLI, or automated tools. Create and maintain automation for all testing requirements.
+
 **Current Testing Architecture (Godot 4.x):**
 - **Godot Test Framework**: Native GDScript testing via `@tool` scripts
   - Location: `road-to-war/tests/` - Test scripts
   - Location: `road-to-war/scripts/TestSuite.gd` - Test suite runner
   - Configuration: Godot Editor → Run → Test Scene
   - Commands: Run tests via Godot Editor or command line
-- **Test Suite**: 
+- **Test Suite**:
   - `TestSuite.gd` - Comprehensive test runner for all systems
   - Tests for managers, utilities, and integration flows
   - Manual testing via debug tools (F1-F10 shortcuts)

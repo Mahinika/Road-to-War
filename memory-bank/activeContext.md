@@ -4,6 +4,8 @@
 **Project Status: Production Ready - Balance Verification Phase ✅**
 **Status**: Comprehensive state analysis completed (January 2026). All core systems functional (85% overall completion). Balance pass adjustments applied and verified. **Balance audit automation system complete** - ready for verification run. Ready to proceed with recommendations-based roadmap. Project is 100% Godot-native, production-ready, and well-architected.
 
+**Automated Testing Requirement**: All tests MUST be automated - no manual execution required. User should be able to run via npm scripts, Godot CLI, or automated tools. Create and maintain automation for any testing requirements.
+
 ### Quick Status Summary (January 2026)
 - ✅ **Core Systems**: 100% complete (Party, Combat, Loot, Equipment, Talents, Prestige)
 - ✅ **WotLK Systems**: Phases 1, 2 & 3 complete (Taunt, Execute, Combo Points, Party Buffs, Forms/Stances, Pets, Channeled Spells, Bounce Heals)

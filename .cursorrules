@@ -182,6 +182,7 @@ Create additional files/folders within memory-bank/ when they help organize:
 - **Memory Bank reading is MANDATORY** - See "FIRST STEPS" section above
 - **Role-specific prompts are in this file** - See "Road of War: Role-Based Development Prompts" section below
 - **Reference `docs/PROMPTS.md`** only if it contains additional context beyond what's in this file
+- **AUTOMATED TESTING REQUIREMENT**: All tests we need to run MUST be automated via scripts or tools. User should never have to manually execute tests - they should be able to run via npm scripts, Godot CLI, or automated tools. Create and maintain automation for any testing requirements.
 
 ## BEFORE WRITING CODE
 

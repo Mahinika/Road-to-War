@@ -494,6 +494,34 @@ if hero_group:
 
 ---
 
+## Decision #19: Automated Testing Requirement
+
+**Date**: January 2026
+
+**Decision**: All tests we need to run MUST be automated via scripts or tools. User should never have to manually execute tests - they should be able to run via npm scripts, Godot CLI, or automated tools. Create and maintain automation for any testing requirements.
+
+**Rationale**:
+- **User Experience**: User should not have to manually run tests or remember complex procedures
+- **Reliability**: Automated tests ensure consistent execution and reduce human error
+- **Efficiency**: Saves time and prevents manual testing bottlenecks
+- **Scalability**: As test suite grows, automation becomes increasingly important
+- **Consistency**: Ensures tests are run the same way every time
+- **Integration**: Fits with existing automation patterns (balance audit, asset generation)
+
+**Alternatives Considered**:
+- Manual testing with documentation: Rejected - prone to human error and inconsistent execution
+- Partial automation: Rejected - creates confusion about what needs to be automated vs manual
+- No automation requirement: Rejected - doesn't scale with project complexity
+
+**Status**: ✅ Implemented - Added to .cursorrules, techContext.md, and systemPatterns.md as mandatory requirement
+
+**Impact**:
+- **Positive**: Ensures all testing is automated, improves reliability and user experience
+- **Constraints**: Must create automation for any new testing requirements
+- **Affected Systems**: All testing workflows, tool development, documentation
+
+---
+
 ## Decision #18: Equipment Display System Implementation
 
 **Date**: January 2026 (Visual Enhancement)

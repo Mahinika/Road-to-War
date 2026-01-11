@@ -318,6 +318,7 @@ This section documents measured performance characteristics, optimization impact
 - **Debug Output**: Godot's console output for runtime debugging
 
 ### Testing & Automation Tools (January 2026)
+- **AUTOMATED TESTING REQUIREMENT**: All tests MUST be automated - no manual execution required. User should be able to run via npm scripts, Godot CLI, or automated tools. Create and maintain automation for all testing requirements.
 - **Balance Audit Automation**: Comprehensive automation system for balance testing
   - `scripts/run-balance-audit.js` - Automated balance audit runner (tries Godot command line, falls back to instructions)
   - `scripts/analyze-balance-audit.js` - Analysis script that reads audit reports, analyzes DPS by class/spec, identifies overperforming/underperforming classes, generates summary JSON
