@@ -40,7 +40,8 @@ func run_all_tests():
 	print("\n=== TEST SUITE COMPLETED ===\n")
 
 func test_stats_audit():
-	print("[TEST] Stats Audit (Balance Report)...")
+	print("[TEST] Stats Audit (Balance Report) - STARTING WITH ABILITY TESTING...")
+	print("[DEBUG] TestSuite.test_stats_audit() called successfully")
 	var dm = get_node_or_null("/root/DataManager")
 	var hf = get_node_or_null("/root/HeroFactory")
 	var sc = get_node_or_null("/root/StatCalculator")
@@ -170,9 +171,39 @@ func test_stats_audit():
 				# DPS vs scaled enemy at different miles
 				for mile in mile_samples:
 					var enemy_stats: Dictionary = _audit_scaled_enemy(enemies, baseline_enemy_id, mile)
-					var avg_damage: float = _audit_average_damage(dc, stats, enemy_stats, iterations)
-					var dps: float = avg_damage / attack_speed
-					level_block["dps_by_mile"][str(mile)] = {"avg_hit": avg_damage, "dps": dps, "enemy_hp": float(enemy_stats.get("health", 0.0))}
+
+				# Test both auto-attack and key abilities
+				var auto_attack_damage: float = _audit_average_damage(dc, stats, enemy_stats, iterations, hero, "")
+				var auto_attack_dps: float = auto_attack_damage / attack_speed
+
+				# Test key abilities for this class/spec (if available)
+				var ability_damages: Dictionary = {}
+				var key_abilities = _get_key_abilities_for_class_spec(class_id, spec_id)
+				print("[DEBUG] Testing %d key abilities for %s/%s" % [key_abilities.size(), class_id, spec_id])
+				for ability_name in key_abilities:
+						# Ensure hero is in PartyManager during ability lookup
+						var hero_was_added = false
+						if not pm.heroes.has(hero):
+							pm.add_hero(hero)
+							hero_was_added = true
+
+						print("[BALANCE AUDIT] Testing ability: %s for %s/%s" % [ability_name, class_id, spec_id])
+						var ability_damage: float = _audit_average_damage(dc, stats, enemy_stats, iterations, hero, ability_name)
+						print("[BALANCE AUDIT] Ability %s damage: %f" % [ability_name, ability_damage])
+
+						# Remove hero if we added it temporarily
+						if hero_was_added:
+							pm.heroes.erase(hero)
+
+						if ability_damage > 0:
+							var ability_dps: float = ability_damage / attack_speed
+							ability_damages[ability_name] = {"avg_hit": ability_damage, "dps": ability_dps}
+
+					level_block["dps_by_mile"][str(mile)] = {
+						"auto_attack": {"avg_hit": auto_attack_damage, "dps": auto_attack_dps},
+						"abilities": ability_damages,
+						"enemy_hp": float(enemy_stats.get("health", 0.0))
+					}
 				
 				spec_block["levels"][str(level)] = level_block
 	
@@ -222,15 +253,72 @@ func _audit_scaled_enemy(enemies: Dictionary, enemy_id: String, mile: int) -> Di
 	stats["defense"] = base_def + (mile * 2)
 	return stats
 
-func _audit_average_damage(dc: Node, attacker_stats: Dictionary, target_stats: Dictionary, iterations: int) -> float:
+func _get_key_abilities_for_class_spec(class_id: String, spec_id: String) -> Array[String]:
+	# Return key abilities that should be tested for balance auditing
+	# Focus on abilities we adjusted in the balance pass
+	var key_abilities: Dictionary = {
+		"warrior": {
+			"arms": ["mortal_strike", "execute"],
+			"fury": ["bloodthirst"]
+		},
+		"paladin": {
+			"retribution": ["crusader_strike", "divine_storm"],
+			"holy": ["judgment"]  # Healer, but still test damage ability
+		},
+		"warlock": {
+			"affliction": ["corruption", "unstable_affliction"]
+		},
+		"druid": {
+			"feral": ["mangle", "swipe"]
+		}
+	}
+
+	if key_abilities.has(class_id) and key_abilities[class_id].has(spec_id):
+		return key_abilities[class_id][spec_id]
+	return []
+
+func _audit_average_damage(dc: Node, attacker_stats: Dictionary, target_stats: Dictionary, iterations: int, hero = null, ability_name: String = "") -> float:
 	var sum: float = 0.0
 	var hits: int = 0
-	for i in range(iterations):
-		var res: Dictionary = dc.calculate_damage(attacker_stats, target_stats)
-		if bool(res.get("miss", false)):
-			continue
-		sum += float(res.get("damage", 0.0))
-		hits += 1
+
+	# If testing ability damage, use ability multipliers
+	if ability_name != "" and hero != null:
+		print("[ABILITY AUDIT] Testing ability: %s for hero: %s (%s/%s)" % [ability_name, hero.id, hero.class_id, hero.spec_id])
+		var am = get_node_or_null("/root/AbilityManager")
+		if am:
+			var ability_def = am.get_ability_definition(hero.id, ability_name)
+			print("[ABILITY AUDIT] Ability definition found: %s" % str(!ability_def.is_empty()))
+			if ability_def:
+				print("[ABILITY AUDIT] Ability def: %s" % str(ability_def))
+				# Simulate ability damage calculation (similar to CombatActions)
+				var ability_type = ability_def.get("type", "attack")
+				var damage_mult = ability_def.get("damageMultiplier", 1.0)
+				print("[ABILITY AUDIT] Damage multiplier: %f" % damage_mult)
+
+				for i in range(iterations):
+					var base_damage = dc.calculate_damage(attacker_stats, target_stats, hero, {"stats": target_stats})
+					if bool(base_damage.get("miss", false)):
+						continue
+
+					# Apply ability damage multiplier
+					var ability_damage = float(base_damage.get("damage", 0.0)) * damage_mult
+					sum += ability_damage
+					hits += 1
+			else:
+				# Fallback to auto-attack if ability not found
+				return _audit_average_damage(dc, attacker_stats, target_stats, iterations, hero, "")
+		else:
+			# Fallback to auto-attack if AbilityManager not available
+			return _audit_average_damage(dc, attacker_stats, target_stats, iterations, hero, "")
+	else:
+		# Standard auto-attack damage calculation
+		for i in range(iterations):
+			var res: Dictionary = dc.calculate_damage(attacker_stats, target_stats, hero, {"stats": target_stats})
+			if bool(res.get("miss", false)):
+				continue
+			sum += float(res.get("damage", 0.0))
+			hits += 1
+
 	if hits <= 0:
 		return 0.0
 	return sum / float(hits)

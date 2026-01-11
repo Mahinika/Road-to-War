@@ -56,7 +56,7 @@ layout_mode = 0
 offset_left = 30.0
 offset_top = 80.0
 offset_right = 280.0
-offset_bottom = 200.0
+offset_bottom = 220.0
 
 [node name="PrestigeLabel" type="RichTextLabel" parent="Prestige/MainPanel/StatsPanel"]
 layout_mode = 1
@@ -66,12 +66,27 @@ anchor_bottom = 1.0
 offset_left = 10.0
 offset_top = 10.0
 offset_right = -10.0
-offset_bottom = -10.0
+offset_bottom = -40.0
 grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
 text = "Available Points: 0
 Prestige Level: 0"
+
+[node name="PrestigeProgress" type="ProgressBar" parent="Prestige/MainPanel/StatsPanel"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -30.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+max_value = 100.0
+step = 1.0
 
 [node name="ScrollContainer" type="ScrollContainer" parent="Prestige/MainPanel"]
 layout_mode = 1

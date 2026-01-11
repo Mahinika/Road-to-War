@@ -46,17 +46,34 @@ function getDPS(report, classId, specId, level = 80, mile = 0) {
     try {
         const classData = report.classes[classId];
         if (!classData) return null;
-        
+
         const specData = classData.specs[specId];
         if (!specData) return null;
-        
+
         const levelData = specData.levels?.[String(level)];
         if (!levelData) return null;
-        
+
         const mileData = levelData.dps_by_mile?.[String(mile)];
         if (!mileData) return null;
-        
-        return mileData.dps || null;
+
+        // Use ability DPS if available, otherwise fall back to auto-attack
+        let dps = mileData.auto_attack?.dps || mileData.dps || 0;
+
+        // For classes with key abilities, use the highest ability DPS
+        if (mileData.abilities) {
+            const abilityDPS = Object.values(mileData.abilities)
+                .map(ability => ability.dps)
+                .filter(d => d > 0);
+
+            if (abilityDPS.length > 0) {
+                // Use average of top abilities (weighted toward the highest)
+                const sortedDPS = abilityDPS.sort((a, b) => b - a);
+                dps = sortedDPS.slice(0, Math.min(2, sortedDPS.length))
+                    .reduce((sum, d) => sum + d, 0) / Math.min(2, sortedDPS.length);
+            }
+        }
+
+        return dps;
     } catch (e) {
         return null;
     }

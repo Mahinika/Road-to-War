@@ -34,26 +34,40 @@ func _log_debug(source: String, message: String):
 # Prestige.gd - Prestige system menu
 
 @onready var prestige_label: RichTextLabel = $MainPanel/StatsPanel/PrestigeLabel
+@onready var prestige_progress: ProgressBar = $MainPanel/StatsPanel/PrestigeProgress
 @onready var upgrade_grid: GridContainer = $MainPanel/ScrollContainer/UpgradeGrid
 @onready var prestige_button: Button = $MainPanel/PrestigeButton
 @onready var back_button: Button = $MainPanel/BackButton
 
+# Tooltip system
+var tooltip_panel: Panel = null
+var tooltip_label: RichTextLabel = null
+var current_tooltip_upgrade: Dictionary = {}
+
 func _ready():
 	_log_info("Prestige", "Scene initialized")
-	
+
 	var ut = get_node_or_null("/root/UITheme")
 	if not ut: return
-	
+
 	# Apply WoW Style
 	$MainPanel.add_theme_stylebox_override("panel", ut.get_stylebox_panel(ut.COLORS["frame"], ut.COLORS["gold_border"], 2))
 	$MainPanel/StatsPanel.add_theme_stylebox_override("panel", ut.get_stylebox_panel(ut.COLORS["frame_dark"], ut.COLORS["gold_border"], 1))
-	
+
 	prestige_button.add_theme_stylebox_override("normal", ut.get_stylebox_panel(ut.COLORS["frame_dark"], ut.COLORS["gold"], 2))
 	back_button.add_theme_stylebox_override("normal", ut.get_stylebox_panel(ut.COLORS["frame"], ut.COLORS["gold_border"], 1))
-	
+
+	# Style progress bar
+	if prestige_progress:
+		prestige_progress.add_theme_stylebox_override("fill", ut.get_stylebox_panel(Color(0.8, 0.6, 0.2, 0.8), Color.GOLD, 1))
+		prestige_progress.add_theme_stylebox_override("background", ut.get_stylebox_panel(Color(0.2, 0.2, 0.2, 0.5), Color(0.5, 0.5, 0.5), 1))
+
 	prestige_button.pressed.connect(_on_prestige_pressed)
 	back_button.pressed.connect(_on_back_pressed)
-	
+
+	# Create tooltip system
+	_create_tooltip_panel()
+
 	_populate_upgrades()
 	_update_display()
 
@@ -139,12 +153,15 @@ func _populate_upgrades():
 		cost_label.text = "Cost: %d Points" % cost
 		vbox.add_child(cost_label)
 		
-		# Description label
+		# Description label (shortened for grid view)
 		var desc_label = Label.new()
 		desc_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
 		desc_label.add_theme_font_size_override("font_size", 11)
 		desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		desc_label.text = description
+
+		# Show only first line in grid, full description in tooltip
+		var desc_lines = description.split("\n")
+		desc_label.text = desc_lines[0] + (desc_lines.size() > 1 ? "..." : "")
 		desc_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		vbox.add_child(desc_label)
 		
@@ -165,6 +182,10 @@ func _populate_upgrades():
 			panel.add_child(btn)
 			btn.pressed.connect(_on_upgrade_button_pressed.bind(up_id))
 
+			# Add tooltip hover functionality
+			btn.mouse_entered.connect(_on_upgrade_hover.bind(up_data, panel))
+			btn.mouse_exited.connect(_on_upgrade_unhover)
+
 func _on_upgrade_button_pressed(upgrade_id: String):
 	_on_upgrade_purchased(upgrade_id)
 
@@ -181,7 +202,17 @@ func _update_display():
 	
 	var text = "[color=#FFD700]Available Points: %d[/color]\n" % points
 	text += "[color=#FFD700]Prestige Level: %d[/color]\n" % prestige_level
-	text += "\n[color=#00FF00]Next Prestige Rewards:[/color]\n"
+
+	# Add prestige milestone indicators
+	text += "\n[color=#87CEEB]Prestige Milestones:[/color]\n"
+	var milestones = [1, 5, 10, 25, 50, 100]
+	for milestone in milestones:
+		var achieved = prestige_level >= milestone
+		var marker = "[color=#00FF00]✓[/color]" if achieved else "[color=#666666]○[/color]"
+		text += "%s Level %d " % [marker, milestone]
+		if milestone < milestones.back():
+			text += " "
+	text += "\n\n[color=#00FF00]Next Prestige Rewards:[/color]\n"
 	text += "  Base: %d\n" % breakdown.get("base", 0)
 	if breakdown.get("level_bonus", 0) > 0:
 		text += "  Level Bonus: +%d\n" % breakdown.get("level_bonus", 0)
@@ -199,10 +230,17 @@ func _update_display():
 		text += "  [color=#FFA500]Multiplier: %.2fx[/color]\n" % multiplier
 	
 	text += "[color=#FFD700]Total: +%d Points[/color]" % breakdown.get("total", 0)
-	
+
 	if prestige_label:
 		prestige_label.bbcode_enabled = true
 		prestige_label.text = text
+
+	# Update prestige progress bar (visual indicator of prestige level)
+	if prestige_progress:
+		# Show prestige level as a percentage of progress (cycles every 10 levels for visual feedback)
+		var visual_progress = fmod(prestige_level, 10) / 10.0 * 100.0
+		prestige_progress.value = visual_progress
+		prestige_progress.tooltip_text = "Prestige Level %d" % prestige_level
 	
 	# Enable/disable prestige button based on availability and requirements
 	var can_prestige = prem.can_prestige() and breakdown.get("total", 0) > 0
@@ -381,3 +419,126 @@ func _confirm_prestige(dialog_panel: Node = null):
 func _on_back_pressed():
 	var sm = get_node_or_null("/root/SceneManager")
 	if sm: sm.change_scene("res://scenes/MainMenu.tscn")
+
+func _create_tooltip_panel():
+	"""Create the tooltip panel for upgrade details"""
+	var ut = get_node_or_null("/root/UITheme")
+	if not ut: return
+
+	tooltip_panel = Panel.new()
+	tooltip_panel.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	tooltip_panel.custom_minimum_size = Vector2(400, 250)
+	tooltip_panel.position = Vector2(-420, -270)  # Position near bottom right
+	tooltip_panel.z_index = 100
+	tooltip_panel.visible = false
+	tooltip_panel.add_theme_stylebox_override("panel", ut.get_stylebox_panel(
+		ut.COLORS["frame_dark"],
+		ut.COLORS["gold_border"],
+		2
+	))
+	add_child(tooltip_panel)
+
+	# Create tooltip content
+	var vbox = VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.add_theme_constant_override("separation", 8)
+	vbox.add_theme_constant_override("offset_left", 15)
+	vbox.add_theme_constant_override("offset_top", 15)
+	vbox.add_theme_constant_override("offset_right", -15)
+	vbox.add_theme_constant_override("offset_bottom", -15)
+	tooltip_panel.add_child(vbox)
+
+	# Title
+	var title_label = Label.new()
+	title_label.add_theme_color_override("font_color", Color.GOLD)
+	title_label.add_theme_font_size_override("font_size", 16)
+	title_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	title_label.add_theme_constant_override("outline_size", 1)
+	vbox.add_child(title_label)
+
+	# Separator
+	var separator = HSeparator.new()
+	vbox.add_child(separator)
+
+	# Content
+	tooltip_label = RichTextLabel.new()
+	tooltip_label.bbcode_enabled = true
+	tooltip_label.fit_content = true
+	tooltip_label.scroll_active = true
+	tooltip_label.add_theme_color_override("default_color", Color(0.95, 0.95, 0.95))
+	tooltip_label.add_theme_font_size_override("normal_font_size", 12)
+	tooltip_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(tooltip_label)
+
+func _on_upgrade_hover(upgrade_data: Dictionary, panel: Panel):
+	"""Show tooltip when hovering over upgrade"""
+	if not tooltip_panel or not tooltip_label: return
+
+	var upgrade_name = upgrade_data.get("name", "Unknown")
+	var description = upgrade_data.get("description", "")
+	var cost = upgrade_data.get("cost", 0)
+	var is_purchased = upgrade_data.get("purchased", false)
+	var can_afford = upgrade_data.get("can_afford", false)
+	var upgrade_type = upgrade_data.get("type", "unknown")
+
+	# Update tooltip title
+	var title_node = tooltip_panel.get_child(0).get_child(0)  # VBox -> Title
+	if title_node:
+		title_node.text = upgrade_name
+
+	# Build detailed tooltip content
+	var tooltip_text = ""
+
+	# Full description
+	tooltip_text += description + "\n\n"
+
+	# Cost and status
+	if is_purchased:
+		tooltip_text += "[color=#00FF00]✓ PURCHASED[/color]\n"
+	else:
+		tooltip_text += "[color=#FFD700]Cost: %d Prestige Points[/color]\n" % cost
+		if can_afford:
+			tooltip_text += "[color=#00FF00]Can Afford[/color]\n"
+		else:
+			tooltip_text += "[color=#FF6B6B]Cannot Afford[/color]\n"
+
+	# Current effect if applicable
+	var prem = get_node_or_null("/root/PrestigeManager")
+	if prem and upgrade_type in ["stat_multiplier", "gold_multiplier", "xp_multiplier", "gear_effectiveness", "combat_bonus"]:
+		var current_effect = prem.get_upgrade_current_effect(upgrade_data.get("id", ""))
+		if current_effect > 0:
+			var effect_desc = ""
+			match upgrade_type:
+				"stat_multiplier":
+					var stat = upgrade_data.get("stat", "unknown")
+					effect_desc = "+%.0f%% %s" % [current_effect * 100, stat.capitalize()]
+				"gold_multiplier":
+					effect_desc = "+%.0f%% gold gain" % [current_effect * 100]
+				"xp_multiplier":
+					effect_desc = "+%.0f%% experience gain" % [current_effect * 100]
+				"gear_effectiveness":
+					effect_desc = "+%.0f%% gear effectiveness" % [current_effect * 100]
+				"combat_bonus":
+					effect_desc = "+%.0f%% damage and healing" % [current_effect * 100]
+
+			if effect_desc != "":
+				tooltip_text += "\n[color=#87CEEB]Current Effect: %s[/color]" % effect_desc
+
+	# Update tooltip content
+	tooltip_label.text = tooltip_text
+
+	# Position tooltip near the hovered panel
+	var panel_global_pos = panel.get_global_rect()
+	tooltip_panel.position = Vector2(
+		clamp(panel_global_pos.position.x + panel_global_pos.size.x + 10, 10, get_viewport_rect().size.x - 410),
+		clamp(panel_global_pos.position.y, 10, get_viewport_rect().size.y - 260)
+	)
+
+	tooltip_panel.visible = true
+	current_tooltip_upgrade = upgrade_data
+
+func _on_upgrade_unhover():
+	"""Hide tooltip when not hovering"""
+	if tooltip_panel:
+		tooltip_panel.visible = false
+	current_tooltip_upgrade = {}

@@ -5,7 +5,7 @@
     {
       "id": "attack_bonus_1",
       "name": "Attack Bonus I",
-      "description": "+10% base attack",
+      "description": "+10% base attack power\n\nIncreases the raw attack power of all heroes, making their auto-attacks and abilities deal more damage.",
       "cost": 1,
       "type": "stat_multiplier",
       "stat": "attack",
@@ -14,7 +14,7 @@
     {
       "id": "attack_bonus_2",
       "name": "Attack Bonus II",
-      "description": "+10% base attack (stacks)",
+      "description": "+10% base attack power (stacks with I)\n\nFurther increases attack power, compounding with previous attack bonuses for significant damage growth.",
       "cost": 2,
       "type": "stat_multiplier",
       "stat": "attack",
@@ -23,7 +23,7 @@
     {
       "id": "attack_bonus_3",
       "name": "Attack Bonus III",
-      "description": "+15% base attack (stacks)",
+      "description": "+15% base attack power (stacks with I & II)\n\nMajor attack power upgrade that dramatically increases damage output across all heroes and abilities.",
       "cost": 5,
       "type": "stat_multiplier",
       "stat": "attack",
@@ -99,7 +99,7 @@
     {
       "id": "better_loot_1",
       "name": "Better Loot I",
-      "description": "+10% item quality chance per prestige level",
+      "description": "+10% item quality chance per prestige level\n\nIncreases the likelihood of finding higher-quality items (Uncommon, Rare, Epic) from enemies and chests. Quality bonus scales with your prestige level.",
       "cost": 5,
       "type": "item_quality_bonus",
       "value": 0.10
@@ -107,7 +107,7 @@
     {
       "id": "better_loot_2",
       "name": "Better Loot II",
-      "description": "+15% item quality chance per prestige level",
+      "description": "+15% item quality chance per prestige level\n\nSignificantly improves item quality rolls, making Epic and Legendary items much more common as you progress through prestige levels.",
       "cost": 8,
       "type": "item_quality_bonus",
       "value": 0.15
@@ -131,7 +131,7 @@
     {
       "id": "gear_affinity_1",
       "name": "Gear Affinity I",
-      "description": "+5% stat effectiveness from gear",
+      "description": "+5% stat effectiveness from gear\n\nIncreases the effectiveness of all equipped items, making your gear provide more stats and combat power. Essential for maximizing equipment value.",
       "cost": 7,
       "type": "gear_effectiveness",
       "value": 0.05
@@ -139,7 +139,7 @@
     {
       "id": "gear_affinity_2",
       "name": "Gear Affinity II",
-      "description": "+10% stat effectiveness from gear",
+      "description": "+10% stat effectiveness from gear\n\nSignificantly enhances gear performance, making high-quality equipment even more powerful and rewarding investment in better items.",
       "cost": 12,
       "type": "gear_effectiveness",
       "value": 0.10
@@ -147,7 +147,7 @@
     {
       "id": "talent_efficiency_1",
       "name": "Talent Efficiency I",
-      "description": "-10% talent point cost",
+      "description": "-10% talent point cost\n\nReduces the prestige points required to purchase talent upgrades, making it easier to customize your heroes' abilities and playstyle.",
       "cost": 8,
       "type": "talent_cost_reduction",
       "value": 0.10
@@ -155,7 +155,7 @@
     {
       "id": "talent_efficiency_2",
       "name": "Talent Efficiency II",
-      "description": "-15% talent point cost",
+      "description": "-15% talent point cost\n\nMajor reduction in talent costs, allowing for much more flexible hero customization and faster progression through the talent trees.",
       "cost": 15,
       "type": "talent_cost_reduction",
       "value": 0.15

@@ -35,7 +35,25 @@ for (const [classId, classData] of Object.entries(report.classes)) {
     for (const [specId, specData] of Object.entries(classData.specs)) {
         const level80 = specData.levels?.['80'];
         if (level80 && level80.dps_by_mile?.['0']) {
-            const dps = level80.dps_by_mile['0'].dps;
+            const mileData = level80.dps_by_mile['0'];
+
+            // Use ability DPS if available, otherwise fall back to auto-attack
+            let dps = mileData.auto_attack?.dps || 0;
+
+            // For classes with key abilities, use the highest ability DPS
+            if (mileData.abilities) {
+                const abilityDPS = Object.values(mileData.abilities)
+                    .map(ability => ability.dps)
+                    .filter(d => d > 0);
+
+                if (abilityDPS.length > 0) {
+                    // Use average of top abilities (weighted toward the highest)
+                    const sortedDPS = abilityDPS.sort((a, b) => b - a);
+                    dps = sortedDPS.slice(0, Math.min(2, sortedDPS.length))
+                        .reduce((sum, d) => sum + d, 0) / Math.min(2, sortedDPS.length);
+                }
+            }
+
             const role = specData.role || 'dps';
             dpsData.push({
                 class: classId,
@@ -45,7 +63,8 @@ for (const [classId, classData] of Object.entries(report.classes)) {
                 attack: level80.final.attack,
                 spellPower: level80.final.spellPower,
                 critChance: level80.final.critChance,
-                maxHealth: level80.final.maxHealth
+                maxHealth: level80.final.maxHealth,
+                hasAbilities: !!mileData.abilities && Object.keys(mileData.abilities).length > 0
             });
         }
     }

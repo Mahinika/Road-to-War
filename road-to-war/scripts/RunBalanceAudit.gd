@@ -1,7 +1,7 @@
 extends Node
 
 func _ready():
-	print("\n=== RUNNING BALANCE AUDIT ===\n")
+	print("\n=== RUNNING BALANCE AUDIT (UPDATED) ===\n")
 	await get_tree().process_frame
 	run_balance_audit()
 
