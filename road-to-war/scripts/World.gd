@@ -34,8 +34,21 @@ func _log_error(source: String, message: String):
 	else:
 		print("[%s] [ERROR] %s" % [source, message])
 
+# Show a notification message to the player
+func show_notification(text: String, color: Color = Color.WHITE):
+	var particle_mgr = get_node_or_null("/root/ParticleManager")
+	if particle_mgr and particle_mgr.has_method("create_floating_text"):
+		# Position notification at center-top of screen
+		var viewport_size = get_viewport().get_visible_rect().size
+		var notification_pos = Vector2(viewport_size.x * 0.5, viewport_size.y * 0.2)
+		particle_mgr.create_floating_text(notification_pos, text, color)
+	else:
+		# Fallback to console log if ParticleManager not available
+		_log_info("World", text)
+
 var hero_group
 var enemy_group
+var _spawning_party: bool = false  # Guard to prevent concurrent spawn_party() calls
 var loot_group: Node2D
 var parallax_bg
 var road_line
@@ -71,12 +84,42 @@ const COMBAT_HERO_RANGED_X_RATIO: float = 0.32
 const COMBAT_ENEMY_MELEE_X_RATIO: float = 0.68
 const COMBAT_ENEMY_RANGED_X_RATIO: float = 0.80
 const COMBAT_SPACING_X: float = 60.0
+const COMBAT_MELEE_GAP_PX: float = 120.0 # Visual contact distance between front lines (sword reach)
+const COMBAT_RANGED_BACKSTEP_PX: float = 170.0 # How far back ranged/healers stand from the melee line
+const COMBAT_ENEMY_RANGED_BACKSTEP_PX: float = 140.0
+
+func _get_combat_x_layout(view_size: Vector2) -> Dictionary:
+	# Compute resolution-safe combat "lanes" using a pixel-based melee gap for realism.
+	# Ratios are still used as anchors so small resolutions don't push units off-screen.
+	var hero_melee_x: float = view_size.x * COMBAT_HERO_MELEE_X_RATIO
+	var gap: float = clamp(COMBAT_MELEE_GAP_PX, view_size.x * 0.08, view_size.x * 0.16)
+	var ranged_back: float = clamp(COMBAT_RANGED_BACKSTEP_PX, view_size.x * 0.12, view_size.x * 0.22)
+	var enemy_ranged_back: float = clamp(COMBAT_ENEMY_RANGED_BACKSTEP_PX, view_size.x * 0.10, view_size.x * 0.18)
+	
+	var enemy_melee_x: float = hero_melee_x + gap
+	# Keep enemies well within screen bounds across common window sizes.
+	enemy_melee_x = clamp(enemy_melee_x, view_size.x * 0.52, view_size.x * 0.74)
+	
+	var hero_ranged_x: float = hero_melee_x - ranged_back
+	hero_ranged_x = max(view_size.x * 0.20, hero_ranged_x)
+	
+	# Calculate enemy ranged position
+	var enemy_ranged_x: float = enemy_melee_x + enemy_ranged_back
+	enemy_ranged_x = min(view_size.x * 0.90, enemy_ranged_x)
+	
+	return {
+		"hero_melee_x": hero_melee_x,
+		"hero_ranged_x": hero_ranged_x,
+		"enemy_melee_x": enemy_melee_x,
+		"enemy_ranged_x": enemy_ranged_x
+	}
 
 func _init():
-	print("World: _init() called")
+	# Removed verbose initialization logging to prevent output overflow
+	pass
 
 func _ready():
-	print("World: _ready() started")
+	# Removed verbose initialization logging to prevent output overflow
 	var sm = get_node_or_null("/root/SceneManager")
 	if sm: sm.is_in_game = true
 	# Find groups
@@ -99,9 +142,26 @@ func _ready():
 	
 	# Create Camera if missing
 	camera = Camera2D.new()
-	camera.anchor_mode = Camera2D.ANCHOR_MODE_FIXED_TOP_LEFT
+	# Use DRAG_CENTER so camera centers on its position (default behavior)
+	# ANCHOR_MODE_FIXED_TOP_LEFT would position top-left corner at the position
+	camera.anchor_mode = Camera2D.ANCHOR_MODE_DRAG_CENTER
+	# Camera position will be set when heroes are spawned
+	# Start at a reasonable default position instead of origin
+	# Heroes are typically positioned around Y=600-700, so start camera at a visible Y position
+	var camera_view_size = get_viewport_rect().size if get_viewport() else Vector2(1920, 1080)
+	camera.position = Vector2(camera_view_size.x * 0.5, camera_view_size.y * 0.65)  # Center X, road-level Y
 	add_child(camera)
 	camera.make_current()
+	
+	# #region agent log
+	var debug_log_path = "c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log"
+	var debug_file_init = FileAccess.open(debug_log_path, FileAccess.WRITE_READ)
+	if debug_file_init:
+		debug_file_init.seek_end()
+		var log_entry_init = JSON.stringify({"id":"log_camera_initialized","timestamp":Time.get_ticks_msec(),"location":"World.gd:144","message":"camera initialized","data":{"camera_pos_x":camera.position.x,"camera_pos_y":camera.position.y,"view_size_x":camera_view_size.x,"view_size_y":camera_view_size.y},"sessionId":"debug-session","runId":"run1","hypothesisId":"B"})
+		debug_file_init.store_line(log_entry_init)
+		debug_file_init.close()
+	# #endregion
 	
 	if has_node("/root/CameraManager"):
 		var cam_m = get_node_or_null("/root/CameraManager")
@@ -129,7 +189,7 @@ func _ready():
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
 	env_node.environment = env
 	
-	print("World: Initialized with groups reset to ZERO")
+	# Removed verbose initialization logging to prevent output overflow
 	_setup_parallax_visuals()
 	_setup_road()
 	
@@ -139,9 +199,22 @@ func _ready():
 	var cm = get_node_or_null("/root/CombatManager")
 	
 	if pm:
-		if pm.heroes.is_empty():
-			_create_test_party()
-		spawn_party()
+		# Connect to hero_added signal to spawn heroes when they're added
+		if not pm.hero_added.is_connected(_on_hero_added):
+			pm.hero_added.connect(_on_hero_added)
+			# Removed verbose logging to prevent output overflow
+		
+		# CRITICAL FIX: Always wait for signal-based spawning
+		# Main.gd creates heroes via PartyManager.add_hero(), which emits hero_added signal
+		# The signal handler will call spawn_party() when party is complete (5 heroes)
+		# This prevents race conditions where _ready() might run before or during hero creation
+		if not pm.heroes.is_empty():
+			# Removed verbose logging to prevent output overflow
+			# Only spawn if we have a complete party AND no heroes in scene tree yet
+			if pm.heroes.size() >= 5 and (not hero_group or hero_group.get_child_count() == 0):
+				# Removed verbose logging to prevent output overflow
+				spawn_party()
+		# Removed else branch verbose logging
 	
 	# UI setup
 	var view_size = get_viewport_rect().size
@@ -167,6 +240,12 @@ func _ready():
 			wm.mile_changed.connect(_on_mile_changed)
 		if not wm.combat_triggered.is_connected(_on_combat_triggered):
 			wm.combat_triggered.connect(_on_combat_triggered)
+		if not wm.shop_encountered.is_connected(_on_shop_encountered):
+			wm.shop_encountered.connect(_on_shop_encountered)
+		if not wm.treasure_encountered.is_connected(_on_treasure_encountered):
+			wm.treasure_encountered.connect(_on_treasure_encountered)
+		if not wm.quest_encountered.is_connected(_on_quest_encountered):
+			wm.quest_encountered.connect(_on_quest_encountered)
 		if not wm.mile_100_arrived.is_connected(_on_mile_100_arrived):
 			wm.mile_100_arrived.connect(_on_mile_100_arrived)
 		wm.initialize_world()
@@ -213,7 +292,7 @@ func _ready():
 	if level_up_handler and level_up_handler.has_method("reconnect_hero_signals"):
 		level_up_handler.reconnect_hero_signals()
 	
-	print("World: Setup complete.")
+	# Removed verbose completion logging to prevent output overflow
 
 # Initialize Scene Handlers
 func _initialize_scene_handlers():
@@ -235,10 +314,7 @@ func _initialize_scene_handlers():
 	
 	# SaveLoadHandler is now an Autoload singleton, accessible via /root/SaveLoadHandler
 	save_load_handler = get_node_or_null("/root/SaveLoadHandler")
-	if save_load_handler:
-		_log_info("World", "SaveLoadHandler Autoload found")
-	else:
-		_log_warn("World", "SaveLoadHandler Autoload not found")
+	# Removed verbose SaveLoadHandler logging to prevent output overflow
 	
 	# Initialize InteractionManager
 	interaction_manager = get_node_or_null("/root/InteractionManager")
@@ -262,24 +338,26 @@ func _on_unit_acting(id):
 	if node and highlight_ring:
 		highlight_ring.visible = true
 		highlight_ring.global_position = node.global_position + Vector2(0, 20) # Slightly below center
-		
+
 		# Animate the ring
-		var tween = create_tween().set_loops(2)
+		var ring_tween = create_tween().set_loops(2)
 		highlight_ring.scale = Vector2(0.8, 0.8)
-		tween.tween_property(highlight_ring, "scale", Vector2(1.2, 1.2), 0.2)
-		tween.tween_property(highlight_ring, "scale", Vector2(1.0, 1.0), 0.2)
+		ring_tween.tween_property(highlight_ring, "scale", Vector2(1.2, 1.2), 0.2)
+		ring_tween.tween_property(highlight_ring, "scale", Vector2(1.0, 1.0), 0.2)
+	return
 
 func _on_status_effect_applied(combatant_id: String, effect_type: String):
 	var target_node = _find_unit_node(combatant_id)
 	if target_node:
-		var pm = get_node_or_null("/root/ParticleManager")
-		if pm:
+		var particle_mgr = get_node_or_null("/root/ParticleManager")
+		if particle_mgr:
 			if effect_type == "poison":
-				pm.create_poison_effect(target_node.global_position)
+				particle_mgr.create_poison_effect(target_node.global_position)
 			elif effect_type == "stun":
-				pm.create_stun_effect(target_node.global_position)
-			
-			pm.create_floating_text(target_node.global_position + Vector2(0, -20), effect_type.to_upper(), Color.VIOLET)
+				particle_mgr.create_stun_effect(target_node.global_position)
+
+			particle_mgr.create_floating_text(target_node.global_position + Vector2(0, -20), effect_type.to_upper(), Color.VIOLET)
+	return
 
 func _setup_parallax_visuals():
 	if not parallax_bg: return
@@ -311,9 +389,9 @@ func _setup_parallax_visuals():
 		var m_width = randf_range(width * 0.15, width * 0.3)
 		var ground_y = height * 0.6
 		mountain.polygon = PackedVector2Array([
-			Vector2(base_x - m_width/2, ground_y),
+			Vector2(base_x - m_width / 2.0, ground_y),
 			Vector2(base_x, ground_y - m_height),
-			Vector2(base_x + m_width/2, ground_y)
+			Vector2(base_x + m_width / 2.0, ground_y)
 		])
 		mountain.color = Color(0.1, 0.1, 0.15)
 		mountain_layer.add_child(mountain)
@@ -364,24 +442,31 @@ func _input(event):
 		if OS.is_debug_build():
 			match event.keycode:
 				KEY_F1:
-					var pm = get_node_or_null("/root/PartyManager")
-					if pm and pm.heroes.size() > 0:
-						_on_hero_level_up(pm.heroes[0].level + 1, pm.heroes[0])
+					var party_mgr = get_node_or_null("/root/PartyManager")
+					if party_mgr and party_mgr.heroes.size() > 0:
+						_on_hero_level_up(party_mgr.heroes[0].level + 1, party_mgr.heroes[0])
 				KEY_F2:
 					_trigger_boss_transition(10)
 				KEY_F3:
-					var pm = get_node_or_null("/root/PartyManager")
-					if pm and pm.heroes.size() > 0:
-						_on_damage_dealt("enemy", pm.heroes[0].id, 999, true)
+					# Debug: Deal test damage to first hero
+					var party_mgr = get_node_or_null("/root/PartyManager")
+					var cm = get_node_or_null("/root/CombatManager")
+					if party_mgr and party_mgr.heroes.size() > 0 and cm:
+						cm.damage_dealt.emit("debug_enemy", party_mgr.heroes[0].id, 999, true)
+				KEY_F4:
+					# Debug: Trigger shop encounter
+					var wm = get_node_or_null("/root/WorldManager")
+					if wm:
+						wm._trigger_shop_encounter()
 
+# @CRITICAL: Main game loop - handles world movement, hero positioning, road following
+# Used by: Godot engine (called every frame)
+# Changing this requires: Maintain 60 FPS target, coordinate with MovementManager and CameraManager
+# Performance: Called every frame, must complete in <16ms for 60 FPS
 func _process(delta):
 	var wm = get_node_or_null("/root/WorldManager")
 	var rm = get_node_or_null("/root/ResourceManager")
 	var view_size = get_viewport_rect().size
-	
-	# Debug: track hero nodes being removed during combat
-	if not has_meta("_dbg_last_hero_count"):
-		set_meta("_dbg_last_hero_count", -1)
 	
 	if rm:
 		rm.update_resources(delta)
@@ -390,32 +475,33 @@ func _process(delta):
 		var distance = wm.distance_traveled
 		if not wm.combat_active:
 			wm.update_world(delta)
-		else:
-			# NUCLEAR OPTION: Force heroes to stay visible
+			# Ensure heroes stay visible during travel mode
 			if hero_group:
-				var last_count = int(get_meta("_dbg_last_hero_count"))
-				var current_count = hero_group.get_child_count()
-				if last_count != -1 and current_count != last_count:
-					# #region agent log
-					var log_file_count = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
-					if log_file_count:
-						log_file_count.seek_end()
-						log_file_count.store_line(JSON.stringify({
-							"location":"World.gd:_process",
-							"message":"hero_group child count changed during combat",
-							"data":{"before":last_count,"after":current_count},
-							"timestamp":Time.get_ticks_msec(),
-							"sessionId":"debug-session",
-							"hypothesisId":"CC"
-						}))
-						log_file_count.close()
-					# #endregion
-				set_meta("_dbg_last_hero_count", current_count)
 				for node in hero_group.get_children():
-					node.visible = true  # Force visible
-					var vis_node = node.get_node_or_null("Visuals")
-					if vis_node:
-						vis_node.modulate = Color.WHITE  # Force full alpha
+					if is_instance_valid(node):
+						node.visible = true  # Force visible
+						var vis_node = node.get_node_or_null("Visuals")
+						if vis_node:
+							vis_node.visible = true
+							vis_node.modulate = Color.WHITE  # Force full alpha
+						var body_layer = node.get_node_or_null("Visuals/Body")
+						if body_layer:
+							body_layer.visible = true
+							body_layer.modulate = Color.WHITE
+		else:
+			# Ensure heroes stay visible during combat
+			if hero_group:
+				for node in hero_group.get_children():
+					if is_instance_valid(node):
+						node.visible = true  # Force visible
+						var vis_node = node.get_node_or_null("Visuals")
+						if vis_node:
+							vis_node.visible = true
+							vis_node.modulate = Color.WHITE  # Force full alpha
+						var body_layer = node.get_node_or_null("Visuals/Body")
+						if body_layer:
+							body_layer.visible = true
+							body_layer.modulate = Color.WHITE
 		
 		if parallax_bg:
 			parallax_bg.scroll_offset = Vector2(-distance, 0)
@@ -433,7 +519,12 @@ func _process(delta):
 					y_offset = float(child.get_meta("combat_y_offset"))
 				elif child.has_meta("formation_y_offset"):
 					y_offset = float(child.get_meta("formation_y_offset"))
-				child.position.y = _get_road_y(rx, view_size) + y_offset
+				var road_y = _get_road_y(rx, view_size)
+				# Road Line2D has width 40, so it extends 20 pixels above and below center
+				# Position units so their feet touch the road surface
+				# Adjust to account for visual appearance - bring closer to road
+				var road_surface_y = road_y - 5.0
+				child.position.y = road_surface_y + y_offset
 				
 		if enemy_group:
 			for child in enemy_group.get_children():
@@ -443,7 +534,12 @@ func _process(delta):
 					y_offset = float(child.get_meta("combat_y_offset"))
 				elif child.has_meta("formation_y_offset"):
 					y_offset = float(child.get_meta("formation_y_offset"))
-				child.position.y = _get_road_y(rx, view_size) + y_offset
+				var road_y = _get_road_y(rx, view_size)
+				# Road Line2D has width 40, so it extends 20 pixels above and below center
+				# Position units so their feet touch the road surface
+				# Now using same scale as heroes (1.0), so same positioning
+				var road_surface_y = road_y - 5.0
+				child.position.y = road_surface_y + y_offset
 				
 		if loot_group:
 			var current_dist = wm.distance_traveled
@@ -483,7 +579,15 @@ func _update_biome_visuals(_delta):
 
 func _apply_biome_theme(biome: String):
 	var ut = get_node_or_null("/root/UITheme")
-	var sky_color = ut.COLORS.get("biome_" + biome, Color(0.05, 0.05, 0.1)) if ut else Color(0.05, 0.05, 0.1)
+	var sky_color: Color
+	if ut:
+		var biome_key = "biome_" + biome
+		if ut.COLORS.has(biome_key):
+			sky_color = ut.COLORS[biome_key] as Color
+		else:
+			sky_color = Color(0.05, 0.05, 0.1)
+	else:
+		sky_color = Color(0.05, 0.05, 0.1)
 	var mountain_color = sky_color.darkened(0.2)
 	var tree_color = sky_color.lightened(0.1)
 	
@@ -492,15 +596,15 @@ func _apply_biome_theme(biome: String):
 	elif biome == "desert":
 		tree_color = Color(0.2, 0.15, 0.05)
 	
-	var tween = create_tween().set_parallel(true)
+	var color_tween = create_tween().set_parallel(true)
 	if sky_rect:
-		tween.tween_property(sky_rect, "color", sky_color, 2.0)
+		color_tween.tween_property(sky_rect, "color", sky_color, 2.0)
 	
 	for m in mountain_polygons:
-		if m: tween.tween_property(m, "color", mountain_color, 2.0)
+		if m: color_tween.tween_property(m, "color", mountain_color, 2.0)
 		
 	for t in tree_polygons:
-		if t: tween.tween_property(t, "color", tree_color, 2.0)
+		if t: color_tween.tween_property(t, "color", tree_color, 2.0)
 	
 	var audio_m = get_node_or_null("/root/AudioManager")
 	if audio_m:
@@ -508,12 +612,48 @@ func _apply_biome_theme(biome: String):
 	
 	_log_info("World", "Transitioning to biome: " + biome)
 
+func _calculate_battle_center(view_size: Vector2, offset: float = 0.0) -> Vector2:
+	"""Calculate the center position between heroes and enemies for camera positioning"""
+	var combat_layout := _get_combat_x_layout(view_size)
+	var hero_melee_x: float = float(combat_layout.get("hero_melee_x", view_size.x * COMBAT_HERO_MELEE_X_RATIO))
+	var enemy_melee_x: float = float(combat_layout.get("enemy_melee_x", view_size.x * COMBAT_ENEMY_MELEE_X_RATIO))
+	
+	# Center X is the midpoint between hero melee front line and enemy melee front line
+	var center_x = (hero_melee_x + enemy_melee_x) / 2.0
+	
+	# Get the road Y position at this center X to ensure both heroes and enemies are visible
+	var center_road_y = _get_road_y(center_x + offset, view_size)
+	
+	return Vector2(center_x, center_road_y)
+
 func _get_road_y(rx: float, view_size: Vector2) -> float:
 	var rg = get_node_or_null("/root/RoadGenerator")
-	if not rg: return view_size.y * 0.65
+	if not rg:
+		var fallback_y = view_size.y * 0.65
+		# #region agent log
+		var debug_log_path = "c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log"
+		var debug_file = FileAccess.open(debug_log_path, FileAccess.WRITE_READ)
+		if debug_file:
+			debug_file.seek_end()
+			var log_entry = JSON.stringify({"id":"log_road_y_fallback","timestamp":Time.get_ticks_msec(),"location":"World.gd:613","message":"RoadGenerator not found, using fallback Y","data":{"rx":rx,"view_size_y":view_size.y,"fallback_y":fallback_y},"sessionId":"debug-session","runId":"run1","hypothesisId":"B"})
+			debug_file.store_line(log_entry)
+			debug_file.close()
+		# #endregion
+		return fallback_y
 	
 	var road_center_y = view_size.y * rg.road_center_y_ratio
-	return road_center_y + sin(rx * (2.0 * PI / view_size.x)) * rg.road_variation
+	var road_y = road_center_y + sin(rx * (2.0 * PI / view_size.x)) * rg.road_variation
+	# #region agent log
+	if Engine.get_process_frames() % 120 == 0:  # Log every 120 frames to avoid spam
+		var debug_log_path = "c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log"
+		var debug_file = FileAccess.open(debug_log_path, FileAccess.WRITE_READ)
+		if debug_file:
+			debug_file.seek_end()
+			var log_entry = JSON.stringify({"id":"log_road_y_calc","timestamp":Time.get_ticks_msec(),"location":"World.gd:616","message":"road_y calculated","data":{"rx":rx,"view_size_x":view_size.x,"view_size_y":view_size.y,"road_center_y":road_center_y,"road_center_y_ratio":rg.road_center_y_ratio,"road_variation":rg.road_variation,"road_y":road_y},"sessionId":"debug-session","runId":"run1","hypothesisId":"B"})
+			debug_file.store_line(log_entry)
+			debug_file.close()
+	# #endregion
+	return road_y
 
 func _on_mile_100_arrived():
 	_log_info("World", "Mile 100 arrived! Preparing for final boss fight")
@@ -524,27 +664,39 @@ func _on_mile_100_arrived():
 
 func _trigger_final_boss_transition():
 	_log_info("World", "Final Boss Transition Started!")
+	var view_size = get_viewport_rect().size
+	var wm = get_node_or_null("/root/WorldManager")
+	var distance = wm.distance_traveled if wm else 0.0
+	var offset = fmod(distance, view_size.x)
+	var battle_center = _calculate_battle_center(view_size, offset)
+	
 	var cam_m = get_node_or_null("/root/CameraManager")
 	if cam_m:
 		cam_m.shake(30.0, 4.0)
-		cam_m.zoom_to_battle(Vector2(960, 540))
+		cam_m.zoom_to_battle(battle_center)
 	
 	var lighting = get_node_or_null("AtmosphericLighting")
 	if lighting:
-		var tween = create_tween()
-		tween.tween_property(lighting, "color", Color(2.0, 0.1, 0.1), 0.5)
-		tween.tween_property(lighting, "color", Color(0.8, 0.2, 0.2), 2.0)
+		var lighting_tween = create_tween()
+		lighting_tween.tween_property(lighting, "color", Color(2.0, 0.1, 0.1), 0.5)
+		lighting_tween.tween_property(lighting, "color", Color(0.8, 0.2, 0.2), 2.0)
 	
-	var pm = get_node_or_null("/root/ParticleManager")
-	if pm:
-		pm.create_floating_text(Vector2(960, 300), "!!! WAR LORD !!!", Color.RED)
-		pm.create_floating_text(Vector2(960, 350), "THE FINAL BATTLE", Color.GOLD)
-		pm.create_floating_text(Vector2(960, 400), "MILE 100", Color.WHITE)
+	var particle_mgr = get_node_or_null("/root/ParticleManager")
+	if particle_mgr:
+		particle_mgr.create_floating_text(Vector2(960, 300), "!!! WAR LORD !!!", Color.RED)
+		particle_mgr.create_floating_text(Vector2(960, 350), "THE FINAL BATTLE", Color.GOLD)
+		particle_mgr.create_floating_text(Vector2(960, 400), "MILE 100", Color.WHITE)
 		# Massive screen-wide impact effects
 		for i in range(10):
 			var rand_pos = Vector2(randf_range(100, 1820), randf_range(100, 980))
-			pm.create_hit_effect(rand_pos, Color.RED)
-			get_tree().create_timer(i * 0.1).timeout.connect(func(): pm.create_hit_effect(rand_pos, Color.GOLD))
+			particle_mgr.create_hit_effect(rand_pos, Color.RED)
+			# Store position to avoid closure capture issues
+			var pos = rand_pos
+			get_tree().create_timer(i * 0.1).timeout.connect(func(): 
+				var pm_inner = get_node_or_null("/root/ParticleManager")
+				if pm_inner:
+					pm_inner.create_hit_effect(pos, Color.GOLD)
+			)
 	
 	var audio_m = get_node_or_null("/root/AudioManager")
 	if audio_m and audio_m.has_method("play_boss_approach_sfx"):
@@ -558,56 +710,117 @@ func _on_combat_triggered(enemy_group_data: Array):
 	if combat_handler and combat_handler.has_method("_on_combat_triggered"):
 		combat_handler._on_combat_triggered(enemy_group_data)
 		return
-	
+
+	# Check for Boss Rush challenge mode
+	var challenge_m = get_node_or_null("/root/ChallengeModeManager")
+	if challenge_m and challenge_m.active_challenge == challenge_m.ChallengeType.BOSS_RUSH:
+		# Filter to only bosses for Boss Rush
+		var boss_group = []
+		for enemy in enemy_group_data:
+			if enemy.get("type", "") == "boss":
+				boss_group.append(enemy)
+		if not boss_group.is_empty():
+			enemy_group_data = boss_group
+
 	# Fallback to direct handling
-	var cm = get_node_or_null("/root/CombatManager")
-	if cm:
+	var combat_mgr = get_node_or_null("/root/CombatManager")
+	if combat_mgr:
 		_log_info("World", "Encounter triggered with %d enemies!" % enemy_group_data.size())
-		
-		# Check for Boss Rush challenge mode
-		var challenge_m = get_node_or_null("/root/ChallengeModeManager")
-		if challenge_m and challenge_m.active_challenge == challenge_m.ChallengeType.BOSS_RUSH:
-			# Filter to only bosses for Boss Rush
-			var boss_group = []
-			for enemy in enemy_group_data:
-				if enemy.get("type", "") == "boss":
-					boss_group.append(enemy)
-			if not boss_group.is_empty():
-				enemy_group_data = boss_group
-		
-		cm.start_party_combat(enemy_group_data)
+		combat_mgr.start_party_combat(enemy_group_data)
+	return
 
-# Damage handling is now done by CombatHandler via direct signal connection
-# This method is kept for backward compatibility and debug/test calls (F3 key)
-func _on_damage_dealt(source_id, target_id, amount, _is_crit: bool):
-	# _is_crit is passed to handlers but not used directly in this function
-	if combat_handler and combat_handler.has_method("_on_damage_dealt"):
-		combat_handler._on_damage_dealt(source_id, target_id, amount, _is_crit)
+func _on_shop_encountered(shop_data: Dictionary):
+	_log_info("World", "Shop encountered: %s" % shop_data.get("name", "Unknown Shop"))
+	
+	# Don't open shop if already open or in combat
+	if get_tree().paused:
+		_log_warn("World", "Cannot open shop - game already paused (shop/combat already active)")
+		return
+	
+	# Show notification
+	var shop_name = shop_data.get("name", "Merchant")
+	show_notification("%s Approached!" % shop_name, Color.GOLD)
+	
+	# Get shop type and items from shop data
+	var shop_type = shop_data.get("type", "general_store")
+	var shop_items = shop_data.get("items", [])
+	
+	# Open shop via ShopManager first (this sets up shop state)
+	var shop_mgr = get_node_or_null("/root/ShopManager")
+	if not shop_mgr:
+		_log_error("World", "ShopManager not found - cannot open shop")
+		return
+	
+	if not shop_mgr.has_method("open_shop"):
+		_log_error("World", "ShopManager.open_shop() method not found")
+		return
+	
+	shop_mgr.open_shop(shop_type, shop_items)
+	
+	# Pause game when shop opens (after ShopManager is ready)
+	get_tree().paused = true
+	
+	# Get or create CanvasLayer for UI overlays
+	var canvas_layer = get_node_or_null("CanvasLayer")
+	if not canvas_layer:
+		canvas_layer = CanvasLayer.new()
+		canvas_layer.name = "CanvasLayer"
+		add_child(canvas_layer)
+	
+	# Remove existing shop overlay if present
+	var existing_shop = canvas_layer.get_node_or_null("Shop")
+	if existing_shop:
+		existing_shop.queue_free()
+	
+	# Instantiate Shop UI as overlay
+	var shop_scene = preload("res://scenes/Shop.tscn")
+	if shop_scene:
+		var shop_ui = shop_scene.instantiate()
+		shop_ui.name = "Shop"
+		# Add to CanvasLayer so it appears above everything (HUD, combat log, etc.)
+		canvas_layer.add_child(shop_ui)
+		
+		# Set process mode to ALWAYS so Shop UI remains interactive when game is paused
+		shop_ui.process_mode = Node.PROCESS_MODE_ALWAYS
+		
+		# Set high z-index to ensure it's on top
+		if shop_ui is Control:
+			shop_ui.z_index = 200  # Higher than combat log (100)
+		shop_ui.visible = true
+		_log_info("World", "Shop UI opened as overlay (process_mode: ALWAYS)")
 	else:
-		# Fallback to direct handling (keep existing logic as backup)
-		_handle_damage_dealt_fallback(source_id, target_id, amount, _is_crit)
+		_log_error("World", "Failed to load Shop.tscn scene")
 
-# Fallback damage handling (kept for compatibility)
-func _handle_damage_dealt_fallback(source_id, target_id, target_amount, _is_crit: bool):
-	var target_node = _find_unit_node(target_id)
-	var source_node = _find_unit_node(source_id)
-	
-	if source_node and source_node.has_method("play_animation"):
-		source_node.play_animation("attack")
-	
-	if target_node:
-		var pos = target_node.global_position + Vector2(0, -40)
-		var pm = get_node_or_null("/root/ParticleManager")
-		if pm:
-			pm.create_floating_text(pos, str(target_amount), Color.YELLOW)
-		
-		# Check for death
-		var cm = get_node_or_null("/root/CombatManager")
-		var combatant = cm._get_combatant_by_id(target_id) if cm else {}
-		if not combatant.is_empty() and combatant.get("current_health", 0) <= 0:
-			if target_node.has_method("play_animation"):
-				target_node.play_animation("death")
-			get_tree().create_timer(1.0).timeout.connect(target_node.queue_free)
+func _on_treasure_encountered(treasure_data: Dictionary):
+	_log_info("World", "Treasure encountered!")
+
+	# Auto-collect gold
+	var gold_amount = treasure_data.get("gold", 0)
+	if gold_amount > 0:
+		var sm = get_node_or_null("/root/StatisticsManager")
+		if sm and sm.has_method("add_gold"):
+			sm.add_gold(gold_amount)
+
+		# Show floating text
+		show_notification("Found %d gold!" % gold_amount, Color.GOLD)
+
+	# Auto-collect items
+	var items = treasure_data.get("items", [])
+	if not items.is_empty():
+		var lm = get_node_or_null("/root/LootManager")
+		if lm:
+			for item in items:
+				lm.award_item_to_party(item)
+
+		show_notification("Found treasure!", Color.GOLD)
+
+func _on_quest_encountered(quest_data: Dictionary):
+	_log_info("World", "Quest encountered: %s" % quest_data.get("title", "Unknown Quest"))
+
+	# For now, just show a notification
+	show_notification("Quest Available: %s" % quest_data.get("title", "Unknown"), Color.CYAN)
+	return
+
 
 func _on_healing_applied(healer_id, target_id, amount):
 	var target_node = _find_unit_node(target_id)
@@ -620,10 +833,10 @@ func _on_healing_applied(healer_id, target_id, amount):
 		var pos = target_node.global_position + Vector2(0, -40)
 		var color = Color.GREEN
 		
-		var pm = get_node_or_null("/root/ParticleManager")
-		if pm:
-			pm.create_heal_effect(target_node.global_position)
-			pm.create_floating_text(pos, "+" + str(amount), color)
+		var particle_mgr = get_node_or_null("/root/ParticleManager")
+		if particle_mgr:
+			particle_mgr.create_heal_effect(target_node.global_position)
+			particle_mgr.create_floating_text(pos, "+" + str(amount), color)
 
 		var audio_m = get_node_or_null("/root/AudioManager")
 		if audio_m:
@@ -642,8 +855,8 @@ func _find_unit_node(id: String):
 
 func _position_heroes_for_combat(view_size: Vector2, offset: float):
 	"""Position heroes based on role: tanks/melee front, ranged/healers back"""
-	var pm = get_node_or_null("/root/PartyManager")
-	if not pm or not hero_group:
+	var party_mgr = get_node_or_null("/root/PartyManager")
+	if not party_mgr or not hero_group:
 		return
 	
 	# IMPORTANT: hero_group child order is NOT guaranteed to match PartyManager.heroes order.
@@ -654,21 +867,18 @@ func _position_heroes_for_combat(view_size: Vector2, offset: float):
 		if "hero_data" in node and node.hero_data:
 			hero_nodes_by_id[node.hero_data.id] = node
 	
-	# #region agent log
-	var log_file_position = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
-	if log_file_position: log_file_position.seek_end(); log_file_position.store_line(JSON.stringify({"location":"World.gd:_position_heroes_for_combat","message":"Positioning heroes for combat (by hero_id)","data":{"hero_nodes_count":hero_group.get_child_count(),"pm_heroes_count":pm.heroes.size()},"timestamp":Time.get_ticks_msec(),"sessionId":"debug-session","hypothesisId":"W2"})); log_file_position.close()
-	# #endregion
 	
 	# RuneScape-style readability: clear front line + back line.
-	# Resolution-safe base X positions (avoid off-screen enemies/heroes at smaller widths).
-	var hero_melee_x: float = view_size.x * COMBAT_HERO_MELEE_X_RATIO
-	var hero_ranged_x: float = view_size.x * COMBAT_HERO_RANGED_X_RATIO
+	# Resolution-safe base X positions (pixel-based melee gap so swings look like they connect).
+	var layout := _get_combat_x_layout(view_size)
+	var hero_melee_x: float = float(layout.get("hero_melee_x", view_size.x * COMBAT_HERO_MELEE_X_RATIO))
+	var hero_ranged_x: float = float(layout.get("hero_ranged_x", view_size.x * COMBAT_HERO_RANGED_X_RATIO))
 	var tank_i := 0
 	var melee_i := 0
 	var ranged_i := 0
 	var healer_i := 0
 	
-	for hero in pm.heroes:
+	for hero in party_mgr.heroes:
 		if not hero_nodes_by_id.has(hero.id):
 			continue
 		var hero_node = hero_nodes_by_id[hero.id]
@@ -713,11 +923,6 @@ func _update_combat_movement(delta: float):
 	if not hero_group or not enemy_group or not combat_movement_enabled:
 		return
 	
-	# #region agent log
-	var hero_count = hero_group.get_child_count()
-	var log_file_movement = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
-	if log_file_movement: log_file_movement.seek_end(); log_file_movement.store_line(JSON.stringify({"location":"World.gd:640","message":"Combat movement update","data":{"hero_count":hero_count,"enemy_count":enemy_group.get_child_count()},"timestamp":Time.get_ticks_msec(),"sessionId":"debug-session","hypothesisId":"V"})); log_file_movement.close()
-	# #endregion
 	
 	# NEW: "Real fighting" staging.
 	# Units hold their battle lines; attack/cast animations provide the motion (lunges, casts).
@@ -756,10 +961,10 @@ func _is_enemy_melee(enemy_data: Dictionary) -> bool:
 	return true
 
 func _create_test_party():
-	var pm = get_node_or_null("/root/PartyManager")
+	var party_mgr = get_node_or_null("/root/PartyManager")
 	var sc = get_node_or_null("/root/StatCalculator")
 	var hero_factory = get_node_or_null("/root/HeroFactory")
-	if not pm or not hero_factory: return
+	if not party_mgr or not hero_factory: return
 	
 	var roles = ["tank", "healer", "dps", "dps", "dps"]
 	var classes = ["paladin", "priest", "mage", "rogue", "warlock"]
@@ -774,18 +979,38 @@ func _create_test_party():
 			roles[i]  # role
 		)
 		if hero:
-			pm.add_hero(hero)
+			party_mgr.add_hero(hero)
 			if sc:
 				sc.recalculate_hero_stats(hero)
 
 func spawn_party():
+	# CRITICAL: Prevent concurrent calls
+	if _spawning_party:
+		return
+	_spawning_party = true
+
 	var party_m = get_node_or_null("/root/PartyManager")
 	var anim_m = get_node_or_null("/root/AnimationManager")
 	var world_m = get_node_or_null("/root/WorldManager")
 	var move_m = get_node_or_null("/root/MovementManager")
+	var equipment_m = get_node_or_null("/root/EquipmentManager")
 	var view_size = get_viewport_rect().size
 	
-	if not hero_group or not party_m: return
+	if not hero_group:
+		_log_error("World", "HeroGroup node not found! Cannot spawn heroes.")
+		_spawning_party = false
+		return
+		
+	if not party_m:
+		_log_error("World", "PartyManager not found! Cannot spawn heroes.")
+		_spawning_party = false
+		return
+	
+	# Clear existing hero sprites to prevent duplicates
+	var existing_count = hero_group.get_child_count()
+	if existing_count > 0:
+		for child in hero_group.get_children():
+			child.queue_free()
 	
 	if move_m:
 		move_m.update_party_formation()
@@ -800,11 +1025,18 @@ func spawn_party():
 		if hero.current_stats.get("health", 0) <= 0:
 			hero.current_stats["health"] = hero.current_stats.get("maxHealth", 100) * 0.1
 			_log_info("World", "Hero %s spawned with 0 HP, reviving to 10%%" % hero.name)
-			
+		
 		var instance = hero_scene.instantiate()
+		if not instance:
+			_log_error("World", "Failed to instantiate hero_scene for hero %s" % hero.name)
+			continue
+			
 		hero_group.add_child(instance)
+		
 		if instance.has_method("setup"):
 			instance.setup(hero)
+		else:
+			_log_error("World", "Hero instance does not have setup() method!")
 		
 		var target_pos = Vector2(200 + i * 120, 600)
 		if move_m:
@@ -815,14 +1047,192 @@ func spawn_party():
 		# and look like "hovering" when applied on top of the road spline, so we use a small offset.
 		var formation_y_offset = TRAVEL_Y_OFFSETS[i % TRAVEL_Y_OFFSETS.size()]
 		instance.set_meta("formation_y_offset", formation_y_offset)
-		var ry = _get_road_y(sx + offset, view_size) + formation_y_offset
+		var road_y = _get_road_y(sx + offset, view_size)
+		# Road Line2D has width 40, so it extends 20 pixels above and below center
+		# Position heroes so their feet touch the road surface
+		# Adjust to account for visual appearance - bring closer to road
+		var road_surface_y = road_y - 5.0
+		var ry = road_surface_y + formation_y_offset
 		instance.position = Vector2(sx, ry)
+		
+		# CRITICAL: Defer equipment application to ensure HeroSprite is fully initialized
+		# HeroSprite needs _ready() to complete before update_equipment_visuals() can access body_layer
+		# Also defer signal connection to avoid duplicate connections
+		if equipment_m and instance:
+			call_deferred("_apply_hero_equipment", instance, hero.id)
 		
 		# Level-up signals are handled by LevelUpHandler (connected in _initialize_scene_handlers)
 		# No need to connect here to avoid duplicate handling
 		
-		if anim_m:
-			anim_m.play_animation(instance, "walk")
+		# CRITICAL: Defer animation call to ensure HeroSprite is fully initialized
+		# HeroSprite needs _ready() to complete before play_animation can access body_layer
+		if anim_m and instance:
+			call_deferred("_play_hero_animation", instance, "walk")
+	
+	# CRITICAL: Set camera to follow heroes after spawning (deferred to ensure heroes are positioned)
+	call_deferred("_position_camera_to_heroes")
+	
+	# Reset guard flag after spawning completes
+	_spawning_party = false
+
+func _apply_hero_equipment(hero_sprite: Node2D, _hero_id: String):
+	"""Helper function to apply equipment to hero sprite (called deferred)"""
+	# CRITICAL: Validate hero_sprite is valid and in scene tree
+	if not is_instance_valid(hero_sprite):
+		_log_warn("World", "_apply_hero_equipment called with invalid hero_sprite")
+		return
+	
+	# CRITICAL: Check if hero_sprite is in the scene tree (ready) before calling methods
+	if not hero_sprite.is_inside_tree():
+		_log_warn("World", "_apply_hero_equipment: hero_sprite not in scene tree yet")
+		return
+	
+	var equipment_m = get_node_or_null("/root/EquipmentManager")
+	if not equipment_m:
+		_log_warn("World", "_apply_hero_equipment: EquipmentManager not found")
+		return
+	
+	# CRITICAL: Connect equipment change signal (only once)
+	# HeroSprite already connects to equipment_changed in _ready(), but connect here as backup
+	if hero_sprite.has_method("_on_equipment_changed"):
+		if not equipment_m.equipment_changed.is_connected(hero_sprite._on_equipment_changed):
+			equipment_m.equipment_changed.connect(hero_sprite._on_equipment_changed)
+	
+	# CRITICAL: Update equipment visuals if hero has equipment
+	# HeroSprite.update_equipment_visuals() will check hero_data and apply equipment
+	if hero_sprite.has_method("update_equipment_visuals"):
+		hero_sprite.update_equipment_visuals()
+	else:
+		_log_warn("World", "_apply_hero_equipment: hero_sprite does not have update_equipment_visuals method")
+
+func _play_hero_animation(hero_sprite: Node2D, anim_name: String):
+	"""Helper function to play animation on hero sprite (called deferred)"""
+	# CRITICAL: Validate hero_sprite is valid and in scene tree
+	if not is_instance_valid(hero_sprite):
+		_log_warn("World", "_play_hero_animation called with invalid hero_sprite")
+		return
+	
+	# CRITICAL: Check if hero_sprite is in the scene tree (ready) before calling methods
+	if not hero_sprite.is_inside_tree():
+		_log_warn("World", "_play_hero_animation: hero_sprite not in scene tree yet")
+		return
+	
+	# CRITICAL: Validate that hero_sprite has the required method
+	if not hero_sprite.has_method("play_animation"):
+		_log_warn("World", "_play_hero_animation: hero_sprite does not have play_animation method")
+		return
+	
+	var anim_m = get_node_or_null("/root/AnimationManager")
+	if anim_m:
+		anim_m.play_animation(hero_sprite, anim_name)
+	else:
+		_log_warn("World", "_play_hero_animation: AnimationManager not found")
+
+func _position_camera_to_heroes():
+	"""Position camera to follow heroes after they're spawned"""
+	if not hero_group or hero_group.get_child_count() == 0:
+		_log_warn("World", "No heroes to position camera to")
+		return
+	
+	var cam_m = get_node_or_null("/root/CameraManager")
+	
+	# Find tank hero sprite to focus camera on
+	var party_m = get_node_or_null("/root/PartyManager")
+	var tank_hero = null
+	if party_m and party_m.has_method("get_tank"):
+		tank_hero = party_m.get_tank()
+	
+	var tank_sprite: Node2D = null
+	if tank_hero:
+		# Find tank sprite by matching hero ID (hero_data can be Dictionary or Hero resource)
+		for child in hero_group.get_children():
+			if child.has_method("setup") and child.get("hero_data") != null:
+				var hero_data = child.hero_data
+				var hero_id = ""
+				if hero_data is Dictionary:
+					hero_id = hero_data.get("id", "")
+				elif "id" in hero_data:
+					hero_id = hero_data.id
+				
+				var tank_id = ""
+				if tank_hero is Dictionary:
+					tank_id = tank_hero.get("id", "")
+				elif "id" in tank_hero:
+					tank_id = tank_hero.id
+				
+				if hero_id != "" and hero_id == tank_id:
+					tank_sprite = child as Node2D
+					break
+	
+	# Fallback to first hero if no tank found
+	if not tank_sprite or not is_instance_valid(tank_sprite):
+		tank_sprite = hero_group.get_child(0) as Node2D
+	
+	if not tank_sprite or not is_instance_valid(tank_sprite):
+		_log_warn("World", "Tank hero sprite is invalid, cannot position camera")
+		return
+	
+	# Set camera target to tank hero for following
+	if cam_m:
+		# #region agent log
+		var debug_log_path = "c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log"
+		var debug_file = FileAccess.open(debug_log_path, FileAccess.WRITE_READ)
+		if debug_file:
+			debug_file.seek_end()
+			var tank_pos = tank_sprite.global_position
+			var log_entry = JSON.stringify({"id":"log_camera_target_set","timestamp":Time.get_ticks_msec(),"location":"World.gd:1095","message":"camera target set to tank_hero","data":{"tank_pos_x":tank_pos.x,"tank_pos_y":tank_pos.y,"tank_hero_exists":tank_hero != null,"hero_count":hero_group.get_child_count()},"sessionId":"debug-session","runId":"run1","hypothesisId":"E"})
+			debug_file.store_line(log_entry)
+			debug_file.close()
+		# #endregion
+		cam_m.set_target(tank_sprite)
+		# Removed verbose logging to prevent output overflow
+	
+	# Immediately position camera to tank hero position (both X and Y)
+	# Tank is positioned on the road, so camera should be positioned to see it
+	if camera and tank_sprite is Node2D:
+		var hero_pos = tank_sprite.global_position
+		# In Godot, Camera2D centers on its position property, not global_position
+		# Setting global_position can cause positioning issues
+		camera.position = hero_pos
+		# #region agent log
+		var debug_log_path_pos = "c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log"
+		var debug_file_pos = FileAccess.open(debug_log_path_pos, FileAccess.WRITE_READ)
+		if debug_file_pos:
+			debug_file_pos.seek_end()
+			var log_entry_pos = JSON.stringify({"id":"log_camera_positioned_to_tank","timestamp":Time.get_ticks_msec(),"location":"World.gd:1131","message":"camera positioned to tank sprite","data":{"tank_pos_x":hero_pos.x,"tank_pos_y":hero_pos.y,"camera_pos_x":camera.global_position.x,"camera_pos_y":camera.global_position.y},"sessionId":"debug-session","runId":"run1","hypothesisId":"E"})
+			debug_file_pos.store_line(log_entry_pos)
+			debug_file_pos.close()
+		# #endregion
+	else:
+		_log_warn("World", "Camera or tank sprite is null, cannot position camera")
+		# #region agent log
+		var debug_log_path_pos_fail = "c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log"
+		var debug_file_pos_fail = FileAccess.open(debug_log_path_pos_fail, FileAccess.WRITE_READ)
+		if debug_file_pos_fail:
+			debug_file_pos_fail.seek_end()
+			var log_entry_pos_fail = JSON.stringify({"id":"log_camera_position_failed","timestamp":Time.get_ticks_msec(),"location":"World.gd:1140","message":"camera position failed - camera or tank sprite null","data":{"camera_exists":camera != null,"tank_sprite_exists":tank_sprite != null,"tank_sprite_is_node2d":tank_sprite is Node2D if tank_sprite != null else false},"sessionId":"debug-session","runId":"run1","hypothesisId":"E"})
+			debug_file_pos_fail.store_line(log_entry_pos_fail)
+			debug_file_pos_fail.close()
+		# #endregion
+		# Fallback: Manually position camera if CameraManager not available
+		if camera and tank_sprite is Node2D:
+			var hero_pos = tank_sprite.global_position
+			# Use position instead of global_position for Camera2D
+			camera.position = hero_pos
+			# Removed verbose logging to prevent output overflow
+
+# Called when a hero is added to PartyManager
+func _on_hero_added(_hero):
+	# Removed verbose hero added logging to prevent output overflow
+	# Spawn all heroes when party is complete (5 heroes)
+	# CRITICAL: Only spawn if heroes don't already exist in scene tree
+	var party_mgr = get_node_or_null("/root/PartyManager")
+	if party_mgr and party_mgr.heroes.size() >= 5:
+		# Prevent double-spawn: check if heroes already spawned
+		if not hero_group or hero_group.get_child_count() == 0:
+			# Removed verbose logging to prevent output overflow
+			spawn_party()
+		# Removed else branch verbose logging
 
 # Level-up handling is now done by LevelUpHandler
 # This method is kept for backward compatibility but should not be called
@@ -854,25 +1264,31 @@ func _on_mile_changed(mile, _max, _old):
 
 func _trigger_boss_transition(mile: int):
 	_log_info("World", "Boss Mile %d Transition Started!" % mile)
+	var view_size = get_viewport_rect().size
+	var wm = get_node_or_null("/root/WorldManager")
+	var distance = wm.distance_traveled if wm else 0.0
+	var offset = fmod(distance, view_size.x)
+	var battle_center = _calculate_battle_center(view_size, offset)
+	
 	var cam_m = get_node_or_null("/root/CameraManager")
 	if cam_m:
 		cam_m.shake(20.0, 3.0)
-		cam_m.zoom_to_battle(Vector2(960, 540))
+		cam_m.zoom_to_battle(battle_center)
 	
 	var lighting = get_node_or_null("AtmosphericLighting")
 	if lighting:
-		var tween = create_tween()
-		tween.tween_property(lighting, "color", Color(1.5, 0.2, 0.2), 0.3)
-		tween.tween_property(lighting, "color", Color(0.5, 0.3, 0.3), 1.0)
+		var boss_tween = create_tween()
+		boss_tween.tween_property(lighting, "color", Color(1.5, 0.2, 0.2), 0.3)
+		boss_tween.tween_property(lighting, "color", Color(0.5, 0.3, 0.3), 1.0)
 	
-	var pm = get_node_or_null("/root/ParticleManager")
-	if pm:
-		pm.create_floating_text(Vector2(960, 400), "!!! BOSS ENCOUNTER !!!", Color.RED)
-		pm.create_floating_text(Vector2(960, 450), "MILE %d" % mile, Color.GOLD)
+	var particle_mgr = get_node_or_null("/root/ParticleManager")
+	if particle_mgr:
+		particle_mgr.create_floating_text(Vector2(960, 400), "!!! BOSS ENCOUNTER !!!", Color.RED)
+		particle_mgr.create_floating_text(Vector2(960, 450), "MILE %d" % mile, Color.GOLD)
 		# Add some screen-wide impact sparks
 		for i in range(5):
 			var rand_pos = Vector2(randf_range(200, 1700), randf_range(200, 800))
-			pm.create_hit_effect(rand_pos, Color.RED)
+			particle_mgr.create_hit_effect(rand_pos, Color.RED)
 		
 	var audio_m = get_node_or_null("/root/AudioManager")
 	if audio_m and audio_m.has_method("play_boss_approach_sfx"):
@@ -880,17 +1296,35 @@ func _trigger_boss_transition(mile: int):
 
 var combat_movement_enabled: bool = false
 
+# @CRITICAL: Combat start handler - initializes combat UI, positions heroes/enemies, sets up combat state
+# Used by: CombatManager.combat_started signal
+# Changing this requires: Update CombatHandler if combat flow changes, maintain hero positioning logic
+# Performance: Called once per combat, not performance-critical but affects user experience
 func _on_combat_started(enemies: Array):
+	# #region agent log
+	var debug_log_path_combat = "c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log"
+	var debug_file_combat = FileAccess.open(debug_log_path_combat, FileAccess.WRITE_READ)
+	if debug_file_combat:
+		debug_file_combat.seek_end()
+		var log_entry_combat = JSON.stringify({"id":"log_combat_started_entry","timestamp":Time.get_ticks_msec(),"location":"World.gd:1265","message":"_on_combat_started called","data":{"enemy_count":enemies.size(),"enemy_group_exists":enemy_group != null,"hero_group_exists":hero_group != null,"hero_count":hero_group.get_child_count() if hero_group else 0},"sessionId":"debug-session","runId":"run1","hypothesisId":"C"})
+		debug_file_combat.store_line(log_entry_combat)
+		debug_file_combat.close()
+	# #endregion
 	# CombatHandler handles audio/particles via direct signal connection
 	# World handles visual spawning and positioning
 	_log_info("World", "Spawning %d enemy visuals for REAL-TIME combat" % enemies.size())
-	if not enemy_group: return
+	if not enemy_group: 
+		# #region agent log
+		var debug_file_no_enemy = FileAccess.open(debug_log_path_combat, FileAccess.WRITE_READ)
+		if debug_file_no_enemy:
+			debug_file_no_enemy.seek_end()
+			var log_entry_no_enemy = JSON.stringify({"id":"log_combat_no_enemy_group","timestamp":Time.get_ticks_msec(),"location":"World.gd:1228","message":"_on_combat_started: enemy_group is null, returning early","data":{},"sessionId":"debug-session","runId":"run1","hypothesisId":"C"})
+			debug_file_no_enemy.store_line(log_entry_no_enemy)
+			debug_file_no_enemy.close()
+		# #endregion
+		return
 	
 	# Audio handled by CombatHandler via signal connection
-	var cam_m = get_node_or_null("/root/CameraManager")
-	if cam_m:
-		cam_m.zoom_to_battle(Vector2(960, 540))
-	
 	var view_size = get_viewport_rect().size
 	var wm = get_node_or_null("/root/WorldManager")
 	var distance = wm.distance_traveled if wm else 0.0
@@ -898,6 +1332,94 @@ func _on_combat_started(enemies: Array):
 	
 	# Position heroes for real-time combat (melee front, ranged back)
 	_position_heroes_for_combat(view_size, offset)
+	
+	# Find tank hero sprite to focus camera on
+	var party_m = get_node_or_null("/root/PartyManager")
+	var tank_hero = null
+	if party_m and party_m.has_method("get_tank"):
+		tank_hero = party_m.get_tank()
+	
+	var tank_sprite: Node2D = null
+	if tank_hero:
+		# Find tank sprite by matching hero ID (hero_data can be Dictionary or Hero resource)
+		for child in hero_group.get_children():
+			if child.has_method("setup") and child.get("hero_data") != null:
+				var hero_data = child.hero_data
+				var hero_id = ""
+				if hero_data is Dictionary:
+					hero_id = hero_data.get("id", "")
+				elif "id" in hero_data:
+					hero_id = hero_data.id
+				
+				var tank_id = ""
+				if tank_hero is Dictionary:
+					tank_id = tank_hero.get("id", "")
+				elif "id" in tank_hero:
+					tank_id = tank_hero.id
+				
+				if hero_id != "" and hero_id == tank_id:
+					tank_sprite = child as Node2D
+					break
+	
+	# Use tank position for camera, fallback to battle center if no tank
+	var camera_target_pos: Vector2
+	if tank_sprite and is_instance_valid(tank_sprite):
+		camera_target_pos = tank_sprite.global_position
+	else:
+		# Fallback: Calculate center between heroes and enemies for camera positioning
+		camera_target_pos = _calculate_battle_center(view_size, offset)
+	
+	# #region agent log
+	var debug_file = FileAccess.open(debug_log_path_combat, FileAccess.WRITE_READ)
+	if debug_file:
+		debug_file.seek_end()
+		var tank_pos = Vector2.ZERO
+		var tank_id = ""
+		if tank_hero is Dictionary:
+			tank_id = tank_hero.get("id", "")
+		elif "id" in tank_hero:
+			tank_id = tank_hero.id
+		if tank_sprite is Node2D:
+			tank_pos = tank_sprite.global_position
+		var battle_center = _calculate_battle_center(view_size, offset)
+		var road_y_at_tank = 0.0
+		if tank_pos != Vector2.ZERO:
+			road_y_at_tank = _get_road_y(tank_pos.x, view_size)
+		var road_y_at_center = _get_road_y(battle_center.x, view_size)
+		var hero_ids = []
+		for child in hero_group.get_children():
+			if child.get("hero_data") != null:
+				var hd = child.hero_data
+				var hid = ""
+				if hd is Dictionary:
+					hid = hd.get("id", "")
+				elif "id" in hd:
+					hid = hd.id
+				hero_ids.append(hid)
+		var log_entry = JSON.stringify({"id":"log_combat_started","timestamp":Time.get_ticks_msec(),"location":"World.gd:1320","message":"combat started, finding tank for camera","data":{"camera_target_x":camera_target_pos.x,"camera_target_y":camera_target_pos.y,"tank_hero_exists":tank_hero != null,"tank_id":tank_id,"tank_sprite_exists":tank_sprite != null,"tank_pos_x":tank_pos.x,"tank_pos_y":tank_pos.y,"battle_center_x":battle_center.x,"battle_center_y":battle_center.y,"road_y_at_tank":road_y_at_tank,"road_y_at_center":road_y_at_center,"hero_ids":hero_ids,"hero_count":hero_group.get_child_count(),"view_size_x":view_size.x,"view_size_y":view_size.y,"offset":offset},"sessionId":"debug-session","runId":"run1","hypothesisId":"C"})
+		debug_file.store_line(log_entry)
+		debug_file.close()
+	# #endregion
+	
+	# Position camera to tank hero (or battle center if no tank)
+	var cam_m = get_node_or_null("/root/CameraManager")
+	if cam_m:
+		# #region agent log
+		var debug_file2 = FileAccess.open(debug_log_path_combat, FileAccess.WRITE_READ)
+		if debug_file2:
+			debug_file2.seek_end()
+			var log_entry2 = JSON.stringify({"id":"log_combat_camera_setup","timestamp":Time.get_ticks_msec(),"location":"World.gd:1276","message":"setting up camera for combat","data":{"tank_sprite_valid":tank_sprite != null and is_instance_valid(tank_sprite),"camera_target_x":camera_target_pos.x,"camera_target_y":camera_target_pos.y,"cam_m_exists":cam_m != null},"sessionId":"debug-session","runId":"run1","hypothesisId":"C"})
+			debug_file2.store_line(log_entry2)
+			debug_file2.close()
+		# #endregion
+		if tank_sprite is Node2D and is_instance_valid(tank_sprite):
+			# Set camera target to tank for following
+			cam_m.set_target(tank_sprite)
+			# Zoom to tank position
+			cam_m.zoom_to_battle(camera_target_pos)
+		else:
+			# Fallback to battle center
+			cam_m.zoom_to_battle(camera_target_pos)
 	
 	# FORCE HEROES TO RENDER ON TOP
 	if hero_group:
@@ -913,8 +1435,11 @@ func _on_combat_started(enemies: Array):
 		child.queue_free()
 	
 	# Spawn enemies with appropriate positioning
-	var enemy_melee_x: float = view_size.x * COMBAT_ENEMY_MELEE_X_RATIO
-	var enemy_ranged_x: float = view_size.x * COMBAT_ENEMY_RANGED_X_RATIO
+	var layout := _get_combat_x_layout(view_size)
+	var enemy_melee_x: float = float(layout.get("enemy_melee_x", view_size.x * COMBAT_ENEMY_MELEE_X_RATIO))
+	var enemy_ranged_x: float = float(layout.get("enemy_ranged_x", view_size.x * COMBAT_ENEMY_RANGED_X_RATIO))
+	var enemy_melee_i := 0
+	var enemy_ranged_i := 0
 	for i in range(enemies.size()):
 		var enemy_data = enemies[i]
 		var instance = enemy_scene.instantiate()
@@ -927,10 +1452,20 @@ func _on_combat_started(enemies: Array):
 		
 		# Position enemies (melee front, ranged back)
 		var is_melee = _is_enemy_melee(enemy_data)
-		var base_x = enemy_melee_x if is_melee else enemy_ranged_x
-		var sx = base_x + (i * COMBAT_SPACING_X)
+		var base_x: float = enemy_melee_x if is_melee else enemy_ranged_x
+		var lane_i: int = enemy_melee_i if is_melee else enemy_ranged_i
+		var sx = base_x + (lane_i * COMBAT_SPACING_X)
+		if is_melee:
+			enemy_melee_i += 1
+		else:
+			enemy_ranged_i += 1
 		var y_offset = COMBAT_Y_OFFSETS[i % COMBAT_Y_OFFSETS.size()]
-		var ry = _get_road_y(sx + offset, view_size) + y_offset
+		var road_y = _get_road_y(sx + offset, view_size)
+		# Road Line2D has width 40, so it extends 20 pixels above and below center
+		# Position enemies so their feet touch the road surface
+		# Now using same scale as heroes (1.0), so same positioning
+		var road_surface_y = road_y - 5.0
+		var ry = road_surface_y + y_offset
 		instance.position = Vector2(sx, ry)
 		instance.z_index = 50 - i
 		instance.set_meta("combat_y_offset", y_offset)
@@ -963,7 +1498,7 @@ func _on_combat_ended(victory: bool):
 	
 	var audio_m = get_node_or_null("/root/AudioManager")
 	var anim_m = get_node_or_null("/root/AnimationManager")
-	var pm = get_node_or_null("/root/ParticleManager")
+	var particle_mgr = get_node_or_null("/root/ParticleManager")
 	
 	if audio_m:
 		audio_m.play_music("travel")
@@ -980,8 +1515,8 @@ func _on_combat_ended(victory: bool):
 	# Reset boss lighting if active
 	var lighting = get_node_or_null("AtmosphericLighting")
 	if lighting and lighting.color != Color.WHITE:
-		var tween = create_tween()
-		tween.tween_property(lighting, "color", Color.WHITE, 1.5)
+		var reset_tween = create_tween()
+		reset_tween.tween_property(lighting, "color", Color.WHITE, 1.5)
 	
 	if victory:
 		# Check if this was the final boss fight (Mile 100)
@@ -992,8 +1527,8 @@ func _on_combat_ended(victory: bool):
 		
 		if enemy_group:
 			for enemy in enemy_group.get_children():
-				if pm:
-					pm.create_death_effect(enemy.global_position)
+				if particle_mgr:
+					particle_mgr.create_death_effect(enemy.global_position)
 				enemy.visible = false
 		
 		if anim_m and hero_group:
@@ -1009,18 +1544,24 @@ func _handle_mile_100_victory():
 	_log_info("World", "Mile 100 Victory! Starting celebration")
 	
 	# Massive victory celebration
-	var pm = get_node_or_null("/root/ParticleManager")
-	if pm:
+	var particle_mgr = get_node_or_null("/root/ParticleManager")
+	if particle_mgr:
 		# Screen-wide celebration effects
 		for i in range(20):
 			var rand_pos = Vector2(randf_range(100, 1820), randf_range(100, 980))
-			get_tree().create_timer(i * 0.1).timeout.connect(func(): pm.create_hit_effect(rand_pos, Color.GOLD))
+			# Store position to avoid closure capture issues
+			var pos = rand_pos
+			get_tree().create_timer(i * 0.1).timeout.connect(func(): 
+				var pm_local = get_node_or_null("/root/ParticleManager")
+				if pm_local:
+					pm_local.create_hit_effect(pos, Color.GOLD)
+			)
 		
 		# Victory text
-		pm.create_floating_text(Vector2(960, 200), "VICTORY!", Color.GOLD)
-		pm.create_floating_text(Vector2(960, 250), "MILE 100 CHAMPION", Color.WHITE)
-		pm.create_floating_text(Vector2(960, 300), "YOU'VE COMPLETED", Color.GOLD)
-		pm.create_floating_text(Vector2(960, 350), "THE ROAD TO WAR!", Color.GOLD)
+		particle_mgr.create_floating_text(Vector2(960, 200), "VICTORY!", Color.GOLD)
+		particle_mgr.create_floating_text(Vector2(960, 250), "MILE 100 CHAMPION", Color.WHITE)
+		particle_mgr.create_floating_text(Vector2(960, 300), "YOU'VE COMPLETED", Color.GOLD)
+		particle_mgr.create_floating_text(Vector2(960, 350), "THE ROAD TO WAR!", Color.GOLD)
 	
 	# Victory animations for all heroes
 	var anim_m = get_node_or_null("/root/AnimationManager")
@@ -1040,8 +1581,8 @@ func _handle_mile_100_victory():
 	# Clean up enemies
 	if enemy_group:
 		for enemy in enemy_group.get_children():
-			if pm:
-				pm.create_death_effect(enemy.global_position)
+			if particle_mgr:
+				particle_mgr.create_death_effect(enemy.global_position)
 			enemy.visible = false
 
 func _grant_mile_100_rewards():
@@ -1053,9 +1594,9 @@ func _grant_mile_100_rewards():
 		gm.add_gold(20000)
 	
 	# Grant talent points
-	var pm = get_node_or_null("/root/PartyManager")
-	if pm:
-		for hero in pm.heroes:
+	var party_mgr = get_node_or_null("/root/PartyManager")
+	if party_mgr:
+		for hero in party_mgr.heroes:
 			hero.available_talent_points += 5
 	
 	# Grant prestige points
@@ -1283,21 +1824,21 @@ func _select_brutal_difficulty(level: int):
 	if bm and bm.select_brutal_difficulty(level):
 		_log_info("World", "Brutal mode selected: %s" % bm.get_difficulty_name(level))
 		_remove_brutal_mode_dialog()
-		var pm = get_node_or_null("/root/ParticleManager")
-		if pm:
-			pm.create_floating_text(Vector2(960, 400), "BRUTAL MODE: %s" % bm.get_difficulty_name(level), Color.RED)
+		var particle_mgr = get_node_or_null("/root/ParticleManager")
+		if particle_mgr:
+			particle_mgr.create_floating_text(Vector2(960, 400), "BRUTAL MODE: %s" % bm.get_difficulty_name(level), Color.RED)
 	else:
 		_log_error("World", "Failed to select brutal difficulty level %d" % level)
 
 func _show_prestige_confirmation_dialog():
 	_log_info("World", "Showing prestige confirmation dialog")
-	var pm = get_node_or_null("/root/PrestigeManager")
-	if not pm:
+	var prestige_mgr = get_node_or_null("/root/PrestigeManager")
+	if not prestige_mgr:
 		_log_error("World", "PrestigeManager not found")
 		return
 	
-	var prestige_points = pm.calculate_prestige_points()
-	var prestige_level = pm.prestige_level
+	var prestige_points = prestige_mgr.calculate_prestige_points()
+	var prestige_level = prestige_mgr.prestige_level
 	
 	var canvas_layer = get_node_or_null("CanvasLayer")
 	if not canvas_layer:
@@ -1314,7 +1855,7 @@ func _show_prestige_confirmation_dialog():
 	var ui_builder = get_node_or_null("/root/UIBuilder")
 	if not ui_builder:
 		_log_warn("World", "UIBuilder not found, using manual UI creation")
-		_show_prestige_confirmation_dialog_manual(canvas_layer, pm, prestige_points, prestige_level)
+		_show_prestige_confirmation_dialog_manual(canvas_layer, prestige_mgr, prestige_points, prestige_level)
 		return
 	
 	# Create main panel using UIBuilder
@@ -1432,9 +1973,9 @@ func _on_continue_from_prestige_pressed():
 func _on_confirm_prestige_pressed():
 	_log_info("World", "Player confirmed prestige")
 	_remove_prestige_dialog()
-	var pm = get_node_or_null("/root/PrestigeManager")
-	if pm:
-		pm.perform_prestige()
+	var prestige_mgr = get_node_or_null("/root/PrestigeManager")
+	if prestige_mgr:
+		prestige_mgr.perform_prestige()
 
 func _remove_prestige_dialog():
 	var canvas_layer = get_node_or_null("CanvasLayer")
@@ -1504,12 +2045,13 @@ func _on_item_picked_up(item: Dictionary):
 
 func _resume_combat_if_active() -> void:
 	# If the player returns to World mid-combat (after opening menus), re-spawn enemy visuals.
-	var cm = get_node_or_null("/root/CombatManager")
+	# Declare variables at function level to avoid scope warnings
+	var combat_mgr = get_node_or_null("/root/CombatManager")
 	var wm = get_node_or_null("/root/WorldManager")
-	if not cm or not cm.in_combat:
+	if not combat_mgr or not combat_mgr.in_combat:
 		return
 	if wm:
 		wm.combat_active = true
-	var enemies: Array = cm.current_combat.get("enemies", [])
+	var enemies: Array = combat_mgr.current_combat.get("enemies", [])
 	if not enemies.is_empty():
 		_on_combat_started(enemies)

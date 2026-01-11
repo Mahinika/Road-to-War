@@ -95,6 +95,17 @@ func _write_missing_visuals_report(missing: Array[String], checked: int):
 	file.flush()
 	file.close()
 
+func has_equipment(hero_id: String) -> bool:
+	"""Check if hero has any equipment"""
+	if not hero_equipment.has(hero_id):
+		return false
+	var equipment = hero_equipment[hero_id]
+	# Check if any slot has an item
+	for slot in equipment_slots:
+		if equipment.get(slot, null) != null:
+			return true
+	return false
+
 func get_hero_equipment(hero_id: String) -> Dictionary:
 	if not hero_equipment.has(hero_id):
 		var slots = {}

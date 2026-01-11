@@ -14,8 +14,8 @@ export class EquipmentGenerator {
         this.rng = rng;
         this.paletteManager = new PaletteManager();
         this.palette = this.paletteManager.getPalette(paletteName);
-        this.width = 64;
-        this.height = 64;
+        this.width = 128;  // Updated to match hero sprite size (128x128)
+        this.height = 128; // Updated to match hero sprite size (128x128)
         this.drawer = new PixelDrawer(this.ctx, this.width, this.height);
         
         // Initialize TextureGenerator
@@ -27,9 +27,9 @@ export class EquipmentGenerator {
      * Draw a sword with optional bloodline infusion
      */
     drawSword(x, y, length, metalColor, bloodline = null) {
-        const bladeWidth = 2;
-        const hiltLength = 4;
-        const guardWidth = 6;
+        const bladeWidth = 4;  // Scaled up for 128x128 canvas
+        const hiltLength = 8;  // Scaled up for 128x128 canvas
+        const guardWidth = 12; // Scaled up for 128x128 canvas
         
         let finalMetalColor = metalColor;
         let glowColor = null;
@@ -56,16 +56,16 @@ export class EquipmentGenerator {
 
         // Glow effect (on blade edges)
         if (glowColor) {
-            this.drawer.setPixel(x - bladeWidth / 2, y + 2, glowColor);
+            this.drawer.setPixel(x - bladeWidth / 2, y + 4, glowColor); // Scaled up
             this.drawer.setPixel(x + bladeWidth / 2, y + length / 2, glowColor);
         }
 
         // Guard (cross guard)
         this.drawer.drawRect(
             x - guardWidth / 2,
-            y + length - hiltLength - 2,
+            y + length - hiltLength - 4, // Scaled up from -2
             guardWidth,
-            2,
+            4, // Scaled up from 2
             finalMetalColor
         );
 
@@ -80,14 +80,14 @@ export class EquipmentGenerator {
         );
 
         // Pommel
-        this.drawer.drawCircle(x, y + length, 2, finalMetalColor);
+        this.drawer.drawCircle(x, y + length, 4, finalMetalColor); // Scaled up from 2
     }
 
     /**
      * Draw a magical staff
      */
     drawStaff(x, y, length, color, bloodline = null) {
-        const staffWidth = 2;
+        const staffWidth = 4; // Scaled up for 128x128 canvas
         let finalColor = color;
         let crystalColor = 0xFFFFFF;
 
@@ -108,10 +108,10 @@ export class EquipmentGenerator {
         );
 
         // Top ornament (Crystal/Orb)
-        this.drawer.drawCircle(x, y, 4, crystalColor);
-        
+        this.drawer.drawCircle(x, y, 8, crystalColor); // Scaled up from 4
+
         // Secondary glow
-        this.drawer.setPixel(x - 1, y - 1, 0xFFFFFF);
+        this.drawer.setPixel(x - 2, y - 2, 0xFFFFFF); // Scaled up from -1
     }
 
     /**
@@ -146,8 +146,8 @@ export class EquipmentGenerator {
 
         // Shield emblem (simple cross)
         const emblemColor = 0xFFD700; // Gold
-        this.drawer.drawLine(x, y - shieldHeight / 2 + 2, x, y + shieldHeight / 2 - 2, emblemColor);
-        this.drawer.drawLine(x - shieldWidth / 2 + 2, y, x + shieldWidth / 2 - 2, y, emblemColor);
+        this.drawer.drawLine(x, y - shieldHeight / 2 + 4, x, y + shieldHeight / 2 - 4, emblemColor); // Scaled up from 2
+        this.drawer.drawLine(x - shieldWidth / 2 + 4, y, x + shieldWidth / 2 - 4, y, emblemColor); // Scaled up from 2
     }
 
     /**
@@ -158,8 +158,8 @@ export class EquipmentGenerator {
      * @param {number} metalColor - Metal color
      */
     drawHelmet(x, y, size, metalColor) {
-        const helmetHeight = size + 2;
-        const helmetWidth = size + 1;
+        const helmetHeight = size + 4; // Scaled up from +2
+        const helmetWidth = size + 2;  // Scaled up from +1
 
         // Helmet base
         this.drawer.drawRect(
@@ -176,17 +176,17 @@ export class EquipmentGenerator {
             x - helmetWidth / 2,
             visorY,
             helmetWidth,
-            2,
+            4, // Scaled up from 2
             0x000000
         );
 
         // Helmet crest/plume (optional)
         if (this.rng.random() > 0.5) {
             this.drawer.drawRect(
-                x - 1,
-                y - 3,
-                2,
-                3,
+                x - 2, // Scaled up from -1
+                y - 6, // Scaled up from -3
+                4,     // Scaled up from 2
+                6,     // Scaled up from 3
                 0xFF0000 // Red plume
             );
         }
@@ -269,8 +269,8 @@ export class EquipmentGenerator {
 
         // Buckle/emblem (if enabled)
         if (details.buckle !== false) {
-            const buckleSize = details.buckleSize || 4;
-            this.drawBuckle(x, y + height / 2 - 2, buckleSize, details.buckleColor || 0xFFD700);
+            const buckleSize = details.buckleSize || 8; // Scaled up from 4
+            this.drawBuckle(x, y + height / 2 - 4, buckleSize, details.buckleColor || 0xFFD700); // Scaled up from -2
         }
 
         // Engravings (if enabled)
@@ -337,17 +337,17 @@ export class EquipmentGenerator {
             size,
             color
         );
-        
+
         // Buckle highlight
         const highlightColor = this.lightenColor(color, 0.3);
         this.drawer.drawRect(
-            x - size / 2 + 1,
-            y - size / 2 + 1,
-            size - 2,
-            1,
+            x - size / 2 + 2, // Scaled up from +1
+            y - size / 2 + 2, // Scaled up from +1
+            size - 4,         // Scaled up from -2
+            2,                // Scaled up from 1
             highlightColor
         );
-        
+
         // Buckle outline
         this.drawer.drawRectOutline(
             x - size / 2,
@@ -372,31 +372,31 @@ export class EquipmentGenerator {
         switch (pattern) {
             case 'simple':
                 // Simple cross pattern
-                this.drawer.drawLine(x - 2, y - 2, x + 2, y + 2, engravingColor);
-                this.drawer.drawLine(x - 2, y + 2, x + 2, y - 2, engravingColor);
+                this.drawer.drawLine(x - 4, y - 4, x + 4, y + 4, engravingColor); // Scaled up from ±2
+                this.drawer.drawLine(x - 4, y + 4, x + 4, y - 4, engravingColor); // Scaled up from ±2
                 break;
-                
+
             case 'ornate':
                 // Ornate decorative lines
                 // Vertical center line with decorative elements
-                this.drawer.drawLine(x, y - height / 2 + 2, x, y + height / 2 - 2, engravingColor);
+                this.drawer.drawLine(x, y - height / 2 + 4, x, y + height / 2 - 4, engravingColor); // Scaled up from ±2
                 // Decorative curves at top and bottom
-                this.drawer.setPixel(x - 1, y - height / 2 + 2, engravingColor);
-                this.drawer.setPixel(x + 1, y - height / 2 + 2, engravingColor);
-                this.drawer.setPixel(x - 1, y + height / 2 - 2, engravingColor);
-                this.drawer.setPixel(x + 1, y + height / 2 - 2, engravingColor);
+                this.drawer.setPixel(x - 2, y - height / 2 + 4, engravingColor); // Scaled up from ±1, ±2
+                this.drawer.setPixel(x + 2, y - height / 2 + 4, engravingColor); // Scaled up from ±1, ±2
+                this.drawer.setPixel(x - 2, y + height / 2 - 4, engravingColor); // Scaled up from ±1, ±2
+                this.drawer.setPixel(x + 2, y + height / 2 - 4, engravingColor); // Scaled up from ±1, ±2
                 break;
-                
+
             case 'runic':
                 // Runic symbols (simplified)
                 // Top rune
-                this.drawer.setPixel(x - 1, y - height / 2 + 2, engravingColor);
-                this.drawer.setPixel(x, y - height / 2 + 3, engravingColor);
-                this.drawer.setPixel(x + 1, y - height / 2 + 2, engravingColor);
+                this.drawer.setPixel(x - 2, y - height / 2 + 4, engravingColor); // Scaled up from ±1, ±2
+                this.drawer.setPixel(x, y - height / 2 + 6, engravingColor);     // Scaled up from ±3
+                this.drawer.setPixel(x + 2, y - height / 2 + 4, engravingColor); // Scaled up from ±1, ±2
                 // Bottom rune
-                this.drawer.setPixel(x - 1, y + height / 2 - 2, engravingColor);
-                this.drawer.setPixel(x, y + height / 2 - 3, engravingColor);
-                this.drawer.setPixel(x + 1, y + height / 2 - 2, engravingColor);
+                this.drawer.setPixel(x - 2, y + height / 2 - 4, engravingColor); // Scaled up from ±1, ±2
+                this.drawer.setPixel(x, y + height / 2 - 6, engravingColor);     // Scaled up from ±3
+                this.drawer.setPixel(x + 2, y + height / 2 - 4, engravingColor); // Scaled up from ±1, ±2
                 break;
         }
     }
@@ -413,9 +413,9 @@ export class EquipmentGenerator {
         switch (shape) {
             case 'circle':
                 this.drawer.drawCircle(x, y, size / 2, color);
-                this.drawer.drawCircle(x, y, size / 2 - 1, 0x000000); // Outline
+                this.drawer.drawCircle(x, y, size / 2 - 2, 0x000000); // Outline - scaled up from -1
                 break;
-                
+
             case 'shield':
                 // Shield-shaped emblem
                 const shieldWidth = size;
@@ -435,7 +435,7 @@ export class EquipmentGenerator {
                     0x000000
                 );
                 break;
-                
+
             case 'star':
                 // Star-shaped emblem (simplified)
                 const points = [
@@ -476,9 +476,9 @@ export class EquipmentGenerator {
      */
     drawShoulderPads(x, y, size, metalColor) {
         // Left shoulder (will be mirrored)
-        this.drawer.drawCircle(x - 8, y, size, metalColor);
+        this.drawer.drawCircle(x - 16, y, size, metalColor); // Scaled up from -8
         // Right shoulder (will be mirrored)
-        this.drawer.drawCircle(x + 8, y, size, metalColor);
+        this.drawer.drawCircle(x + 16, y, size, metalColor); // Scaled up from +8
     }
 
     /**

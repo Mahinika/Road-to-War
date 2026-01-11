@@ -6,26 +6,23 @@ This directory contains development tools and utilities for the Road of War proj
 
 ### Core Tools
 
-- **`generate-assets.js`** - Build-time pixel-art asset generator
-  - Generates PNG sprite files offline for use in Phaser 3
+- **`generate-assets.js`** - Build-time pixel-art asset generator (legacy)
+  - Generates PNG sprite files offline for character/bloodline assets
   - Usage: `npm run generate-assets`
   - Output: `assets/sprites/` directory
+  - Note: For comprehensive asset generation, use `generate-all-assets.js` or `unified-asset-generator.js`
 
-- **`agent-manager.js`** - Multi-agent workflow helper (Cursor-native, no paid APIs)
-  - Generates per-lane prompt files you paste into multiple Cursor chats (gameplay/ui/infra)
-  - Collects unified diff patches and applies them via `git apply`
-  - Config: `tools/agent-manager.config.json`
-  - Usage:
-    - `npm run agent:prep -- --task "..."` (writes `agent-out/prompts/*.md`)
-    - Save each agent response to `agent-out/patches/<lane>.patch`
-    - `npm run agent:apply`
-  - One-command wrapper:
-    - `npm run manager -- --task "..." --open` (generates prompts and opens them)
-    - Windows launcher: `Start Manager Tool.bat` (double-click)
+- **`generate-all-assets.js`** - Comprehensive asset generator (refactored)
+  - Generates ALL visual assets: spell icons, enemy sprites, item icons, projectiles, VFX
+  - Uses shared utilities (canvas-utils.js, color-utils.js) for consistency
+  - Usage: `node tools/generate-all-assets.js`
+  - Output: `road-to-war/assets/` with JSON metadata
 
-- **MCP server (Cursor integration)**:
-  - Run: `npm run mcp:manager`
-  - Setup: `docs/MCP_MANAGER_SETUP.md`
+- **`unified-asset-generator.js`** - Unified entry point for all asset generation (NEW)
+  - Single `generate(type, data, options)` method for all asset types
+  - Orchestrates all specialized generators
+  - This is the ONLY place to add new asset types - no new generators needed
+  - Usage: `import { UnifiedAssetGenerator } from './unified-asset-generator.js'; const generator = new UnifiedAssetGenerator(); await generator.generate('hero', heroData, { heroId: 'hero_0' });`
 
 - **`smart-game-navigator.js`** - Smart game navigation tool
   - Automated game navigation and testing
@@ -63,26 +60,60 @@ This directory contains development tools and utilities for the Road of War proj
   - Runs automated tests
   - Used by test-runner in full mode
 
+### Asset Generation System (Unified Architecture - January 2026)
+
+**Unified Entry Point:**
+- `unified-asset-generator.js` - **NEW** - Single entry point for all asset generation. Provides `generate(type, data, options)` method for all asset types. This is the ONLY place to add new asset types - no new generators needed.
+
+**Core Asset Generator:**
+- `generate-all-assets.js` - Comprehensive asset generator (refactored with shared utilities). Generates spell icons (176), enemy sprites (10), item icons, projectiles (8), VFX (8). Uses Canvas 2D API. Outputs to `road-to-war/assets/` with JSON metadata. Usage: `node tools/generate-all-assets.js`.
+
 ### Generators (`generators/`)
 
-Build-time asset generators used by `generate-assets.js`:
+**Base Generator:**
+- `base-generator.js` - **NEW** - Shared base class for all generators with common utilities (canvas operations, color operations)
 
-- `paladin-generator.js` - Paladin sprite generation
-- `humanoid-generator.js` - Humanoid sprite generation
-- `equipment-generator.js` - Equipment sprite generation
+**Hero Sprite Generator (NEW - January 2026):**
+- `hero-sprite-generator.js` - **NEW** - 256×256 hero sprite generator with realistic proportions (14% head ratio, not chibi). Exports at 128×128 for runtime use. Supports facial expressions, clothing textures, 5-level cel shading. Design at high resolution for detail, export at manageable size for performance.
+
+**Spell Icon Generator:**
+- `spell-icon-generator.js` - **NEW** - Spell/ability icon generator with keyword-driven motifs. Extracted from generate-all-assets.js inline functions.
+
+**Legacy Generators:**
+- `paladin-generator.js` - Paladin sprite generation (still used, not deprecated)
+- `humanoid-generator.js` - Humanoid sprite generation (legacy, may be replaced)
+- `equipment-generator.js` - Equipment sprite generation (used by paladin-generator)
+- `gem-generator.js` - Gem icon generation (still used)
+- `animation-generator.js` - Animation strip generation (still used)
+
+**Remaining Generators (To Be Extracted):**
+- EnemySpriteGenerator - To be extracted from generate-all-assets.js
+- ItemIconGenerator - To be extracted from generate-all-assets.js
+- ProjectileGenerator - To be extracted from generate-all-assets.js
+- VFXGenerator - To be extracted from generate-all-assets.js
 
 ### Utilities (`utils/`)
 
-Supporting utilities for generators:
+**Shared Utilities (NEW - January 2026):**
+- `canvas-utils.js` - **NEW** - Shared canvas operations (setupCanvasContext, drawIconPlate, resolveResPathToDisk, isMeaningfulTexture)
+- `color-utils.js` - **NEW** - Shared color operations (hexToRgb, rgbToHex, mixHex, lightenHex, darkenHex, getLuma, ensureVisibleFill, clamp, normalizeHex, hexToRgbArray, hexToRgbaArray)
 
-- `color-quantizer.js` - Color quantization
+**Updated Utilities (Now Use Shared Color Utils):**
+- `color-quantizer.js` - Color quantization (updated to use color-utils.js)
+- `pixel-drawer.js` - Pixel drawing utilities (updated to use color-utils.js)
+- `material-classifier.js` - Material classification (updated to use color-utils.js)
+- `glow-renderer.js` - Glow effect rendering (updated to use color-utils.js)
+
+**Other Utilities:**
 - `image-analyzer.js` - Image analysis
-- `material-classifier.js` - Material classification
 - `palette-manager.js` - Palette management
-- `pixel-drawer.js` - Pixel drawing utilities
 - `proportion-analyzer.js` - Proportion analysis
 - `seeded-rng.js` - Seeded random number generation
 - `style-detector.js` - Style detection
+- `texture-generator.js` - Texture generation
+- `qa-validator.js` - QA validation
+- `variation-manager.js` - Variation management
+- `export-manager.js` - Export management
 
 ## Archived Tools
 

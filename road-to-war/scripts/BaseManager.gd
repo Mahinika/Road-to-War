@@ -1,7 +1,7 @@
 extends Node
 
 # BaseManager.gd - Base class for all managers with standardized initialization
-# Migrated from src/managers/base-manager.js
+# Godot 4.x base manager class
 
 func _get_logger():
 	return get_node_or_null("/root/Logger")

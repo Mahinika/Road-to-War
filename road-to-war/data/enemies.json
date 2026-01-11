@@ -83,7 +83,12 @@
       "experience": 25,
       "gold": 15
     },
-    "appearance": { "color": "#008800", "bodyType": "humanoid" }
+    "appearance": {
+      "color": "#008800",
+      "bodyType": "humanoid",
+      "skinTone": "#90EE90",
+      "armorColor": "#004400"
+    }
   },
   "goblin_slinger": {
     "id": "goblin_slinger",
@@ -117,7 +122,12 @@
       "experience": 20,
       "gold": 10
     },
-    "appearance": { "color": "#00aa44", "bodyType": "humanoid" }
+    "appearance": {
+      "color": "#00aa44",
+      "bodyType": "humanoid",
+      "skinTone": "#90EE90",
+      "armorColor": "#006400"
+    }
   },
   "orc": {
     "id": "orc",
@@ -152,7 +162,12 @@
       "experience": 75,
       "gold": 40
     },
-    "appearance": { "color": "#880000", "bodyType": "humanoid" }
+    "appearance": {
+      "color": "#880000",
+      "bodyType": "humanoid",
+      "skinTone": "#8B4513",
+      "armorColor": "#654321"
+    }
   },
   "orc_archer": {
     "id": "orc_archer",
@@ -187,7 +202,12 @@
       "experience": 60,
       "gold": 30
     },
-    "appearance": { "color": "#aa8800", "bodyType": "humanoid" }
+    "appearance": {
+      "color": "#aa8800",
+      "bodyType": "humanoid",
+      "skinTone": "#8B4513",
+      "armorColor": "#8B4513"
+    }
   },
   "orc_shaman": {
     "id": "orc_shaman",
@@ -517,5 +537,1955 @@
       "bodyType": "humanoid"
     },
     "description": "The ultimate challenge. The War Lord commands armies and wields power beyond mortal comprehension."
+  },
+  "worgen_warrior": {
+    "id": "worgen_warrior",
+    "name": "Worgen Warrior",
+    "level": 4,
+    "type": "basic",
+    "role": "melee",
+    "stats": {
+      "health": 180,
+      "maxHealth": 180,
+      "attack": 18,
+      "defense": 10,
+      "speed": 45
+    },
+    "abilities": [
+      {
+        "name": "Savage Rend",
+        "type": "attack",
+        "damageMultiplier": 1.3,
+        "range": 120,
+        "effect": "bleed",
+        "duration": 4,
+        "chance": 0.25,
+        "cooldown": 5,
+        "description": "Savage claw attack that causes bleeding."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["tank", "healer"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 55,
+      "gold": 30
+    },
+    "appearance": {
+      "color": "#8B4513",
+      "bodyType": "humanoid",
+      "skinTone": "#654321",
+      "armorColor": "#4B0082"
+    }
+  },
+  "forest_troll_hunter": {
+    "id": "forest_troll_hunter",
+    "name": "Forest Troll Hunter",
+    "level": 3,
+    "type": "basic",
+    "role": "ranged",
+    "stats": {
+      "health": 90,
+      "maxHealth": 90,
+      "attack": 8,
+      "defense": 4,
+      "speed": 40
+    },
+    "abilities": [
+      {
+        "name": "Throw Spear",
+        "type": "attack",
+        "damageMultiplier": 1.1,
+        "range": 350,
+        "chance": 0.6,
+        "cooldown": 3,
+        "description": "Throws a spear at ranged targets."
+      }
+    ],
+    "aiStrategy": "ranged",
+    "aiPersonality": {
+      "targetPriority": ["healer", "ranged"],
+      "abilityFrequency": "high"
+    },
+    "rewards": {
+      "experience": 35,
+      "gold": 18
+    },
+    "appearance": {
+      "color": "#228B22",
+      "bodyType": "humanoid",
+      "skinTone": "#32CD32",
+      "armorColor": "#006400"
+    }
+  },
+  "nerubian_warrior": {
+    "id": "nerubian_warrior",
+    "name": "Nerubian Warrior",
+    "level": 6,
+    "type": "basic",
+    "role": "melee",
+    "stats": {
+      "health": 220,
+      "maxHealth": 220,
+      "attack": 22,
+      "defense": 14,
+      "speed": 35
+    },
+    "abilities": [
+      {
+        "name": "Venom Strike",
+        "type": "attack",
+        "damageMultiplier": 1.0,
+        "range": 120,
+        "effect": "poison",
+        "duration": 5,
+        "chance": 0.3,
+        "cooldown": 6,
+        "description": "Injects venom that damages over time."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["tank", "dps"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 85,
+      "gold": 45
+    },
+    "appearance": {
+      "color": "#2F4F4F",
+      "bodyType": "humanoid",
+      "skinTone": "#696969",
+      "armorColor": "#000000"
+    }
+  },
+  "magnataur_warrior": {
+    "id": "magnataur_warrior",
+    "name": "Magnataur Warrior",
+    "level": 8,
+    "type": "elite",
+    "role": "melee",
+    "stats": {
+      "health": 400,
+      "maxHealth": 400,
+      "attack": 32,
+      "defense": 18,
+      "speed": 25
+    },
+    "abilities": [
+      {
+        "name": "Trample",
+        "type": "attack",
+        "damageMultiplier": 1.4,
+        "range": 150,
+        "effect": "stun",
+        "duration": 2,
+        "chance": 0.2,
+        "cooldown": 8,
+        "description": "Charges forward, stunning targets."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["tank"],
+      "abilityFrequency": "low"
+    },
+    "rewards": {
+      "experience": 150,
+      "gold": 80
+    },
+    "appearance": {
+      "color": "#8B4513",
+      "size": "large",
+      "bodyType": "humanoid",
+      "skinTone": "#A0522D",
+      "armorColor": "#654321"
+    }
+  },
+  "vrykul_berserker": {
+    "id": "vrykul_berserker",
+    "name": "Vrykul Berserker",
+    "level": 9,
+    "type": "elite",
+    "role": "melee",
+    "stats": {
+      "health": 350,
+      "maxHealth": 350,
+      "attack": 38,
+      "defense": 16,
+      "speed": 30
+    },
+    "abilities": [
+      {
+        "name": "Berserker Rage",
+        "type": "buff",
+        "effect": "attack_boost",
+        "power": 1.5,
+        "duration": 8,
+        "chance": 0.15,
+        "cooldown": 15,
+        "description": "Enters a rage, increasing attack power."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["dps", "healer"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 180,
+      "gold": 95
+    },
+    "appearance": {
+      "color": "#4169E1",
+      "bodyType": "humanoid",
+      "skinTone": "#F5DEB3",
+      "armorColor": "#2F4F4F"
+    }
+  },
+  "proto_drake": {
+    "id": "proto_drake",
+    "name": "Proto-Drake",
+    "level": 12,
+    "type": "elite",
+    "role": "melee",
+    "stats": {
+      "health": 600,
+      "maxHealth": 600,
+      "attack": 45,
+      "defense": 22,
+      "speed": 50
+    },
+    "abilities": [
+      {
+        "name": "Drake Dive",
+        "type": "attack",
+        "damageMultiplier": 1.6,
+        "range": 200,
+        "effect": "knockback",
+        "chance": 0.25,
+        "cooldown": 6,
+        "description": "Dives from above, knocking back targets."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["healer", "ranged"],
+      "abilityFrequency": "high"
+    },
+    "rewards": {
+      "experience": 280,
+      "gold": 150
+    },
+    "appearance": {
+      "color": "#FFD700",
+      "size": "large",
+      "bodyType": "dragon",
+      "skinTone": "#DAA520",
+      "armorColor": "#B8860B"
+    }
+  },
+  "death_knight": {
+    "id": "death_knight",
+    "name": "Death Knight",
+    "level": 14,
+    "type": "elite",
+    "role": "melee",
+    "stats": {
+      "health": 700,
+      "maxHealth": 700,
+      "attack": 50,
+      "defense": 28,
+      "speed": 35
+    },
+    "abilities": [
+      {
+        "name": "Death Coil",
+        "type": "attack",
+        "damageMultiplier": 1.2,
+        "range": 250,
+        "effect": "drain_health",
+        "chance": 0.3,
+        "cooldown": 8,
+        "description": "Drains health from target to heal self."
+      },
+      {
+        "name": "Anti-Magic Shell",
+        "type": "buff",
+        "effect": "magic_immunity",
+        "duration": 6,
+        "chance": 0.1,
+        "cooldown": 20,
+        "description": "Becomes immune to magic damage."
+      }
+    ],
+    "aiStrategy": "boss",
+    "aiPersonality": {
+      "targetPriority": ["healer", "caster"],
+      "abilityFrequency": "high",
+      "adaptiveness": "high"
+    },
+    "rewards": {
+      "experience": 350,
+      "gold": 200
+    },
+    "appearance": {
+      "color": "#2F2F2F",
+      "bodyType": "humanoid",
+      "skinTone": "#708090",
+      "armorColor": "#000000"
+    }
+  },
+  "valkyr": {
+    "id": "valkyr",
+    "name": "Val'kyr",
+    "level": 16,
+    "type": "elite",
+    "role": "healer",
+    "stats": {
+      "health": 500,
+      "maxHealth": 500,
+      "attack": 35,
+      "defense": 18,
+      "speed": 60
+    },
+    "abilities": [
+      {
+        "name": "Holy Light",
+        "type": "heal",
+        "healMultiplier": 0.4,
+        "range": 300,
+        "chance": 0.5,
+        "cooldown": 6,
+        "description": "Heals an ally with holy light."
+      },
+      {
+        "name": "Repentance",
+        "type": "debuff",
+        "effect": "stun",
+        "duration": 3,
+        "chance": 0.2,
+        "cooldown": 12,
+        "description": "Stuns target, preventing action."
+      }
+    ],
+    "aiStrategy": "healer",
+    "aiPersonality": {
+      "targetPriority": ["low_health", "tank"],
+      "abilityFrequency": "very_high"
+    },
+    "rewards": {
+      "experience": 400,
+      "gold": 220
+    },
+    "appearance": {
+      "color": "#FFFFFF",
+      "bodyType": "humanoid",
+      "skinTone": "#F8F8FF",
+      "armorColor": "#FFD700"
+    }
+  },
+  "frost_wyrm": {
+    "id": "frost_wyrm",
+    "name": "Frost Wyrm",
+    "level": 18,
+    "type": "boss",
+    "role": "melee",
+    "stats": {
+      "health": 1500,
+      "maxHealth": 1500,
+      "attack": 65,
+      "defense": 35,
+      "speed": 45
+    },
+    "abilities": [
+      {
+        "name": "Frost Breath",
+        "type": "attack",
+        "damageMultiplier": 0.9,
+        "isAoE": true,
+        "range": 400,
+        "effect": "freeze",
+        "duration": 2,
+        "chance": 0.25,
+        "cooldown": 8,
+        "description": "Breathes frost, damaging and freezing all targets."
+      },
+      {
+        "name": "Wing Buffet",
+        "type": "attack",
+        "damageMultiplier": 1.3,
+        "isAoE": true,
+        "range": 300,
+        "effect": "knockback",
+        "chance": 0.15,
+        "cooldown": 10,
+        "description": "Buffets with wings, knocking back nearby targets."
+      }
+    ],
+    "aiStrategy": "boss",
+    "aiPersonality": {
+      "targetPriority": ["tank", "healer"],
+      "abilityFrequency": "high",
+      "adaptiveness": "high"
+    },
+    "bossMechanics": {
+      "phases": true,
+      "enrage": {
+        "healthThreshold": 0.3,
+        "attackSpeedMultiplier": 1.5,
+        "damageMultiplier": 1.3
+      }
+    },
+    "rewards": {
+      "experience": 800,
+      "gold": 450
+    },
+    "appearance": {
+      "color": "#87CEEB",
+      "size": "gigantic",
+      "bodyType": "dragon",
+      "skinTone": "#B0E0E6",
+      "armorColor": "#4682B4"
+    }
+  },
+  "storm_giant": {
+    "id": "storm_giant",
+    "name": "Storm Giant",
+    "level": 20,
+    "type": "elite",
+    "role": "melee",
+    "stats": {
+      "health": 1200,
+      "maxHealth": 1200,
+      "attack": 55,
+      "defense": 30,
+      "speed": 20
+    },
+    "abilities": [
+      {
+        "name": "Chain Lightning",
+        "type": "attack",
+        "damageMultiplier": 0.8,
+        "isAoE": true,
+        "range": 350,
+        "effect": "chain",
+        "chance": 0.3,
+        "cooldown": 7,
+        "description": "Lightning that jumps between targets."
+      },
+      {
+        "name": "Thunder Clap",
+        "type": "attack",
+        "damageMultiplier": 1.1,
+        "isAoE": true,
+        "range": 250,
+        "chance": 0.2,
+        "cooldown": 9,
+        "description": "Ground-shaking clap that stuns nearby enemies."
+      }
+    ],
+    "aiStrategy": "boss",
+    "aiPersonality": {
+      "targetPriority": ["ranged", "caster"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 600,
+      "gold": 350
+    },
+    "appearance": {
+      "color": "#4169E1",
+      "size": "gigantic",
+      "bodyType": "humanoid",
+      "skinTone": "#87CEEB",
+      "armorColor": "#191970"
+    }
+  },
+  "orc_grunt": {
+    "id": "orc_grunt",
+    "name": "Orc Grunt",
+    "level": 3,
+    "type": "basic",
+    "role": "melee",
+    "stats": {
+      "health": 120,
+      "maxHealth": 120,
+      "attack": 14,
+      "defense": 7,
+      "speed": 28
+    },
+    "abilities": [
+      {
+        "name": "Battle Shout",
+        "type": "buff",
+        "effect": "attack_boost",
+        "power": 1.1,
+        "duration": 10,
+        "chance": 0.1,
+        "cooldown": 15,
+        "description": "Shouts to boost attack power."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["tank", "dps"],
+      "abilityFrequency": "low"
+    },
+    "rewards": {
+      "experience": 40,
+      "gold": 22
+    },
+    "appearance": {
+      "color": "#8B0000",
+      "bodyType": "humanoid",
+      "skinTone": "#8B4513",
+      "armorColor": "#654321"
+    }
+  },
+  "orc_raider": {
+    "id": "orc_raider",
+    "name": "Orc Raider",
+    "level": 4,
+    "type": "basic",
+    "role": "melee",
+    "stats": {
+      "health": 140,
+      "maxHealth": 140,
+      "attack": 16,
+      "defense": 8,
+      "speed": 38
+    },
+    "abilities": [
+      {
+        "name": "Charge",
+        "type": "attack",
+        "damageMultiplier": 1.4,
+        "range": 180,
+        "effect": "stun",
+        "duration": 1,
+        "chance": 0.2,
+        "cooldown": 8,
+        "description": "Charges forward, stunning the target."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["ranged", "healer"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 50,
+      "gold": 28
+    },
+    "appearance": {
+      "color": "#B22222",
+      "bodyType": "humanoid",
+      "skinTone": "#8B4513",
+      "armorColor": "#8B0000"
+    }
+  },
+  "orc_warlock": {
+    "id": "orc_warlock",
+    "name": "Orc Warlock",
+    "level": 5,
+    "type": "basic",
+    "role": "ranged",
+    "stats": {
+      "health": 100,
+      "maxHealth": 100,
+      "attack": 12,
+      "defense": 5,
+      "speed": 25
+    },
+    "abilities": [
+      {
+        "name": "Shadow Bolt",
+        "type": "attack",
+        "damageMultiplier": 1.2,
+        "range": 350,
+        "effect": "shadow_damage",
+        "chance": 0.6,
+        "cooldown": 4,
+        "description": "Fires a bolt of shadow energy."
+      },
+      {
+        "name": "Life Tap",
+        "type": "heal",
+        "healMultiplier": 0.2,
+        "chance": 0.15,
+        "cooldown": 12,
+        "description": "Sacrifices health to restore mana."
+      }
+    ],
+    "aiStrategy": "ranged",
+    "aiPersonality": {
+      "targetPriority": ["healer", "caster"],
+      "abilityFrequency": "high"
+    },
+    "rewards": {
+      "experience": 70,
+      "gold": 38
+    },
+    "appearance": {
+      "color": "#4B0082",
+      "bodyType": "humanoid",
+      "skinTone": "#8B4513",
+      "armorColor": "#2F1B14"
+    }
+  },
+  "orc_blademaster": {
+    "id": "orc_blademaster",
+    "name": "Orc Blademaster",
+    "level": 6,
+    "type": "elite",
+    "role": "melee",
+    "stats": {
+      "health": 300,
+      "maxHealth": 300,
+      "attack": 28,
+      "defense": 16,
+      "speed": 35
+    },
+    "abilities": [
+      {
+        "name": "Whirlwind",
+        "type": "attack",
+        "damageMultiplier": 0.8,
+        "isAoE": true,
+        "range": 150,
+        "chance": 0.25,
+        "cooldown": 6,
+        "description": "Spins rapidly, damaging nearby enemies."
+      },
+      {
+        "name": "Mortal Strike",
+        "type": "attack",
+        "damageMultiplier": 1.5,
+        "range": 120,
+        "effect": "healing_reduction",
+        "duration": 8,
+        "chance": 0.15,
+        "cooldown": 10,
+        "description": "Powerful strike that reduces healing received."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["tank", "dps"],
+      "abilityFrequency": "high"
+    },
+    "rewards": {
+      "experience": 120,
+      "gold": 65
+    },
+    "appearance": {
+      "color": "#DC143C",
+      "bodyType": "humanoid",
+      "skinTone": "#8B4513",
+      "armorColor": "#B22222"
+    }
+  },
+  "goblin_engineer": {
+    "id": "goblin_engineer",
+    "name": "Goblin Engineer",
+    "level": 2,
+    "type": "basic",
+    "role": "ranged",
+    "stats": {
+      "health": 50,
+      "maxHealth": 50,
+      "attack": 5,
+      "defense": 3,
+      "speed": 45
+    },
+    "abilities": [
+      {
+        "name": "Explosive Sheep",
+        "type": "attack",
+        "damageMultiplier": 1.8,
+        "isAoE": true,
+        "range": 200,
+        "chance": 0.1,
+        "cooldown": 12,
+        "description": "Throws an explosive mechanical sheep."
+      },
+      {
+        "name": "Repair Bot",
+        "type": "heal",
+        "healMultiplier": 0.15,
+        "chance": 0.2,
+        "cooldown": 8,
+        "description": "Deploys a bot that repairs damage."
+      }
+    ],
+    "aiStrategy": "ranged",
+    "aiPersonality": {
+      "targetPriority": ["low_health", "healer"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 30,
+      "gold": 25
+    },
+    "appearance": {
+      "color": "#32CD32",
+      "bodyType": "humanoid",
+      "skinTone": "#90EE90",
+      "armorColor": "#228B22"
+    }
+  },
+  "goblin_assassin": {
+    "id": "goblin_assassin",
+    "name": "Goblin Assassin",
+    "level": 3,
+    "type": "basic",
+    "role": "melee",
+    "stats": {
+      "health": 70,
+      "maxHealth": 70,
+      "attack": 20,
+      "defense": 4,
+      "speed": 55
+    },
+    "abilities": [
+      {
+        "name": "Backstab",
+        "type": "attack",
+        "damageMultiplier": 2.0,
+        "range": 120,
+        "chance": 0.3,
+        "cooldown": 6,
+        "description": "Sneaky attack from behind for extra damage."
+      },
+      {
+        "name": "Vanish",
+        "type": "buff",
+        "effect": "stealth",
+        "duration": 5,
+        "chance": 0.15,
+        "cooldown": 15,
+        "description": "Temporarily becomes invisible."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["healer", "caster"],
+      "abilityFrequency": "high"
+    },
+    "rewards": {
+      "experience": 45,
+      "gold": 30
+    },
+    "appearance": {
+      "color": "#000000",
+      "bodyType": "humanoid",
+      "skinTone": "#90EE90",
+      "armorColor": "#2F2F2F"
+    }
+  },
+  "taunka_shaman": {
+    "id": "taunka_shaman",
+    "name": "Taunka Shaman",
+    "level": 6,
+    "type": "basic",
+    "role": "healer",
+    "stats": {
+      "health": 160,
+      "maxHealth": 160,
+      "attack": 10,
+      "defense": 8,
+      "speed": 22
+    },
+    "abilities": [
+      {
+        "name": "Healing Wave",
+        "type": "heal",
+        "healMultiplier": 0.25,
+        "range": 300,
+        "chance": 0.4,
+        "cooldown": 6,
+        "description": "Waves of healing energy."
+      },
+      {
+        "name": "Earthbind Totem",
+        "type": "debuff",
+        "effect": "speed_reduction",
+        "power": 0.5,
+        "duration": 8,
+        "chance": 0.2,
+        "cooldown": 12,
+        "description": "Summons totem that slows enemies."
+      }
+    ],
+    "aiStrategy": "healer",
+    "aiPersonality": {
+      "targetPriority": ["low_health"],
+      "abilityFrequency": "high"
+    },
+    "rewards": {
+      "experience": 90,
+      "gold": 48
+    },
+    "appearance": {
+      "color": "#8B4513",
+      "bodyType": "humanoid",
+      "skinTone": "#D2691E",
+      "armorColor": "#A0522D"
+    }
+  },
+  "wendigo": {
+    "id": "wendigo",
+    "name": "Wendigo",
+    "level": 7,
+    "type": "basic",
+    "role": "melee",
+    "stats": {
+      "health": 250,
+      "maxHealth": 250,
+      "attack": 24,
+      "defense": 12,
+      "speed": 40
+    },
+    "abilities": [
+      {
+        "name": "Frost Bite",
+        "type": "attack",
+        "damageMultiplier": 1.1,
+        "range": 120,
+        "effect": "freeze",
+        "duration": 3,
+        "chance": 0.25,
+        "cooldown": 7,
+        "description": "Freezing bite that slows and damages."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["tank", "dps"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 110,
+      "gold": 58
+    },
+    "appearance": {
+      "color": "#B0C4DE",
+      "bodyType": "beast",
+      "skinTone": "#778899",
+      "armorColor": "#4682B4"
+    }
+  },
+  "iron_dwarf": {
+    "id": "iron_dwarf",
+    "name": "Iron Dwarf",
+    "level": 7,
+    "type": "basic",
+    "role": "melee",
+    "stats": {
+      "health": 280,
+      "maxHealth": 280,
+      "attack": 26,
+      "defense": 20,
+      "speed": 20
+    },
+    "abilities": [
+      {
+        "name": "Steam Blast",
+        "type": "attack",
+        "damageMultiplier": 1.3,
+        "range": 200,
+        "effect": "knockback",
+        "chance": 0.2,
+        "cooldown": 8,
+        "description": "Blasts steam, knocking back targets."
+      }
+    ],
+    "aiStrategy": "defensive",
+    "aiPersonality": {
+      "targetPriority": ["melee", "tank"],
+      "abilityFrequency": "low"
+    },
+    "rewards": {
+      "experience": 115,
+      "gold": 62
+    },
+    "appearance": {
+      "color": "#708090",
+      "bodyType": "humanoid",
+      "skinTone": "#2F4F4F",
+      "armorColor": "#696969"
+    }
+  },
+  "harpy": {
+    "id": "harpy",
+    "name": "Harpy",
+    "level": 6,
+    "type": "basic",
+    "role": "ranged",
+    "stats": {
+      "health": 120,
+      "maxHealth": 120,
+      "attack": 14,
+      "defense": 6,
+      "speed": 50
+    },
+    "abilities": [
+      {
+        "name": "Dive Bomb",
+        "type": "attack",
+        "damageMultiplier": 1.4,
+        "range": 250,
+        "chance": 0.3,
+        "cooldown": 5,
+        "description": "Dives from above for a powerful strike."
+      }
+    ],
+    "aiStrategy": "ranged",
+    "aiPersonality": {
+      "targetPriority": ["healer", "ranged"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 85,
+      "gold": 45
+    },
+    "appearance": {
+      "color": "#FF69B4",
+      "bodyType": "humanoid",
+      "skinTone": "#FFB6C1",
+      "armorColor": "#FF1493"
+    }
+  },
+  "ghoul": {
+    "id": "ghoul",
+    "name": "Ghoul",
+    "level": 3,
+    "type": "basic",
+    "role": "melee",
+    "stats": {
+      "health": 80,
+      "maxHealth": 80,
+      "attack": 10,
+      "defense": 4,
+      "speed": 30
+    },
+    "abilities": [
+      {
+        "name": "Disease",
+        "type": "debuff",
+        "effect": "health_regen_reduction",
+        "power": 0.5,
+        "duration": 6,
+        "chance": 0.2,
+        "cooldown": 8,
+        "description": "Infects target with disease, reducing health regeneration."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["low_health", "healer"],
+      "abilityFrequency": "low"
+    },
+    "rewards": {
+      "experience": 32,
+      "gold": 16
+    },
+    "appearance": {
+      "color": "#556B2F",
+      "bodyType": "undead",
+      "skinTone": "#696969",
+      "armorColor": "#2F4F2F"
+    }
+  },
+  "crypt_fiend": {
+    "id": "crypt_fiend",
+    "name": "Crypt Fiend",
+    "level": 6,
+    "type": "elite",
+    "role": "melee",
+    "stats": {
+      "health": 320,
+      "maxHealth": 320,
+      "attack": 30,
+      "defense": 18,
+      "speed": 28
+    },
+    "abilities": [
+      {
+        "name": "Web Wrap",
+        "type": "debuff",
+        "effect": "stun",
+        "duration": 4,
+        "chance": 0.25,
+        "cooldown": 10,
+        "description": "Wraps target in webs, stunning them."
+      },
+      {
+        "name": "Burrow",
+        "type": "buff",
+        "effect": "stealth",
+        "duration": 3,
+        "chance": 0.15,
+        "cooldown": 15,
+        "description": "Burrows underground, becoming temporarily invisible."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["ranged", "caster"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 140,
+      "gold": 75
+    },
+    "appearance": {
+      "color": "#2F4F4F",
+      "bodyType": "insectoid",
+      "skinTone": "#708090",
+      "armorColor": "#000000"
+    }
+  },
+  "ghost": {
+    "id": "ghost",
+    "name": "Ghost",
+    "level": 4,
+    "type": "basic",
+    "role": "ranged",
+    "stats": {
+      "health": 60,
+      "maxHealth": 60,
+      "attack": 8,
+      "defense": 2,
+      "speed": 45
+    },
+    "abilities": [
+      {
+        "name": "Wail",
+        "type": "debuff",
+        "effect": "fear",
+        "duration": 3,
+        "chance": 0.2,
+        "cooldown": 10,
+        "description": "Terrifying wail that causes fear."
+      }
+    ],
+    "aiStrategy": "ranged",
+    "aiPersonality": {
+      "targetPriority": ["healer", "caster"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 45,
+      "gold": 24
+    },
+    "appearance": {
+      "color": "#F8F8FF",
+      "bodyType": "undead",
+      "skinTone": "#E6E6FA",
+      "armorColor": "#DCDCDC"
+    }
+  },
+  "frost_wyrm": {
+    "id": "frost_wyrm",
+    "name": "Frost Wyrm",
+    "level": 12,
+    "type": "boss",
+    "role": "melee",
+    "stats": {
+      "health": 800,
+      "maxHealth": 800,
+      "attack": 48,
+      "defense": 24,
+      "speed": 42
+    },
+    "abilities": [
+      {
+        "name": "Blizzard",
+        "type": "attack",
+        "damageMultiplier": 0.7,
+        "isAoE": true,
+        "range": 350,
+        "effect": "freeze",
+        "duration": 3,
+        "chance": 0.2,
+        "cooldown": 10,
+        "description": "Summons a blizzard that damages and freezes all targets."
+      }
+    ],
+    "aiStrategy": "boss",
+    "aiPersonality": {
+      "targetPriority": ["tank", "healer"],
+      "abilityFrequency": "high"
+    },
+    "bossMechanics": {
+      "phases": false,
+      "enrage": {
+        "healthThreshold": 0.3,
+        "attackSpeedMultiplier": 1.4,
+        "damageMultiplier": 1.3
+      }
+    },
+    "rewards": {
+      "experience": 450,
+      "gold": 240
+    },
+    "appearance": {
+      "color": "#87CEEB",
+      "size": "large",
+      "bodyType": "dragon",
+      "skinTone": "#B0E0E6",
+      "armorColor": "#4682B4"
+    }
+  },
+  "abomination": {
+    "id": "abomination",
+    "name": "Abomination",
+    "level": 10,
+    "type": "elite",
+    "role": "melee",
+    "stats": {
+      "health": 600,
+      "maxHealth": 600,
+      "attack": 40,
+      "defense": 25,
+      "speed": 18
+    },
+    "abilities": [
+      {
+        "name": "Disease Cloud",
+        "type": "debuff",
+        "effect": "poison",
+        "duration": 5,
+        "isAoE": true,
+        "range": 200,
+        "chance": 0.2,
+        "cooldown": 8,
+        "description": "Releases a cloud of disease that poisons nearby targets."
+      }
+    ],
+    "aiStrategy": "boss",
+    "aiPersonality": {
+      "targetPriority": ["tank"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 300,
+      "gold": 160
+    },
+    "appearance": {
+      "color": "#8B4513",
+      "size": "large",
+      "bodyType": "undead",
+      "skinTone": "#A0522D",
+      "armorColor": "#654321"
+    }
+  },
+  "lich": {
+    "id": "lich",
+    "name": "Lich",
+    "level": 13,
+    "type": "boss",
+    "role": "ranged",
+    "stats": {
+      "health": 500,
+      "maxHealth": 500,
+      "attack": 35,
+      "defense": 15,
+      "speed": 20
+    },
+    "abilities": [
+      {
+        "name": "Frost Nova",
+        "type": "attack",
+        "damageMultiplier": 0.9,
+        "isAoE": true,
+        "range": 300,
+        "effect": "freeze",
+        "duration": 4,
+        "chance": 0.25,
+        "cooldown": 8,
+        "description": "Freezes all nearby targets."
+      },
+      {
+        "name": "Frostbolt Volley",
+        "type": "attack",
+        "damageMultiplier": 1.0,
+        "isAoE": true,
+        "range": 400,
+        "chance": 0.3,
+        "cooldown": 6,
+        "description": "Fires multiple frostbolts at random targets."
+      }
+    ],
+    "aiStrategy": "boss",
+    "aiPersonality": {
+      "targetPriority": ["healer", "caster"],
+      "abilityFrequency": "very_high"
+    },
+    "bossMechanics": {
+      "phases": false,
+      "enrage": {
+        "healthThreshold": 0.4,
+        "attackSpeedMultiplier": 1.3,
+        "damageMultiplier": 1.2
+      }
+    },
+    "rewards": {
+      "experience": 550,
+      "gold": 290
+    },
+    "appearance": {
+      "color": "#000080",
+      "bodyType": "undead",
+      "skinTone": "#4169E1",
+      "armorColor": "#00008B"
+    }
+  },
+  "spectral_assassin": {
+    "id": "spectral_assassin",
+    "name": "Spectral Assassin",
+    "level": 7,
+    "type": "elite",
+    "role": "melee",
+    "stats": {
+      "health": 180,
+      "maxHealth": 180,
+      "attack": 32,
+      "defense": 8,
+      "speed": 60
+    },
+    "abilities": [
+      {
+        "name": "Phase Strike",
+        "type": "attack",
+        "damageMultiplier": 2.2,
+        "range": 120,
+        "chance": 0.4,
+        "cooldown": 5,
+        "description": "Phases through defenses for massive damage."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["healer", "caster"],
+      "abilityFrequency": "high"
+    },
+    "rewards": {
+      "experience": 160,
+      "gold": 85
+    },
+    "appearance": {
+      "color": "#E6E6FA",
+      "bodyType": "undead",
+      "skinTone": "#DCDCDC",
+      "armorColor": "#F5F5F5"
+    }
+  },
+  "banshee": {
+    "id": "banshee",
+    "name": "Banshee",
+    "level": 8,
+    "type": "basic",
+    "role": "ranged",
+    "stats": {
+      "health": 140,
+      "maxHealth": 140,
+      "attack": 18,
+      "defense": 6,
+      "speed": 40
+    },
+    "abilities": [
+      {
+        "name": "Piercing Wail",
+        "type": "debuff",
+        "effect": "silence",
+        "duration": 5,
+        "isAoE": true,
+        "range": 250,
+        "chance": 0.2,
+        "cooldown": 12,
+        "description": "Ear-piercing wail that silences nearby targets."
+      }
+    ],
+    "aiStrategy": "ranged",
+    "aiPersonality": {
+      "targetPriority": ["caster", "healer"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 125,
+      "gold": 66
+    },
+    "appearance": {
+      "color": "#FFB6C1",
+      "bodyType": "undead",
+      "skinTone": "#FFE4E1",
+      "armorColor": "#FFC0CB"
+    }
+  },
+  "plagued_beast": {
+    "id": "plagued_beast",
+    "name": "Plagued Beast",
+    "level": 5,
+    "type": "basic",
+    "role": "melee",
+    "stats": {
+      "health": 200,
+      "maxHealth": 200,
+      "attack": 20,
+      "defense": 12,
+      "speed": 32
+    },
+    "abilities": [
+      {
+        "name": "Plague Bite",
+        "type": "attack",
+        "damageMultiplier": 1.0,
+        "range": 120,
+        "effect": "disease",
+        "duration": 6,
+        "chance": 0.3,
+        "cooldown": 6,
+        "description": "Bites target, infecting them with plague."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["tank", "dps"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 75,
+      "gold": 40
+    },
+    "appearance": {
+      "color": "#556B2F",
+      "bodyType": "beast",
+      "skinTone": "#8FBC8F",
+      "armorColor": "#228B22"
+    }
+  },
+  "fire_elemental": {
+    "id": "fire_elemental",
+    "name": "Fire Elemental",
+    "level": 8,
+    "type": "basic",
+    "role": "ranged",
+    "stats": {
+      "health": 280,
+      "maxHealth": 280,
+      "attack": 25,
+      "defense": 10,
+      "speed": 35
+    },
+    "abilities": [
+      {
+        "name": "Fire Blast",
+        "type": "attack",
+        "damageMultiplier": 1.3,
+        "range": 300,
+        "effect": "burn",
+        "duration": 4,
+        "chance": 0.4,
+        "cooldown": 5,
+        "description": "Blasts target with fire, causing burn damage over time."
+      }
+    ],
+    "aiStrategy": "ranged",
+    "aiPersonality": {
+      "targetPriority": ["melee", "tank"],
+      "abilityFrequency": "high"
+    },
+    "rewards": {
+      "experience": 140,
+      "gold": 74
+    },
+    "appearance": {
+      "color": "#FF4500",
+      "bodyType": "elemental",
+      "skinTone": "#FF6347",
+      "armorColor": "#DC143C"
+    }
+  },
+  "water_spirit": {
+    "id": "water_spirit",
+    "name": "Water Spirit",
+    "level": 7,
+    "type": "basic",
+    "role": "healer",
+    "stats": {
+      "health": 200,
+      "maxHealth": 200,
+      "attack": 12,
+      "defense": 8,
+      "speed": 30
+    },
+    "abilities": [
+      {
+        "name": "Healing Wave",
+        "type": "heal",
+        "healMultiplier": 0.3,
+        "range": 350,
+        "chance": 0.5,
+        "cooldown": 6,
+        "description": "Waves of healing water energy."
+      },
+      {
+        "name": "Water Shield",
+        "type": "buff",
+        "effect": "magic_resistance",
+        "power": 0.3,
+        "duration": 8,
+        "chance": 0.2,
+        "cooldown": 12,
+        "description": "Creates a shield that reduces magic damage."
+      }
+    ],
+    "aiStrategy": "healer",
+    "aiPersonality": {
+      "targetPriority": ["low_health", "caster"],
+      "abilityFrequency": "high"
+    },
+    "rewards": {
+      "experience": 120,
+      "gold": 64
+    },
+    "appearance": {
+      "color": "#00CED1",
+      "bodyType": "elemental",
+      "skinTone": "#48D1CC",
+      "armorColor": "#20B2AA"
+    }
+  },
+  "earth_golem": {
+    "id": "earth_golem",
+    "name": "Earth Golem",
+    "level": 9,
+    "type": "elite",
+    "role": "melee",
+    "stats": {
+      "health": 500,
+      "maxHealth": 500,
+      "attack": 30,
+      "defense": 35,
+      "speed": 15
+    },
+    "abilities": [
+      {
+        "name": "Earthquake",
+        "type": "attack",
+        "damageMultiplier": 0.9,
+        "isAoE": true,
+        "range": 250,
+        "effect": "stun",
+        "duration": 2,
+        "chance": 0.15,
+        "cooldown": 10,
+        "description": "Causes earthquake that stuns nearby targets."
+      }
+    ],
+    "aiStrategy": "defensive",
+    "aiPersonality": {
+      "targetPriority": ["ranged", "caster"],
+      "abilityFrequency": "low"
+    },
+    "rewards": {
+      "experience": 220,
+      "gold": 118
+    },
+    "appearance": {
+      "color": "#8B4513",
+      "size": "large",
+      "bodyType": "elemental",
+      "skinTone": "#A0522D",
+      "armorColor": "#654321"
+    }
+  },
+  "air_elemental": {
+    "id": "air_elemental",
+    "name": "Air Elemental",
+    "level": 6,
+    "type": "basic",
+    "role": "ranged",
+    "stats": {
+      "health": 150,
+      "maxHealth": 150,
+      "attack": 16,
+      "defense": 6,
+      "speed": 55
+    },
+    "abilities": [
+      {
+        "name": "Gust",
+        "type": "attack",
+        "damageMultiplier": 0.8,
+        "isAoE": true,
+        "range": 200,
+        "effect": "knockback",
+        "chance": 0.3,
+        "cooldown": 6,
+        "description": "Creates gust of wind that knocks back targets."
+      }
+    ],
+    "aiStrategy": "ranged",
+    "aiPersonality": {
+      "targetPriority": ["melee", "tank"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 95,
+      "gold": 50
+    },
+    "appearance": {
+      "color": "#F0F8FF",
+      "bodyType": "elemental",
+      "skinTone": "#E6E6FA",
+      "armorColor": "#B0C4DE"
+    }
+  },
+  "iron_golem": {
+    "id": "iron_golem",
+    "name": "Iron Golem",
+    "level": 8,
+    "type": "elite",
+    "role": "melee",
+    "stats": {
+      "health": 450,
+      "maxHealth": 450,
+      "attack": 28,
+      "defense": 30,
+      "speed": 18
+    },
+    "abilities": [
+      {
+        "name": "Magnetic Pulse",
+        "type": "debuff",
+        "effect": "disarm",
+        "duration": 5,
+        "chance": 0.2,
+        "cooldown": 12,
+        "description": "Magnetic pulse that disarms targets."
+      }
+    ],
+    "aiStrategy": "defensive",
+    "aiPersonality": {
+      "targetPriority": ["melee", "tank"],
+      "abilityFrequency": "low"
+    },
+    "rewards": {
+      "experience": 190,
+      "gold": 102
+    },
+    "appearance": {
+      "color": "#708090",
+      "size": "large",
+      "bodyType": "mechanical",
+      "skinTone": "#778899",
+      "armorColor": "#2F4F4F"
+    }
+  },
+  "clockwork_spider": {
+    "id": "clockwork_spider",
+    "name": "Clockwork Spider",
+    "level": 6,
+    "type": "basic",
+    "role": "ranged",
+    "stats": {
+      "health": 120,
+      "maxHealth": 120,
+      "attack": 15,
+      "defense": 8,
+      "speed": 45
+    },
+    "abilities": [
+      {
+        "name": "Web Shot",
+        "type": "debuff",
+        "effect": "slow",
+        "power": 0.4,
+        "duration": 6,
+        "range": 300,
+        "chance": 0.3,
+        "cooldown": 7,
+        "description": "Shoots web that slows target movement."
+      }
+    ],
+    "aiStrategy": "ranged",
+    "aiPersonality": {
+      "targetPriority": ["melee", "tank"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 100,
+      "gold": 53
+    },
+    "appearance": {
+      "color": "#C0C0C0",
+      "bodyType": "mechanical",
+      "skinTone": "#A9A9A9",
+      "armorColor": "#808080"
+    }
+  },
+  "harvest_golem": {
+    "id": "harvest_golem",
+    "name": "Harvest Golem",
+    "level": 4,
+    "type": "basic",
+    "role": "melee",
+    "stats": {
+      "health": 160,
+      "maxHealth": 160,
+      "attack": 14,
+      "defense": 12,
+      "speed": 20
+    },
+    "abilities": [
+      {
+        "name": "Thresh",
+        "type": "attack",
+        "damageMultiplier": 1.1,
+        "isAoE": true,
+        "range": 180,
+        "chance": 0.25,
+        "cooldown": 8,
+        "description": "Swings threshing tool, damaging nearby targets."
+      }
+    ],
+    "aiStrategy": "defensive",
+    "aiPersonality": {
+      "targetPriority": ["ranged", "caster"],
+      "abilityFrequency": "low"
+    },
+    "rewards": {
+      "experience": 55,
+      "gold": 29
+    },
+    "appearance": {
+      "color": "#DEB887",
+      "bodyType": "mechanical",
+      "skinTone": "#D2B48C",
+      "armorColor": "#BC8F8F"
+    }
+  },
+  "crystal_spider": {
+    "id": "crystal_spider",
+    "name": "Crystal Spider",
+    "level": 7,
+    "type": "basic",
+    "role": "ranged",
+    "stats": {
+      "health": 140,
+      "maxHealth": 140,
+      "attack": 18,
+      "defense": 10,
+      "speed": 40
+    },
+    "abilities": [
+      {
+        "name": "Crystal Shards",
+        "type": "attack",
+        "damageMultiplier": 1.2,
+        "isAoE": true,
+        "range": 220,
+        "chance": 0.3,
+        "cooldown": 6,
+        "description": "Shatters crystal, sending shards at nearby targets."
+      }
+    ],
+    "aiStrategy": "ranged",
+    "aiPersonality": {
+      "targetPriority": ["melee", "tank"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 115,
+      "gold": 61
+    },
+    "appearance": {
+      "color": "#9370DB",
+      "bodyType": "elemental",
+      "skinTone": "#BA55D3",
+      "armorColor": "#8A2BE2"
+    }
+  },
+  "steam_tank": {
+    "id": "steam_tank",
+    "name": "Steam Tank",
+    "level": 10,
+    "type": "elite",
+    "role": "ranged",
+    "stats": {
+      "health": 400,
+      "maxHealth": 400,
+      "attack": 35,
+      "defense": 25,
+      "speed": 15
+    },
+    "abilities": [
+      {
+        "name": "Steam Cannon",
+        "type": "attack",
+        "damageMultiplier": 1.6,
+        "range": 450,
+        "chance": 0.3,
+        "cooldown": 8,
+        "description": "Fires high-pressure steam cannon."
+      }
+    ],
+    "aiStrategy": "ranged",
+    "aiPersonality": {
+      "targetPriority": ["tank", "melee"],
+      "abilityFrequency": "medium"
+    },
+    "rewards": {
+      "experience": 250,
+      "gold": 134
+    },
+    "appearance": {
+      "color": "#696969",
+      "size": "large",
+      "bodyType": "mechanical",
+      "skinTone": "#2F4F4F",
+      "armorColor": "#000000"
+    }
+  },
+  "voidwalker": {
+    "id": "voidwalker",
+    "name": "Voidwalker",
+    "level": 12,
+    "type": "elite",
+    "role": "melee",
+    "stats": {
+      "health": 550,
+      "maxHealth": 550,
+      "attack": 42,
+      "defense": 20,
+      "speed": 38
+    },
+    "abilities": [
+      {
+        "name": "Void Strike",
+        "type": "attack",
+        "damageMultiplier": 1.4,
+        "range": 120,
+        "effect": "shadow_damage",
+        "chance": 0.3,
+        "cooldown": 6,
+        "description": "Strikes with void energy, dealing shadow damage."
+      },
+      {
+        "name": "Shadow Shield",
+        "type": "buff",
+        "effect": "damage_reduction",
+        "power": 0.4,
+        "duration": 6,
+        "chance": 0.2,
+        "cooldown": 12,
+        "description": "Creates shadow shield that reduces incoming damage."
+      }
+    ],
+    "aiStrategy": "aggressive",
+    "aiPersonality": {
+      "targetPriority": ["healer", "caster"],
+      "abilityFrequency": "high"
+    },
+    "rewards": {
+      "experience": 320,
+      "gold": 170
+    },
+    "appearance": {
+      "color": "#191970",
+      "size": "large",
+      "bodyType": "elemental",
+      "skinTone": "#000080",
+      "armorColor": "#00008B"
+    }
+  },
+  "time_lost_drake": {
+    "id": "time_lost_drake",
+    "name": "Time-Lost Proto-Drake",
+    "level": 15,
+    "type": "boss",
+    "role": "melee",
+    "stats": {
+      "health": 1000,
+      "maxHealth": 1000,
+      "attack": 55,
+      "defense": 28,
+      "speed": 48
+    },
+    "abilities": [
+      {
+        "name": "Time Lapse",
+        "type": "debuff",
+        "effect": "slow",
+        "power": 0.6,
+        "duration": 5,
+        "chance": 0.25,
+        "cooldown": 8,
+        "description": "Distorts time, severely slowing target."
+      },
+      {
+        "name": "Temporal Blast",
+        "type": "attack",
+        "damageMultiplier": 1.5,
+        "range": 300,
+        "chance": 0.2,
+        "cooldown": 10,
+        "description": "Blast of temporal energy."
+      }
+    ],
+    "aiStrategy": "boss",
+    "aiPersonality": {
+      "targetPriority": ["ranged", "caster"],
+      "abilityFrequency": "high"
+    },
+    "bossMechanics": {
+      "phases": false,
+      "enrage": {
+        "healthThreshold": 0.35,
+        "attackSpeedMultiplier": 1.4,
+        "damageMultiplier": 1.3
+      }
+    },
+    "rewards": {
+      "experience": 650,
+      "gold": 345
+    },
+    "appearance": {
+      "color": "#9370DB",
+      "size": "large",
+      "bodyType": "dragon",
+      "skinTone": "#8A2BE2",
+      "armorColor": "#4B0082"
+    }
+  },
+  "faceless_horror": {
+    "id": "faceless_horror",
+    "name": "Faceless Horror",
+    "level": 17,
+    "type": "boss",
+    "role": "melee",
+    "stats": {
+      "health": 1300,
+      "maxHealth": 1300,
+      "attack": 65,
+      "defense": 30,
+      "speed": 35
+    },
+    "abilities": [
+      {
+        "name": "Mind Flay",
+        "type": "attack",
+        "damageMultiplier": 1.0,
+        "range": 400,
+        "effect": "confusion",
+        "duration": 3,
+        "chance": 0.3,
+        "cooldown": 6,
+        "description": "Psychic attack that confuses target."
+      },
+      {
+        "name": "Shadow Crash",
+        "type": "attack",
+        "damageMultiplier": 1.8,
+        "isAoE": true,
+        "range": 250,
+        "chance": 0.15,
+        "cooldown": 12,
+        "description": "Crashes down with shadow energy."
+      }
+    ],
+    "aiStrategy": "boss",
+    "aiPersonality": {
+      "targetPriority": ["healer", "caster"],
+      "abilityFrequency": "very_high"
+    },
+    "bossMechanics": {
+      "phases": true,
+      "enrage": {
+        "healthThreshold": 0.4,
+        "attackSpeedMultiplier": 1.5,
+        "damageMultiplier": 1.4
+      }
+    },
+    "rewards": {
+      "experience": 850,
+      "gold": 450
+    },
+    "appearance": {
+      "color": "#2F1B14",
+      "size": "large",
+      "bodyType": "insectoid",
+      "skinTone": "#1C1C1C",
+      "armorColor": "#000000"
+    }
+  },
+  "titan_construct": {
+    "id": "titan_construct",
+    "name": "Titan Construct",
+    "level": 20,
+    "type": "boss",
+    "role": "melee",
+    "stats": {
+      "health": 2000,
+      "maxHealth": 2000,
+      "attack": 80,
+      "defense": 50,
+      "speed": 20
+    },
+    "abilities": [
+      {
+        "name": "Titanic Slam",
+        "type": "attack",
+        "damageMultiplier": 1.3,
+        "isAoE": true,
+        "range": 300,
+        "effect": "stun",
+        "duration": 3,
+        "chance": 0.2,
+        "cooldown": 10,
+        "description": "Massive slam that stuns all nearby targets."
+      },
+      {
+        "name": "Energy Surge",
+        "type": "buff",
+        "effect": "attack_boost",
+        "power": 1.5,
+        "duration": 8,
+        "chance": 0.15,
+        "cooldown": 20,
+        "description": "Surges with energy, boosting attack power."
+      }
+    ],
+    "aiStrategy": "boss",
+    "aiPersonality": {
+      "targetPriority": ["tank", "melee"],
+      "abilityFrequency": "high"
+    },
+    "bossMechanics": {
+      "phases": true,
+      "enrage": {
+        "healthThreshold": 0.3,
+        "attackSpeedMultiplier": 1.3,
+        "damageMultiplier": 1.6
+      }
+    },
+    "rewards": {
+      "experience": 1200,
+      "gold": 640
+    },
+    "appearance": {
+      "color": "#FFD700",
+      "size": "gigantic",
+      "bodyType": "mechanical",
+      "skinTone": "#FFA500",
+      "armorColor": "#FF8C00"
+    }
   }
 }

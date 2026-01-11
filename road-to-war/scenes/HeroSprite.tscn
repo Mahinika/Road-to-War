@@ -7,6 +7,33 @@ script = ExtResource("1_script")
 
 [node name="Visuals" type="Node2D" parent="."]
 
+[node name="WeaponAttachment" type="Marker2D" parent="Visuals"]
+# Position calculated dynamically in _update_attachment_markers() based on body anatomy
+
+[node name="OffhandAttachment" type="Marker2D" parent="Visuals"]
+# Position calculated dynamically in _update_attachment_markers() based on body anatomy
+
+[node name="ChestAttachment" type="Marker2D" parent="Visuals"]
+# Position calculated dynamically in _update_attachment_markers() based on body anatomy
+
+[node name="HeadAttachment" type="Marker2D" parent="Visuals"]
+# Position calculated dynamically in _update_attachment_markers() based on body anatomy
+
+[node name="LegsAttachment" type="Marker2D" parent="Visuals"]
+# Position calculated dynamically in _update_attachment_markers() based on body anatomy
+
+[node name="ShoulderAttachment" type="Marker2D" parent="Visuals"]
+# Position calculated dynamically in _update_attachment_markers() based on body anatomy
+
+[node name="NeckAttachment" type="Marker2D" parent="Visuals"]
+# Position calculated dynamically in _update_attachment_markers() based on body anatomy
+
+[node name="RingAttachment" type="Marker2D" parent="Visuals"]
+# Position calculated dynamically in _update_attachment_markers() based on body anatomy
+
+[node name="TrinketAttachment" type="Marker2D" parent="Visuals"]
+# Position calculated dynamically in _update_attachment_markers() based on body anatomy
+
 [node name="Body" type="Sprite2D" parent="Visuals"]
 
 [node name="Legs" type="Sprite2D" parent="Visuals"]
@@ -30,9 +57,9 @@ script = ExtResource("1_script")
 [node name="NameLabel" type="Label" parent="."]
 layout_mode = 0
 offset_left = -100.0
-offset_top = -180.0
+offset_top = -280.0
 offset_right = 100.0
-offset_bottom = -157.0
+offset_bottom = -257.0
 text = "Hero Name"
 horizontal_alignment = 1
 
@@ -40,13 +67,14 @@ horizontal_alignment = 1
 visible = false
 layout_mode = 0
 offset_left = -60.0
-offset_top = -150.0
+offset_top = -250.0
 offset_right = 60.0
-offset_bottom = -140.0
+offset_bottom = -240.0
 value = 100.0
 show_percentage = false
 
 [node name="StatusContainer" type="HBoxContainer" parent="."]
+visible = false
 layout_mode = 0
 offset_left = -60.0
 offset_top = -130.0
@@ -59,7 +87,7 @@ alignment = 1
 visible = false
 layout_mode = 0
 offset_left = -60.0
-offset_top = -160.0
+offset_top = -260.0
 offset_right = 60.0
-offset_bottom = -155.0
+offset_bottom = -255.0
 show_percentage = false

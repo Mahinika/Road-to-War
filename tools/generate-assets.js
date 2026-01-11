@@ -1,7 +1,15 @@
 #!/usr/bin/env node
 /**
- * Build-Time Pixel-Art Asset Generator
- * Generates PNG sprite files offline for use in Phaser 3 game
+ * Build-Time Pixel-Art Asset Generator (Legacy - Still Used)
+ * Generates PNG sprite files offline for character/bloodline assets
+ * - Paladin sprites via PaladinGenerator
+ * - Humanoid sprites via HumanoidGenerator
+ * - Bloodline sprites via HumanoidGenerator with bloodline variants
+ * 
+ * NOTE: For comprehensive asset generation (spell icons, enemies, items, projectiles, VFX),
+ * use generate-all-assets.js or unified-asset-generator.js
+ * 
+ * This tool is still actively used for character sprite generation and is NOT obsolete.
  */
 
 import fs from 'fs';
@@ -9,6 +17,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { PaladinGenerator } from './generators/paladin-generator.js';
 import { HumanoidGenerator } from './generators/humanoid-generator.js';
+import { HeroSpriteGenerator } from './generators/hero-sprite-generator.js';
 import { GemGenerator } from './generators/gem-generator.js';
 import { AnimationGenerator } from './generators/animation-generator.js';
 import { SeededRNG } from './utils/seeded-rng.js';
@@ -25,7 +34,8 @@ const __dirname = path.dirname(__filename);
 
 // Configuration
 const CONFIG = {
-    OUTPUT_DIR: path.join(__dirname, '..', 'assets', 'sprites'),
+    // Output directly to game directory so Godot can use them immediately
+    OUTPUT_DIR: path.join(__dirname, '..', 'road-to-war', 'assets', 'sprites'),
     BASE_SIZE: 16,
     SCALE: 4,
     SPRITE_COUNT: 10,
@@ -175,7 +185,53 @@ async function analyzeReference(inputPath, outputPath) {
 }
 
 /**
- * Generate Paladin sprite
+ * Generate new 128x128 hero sprites using HeroSpriteGenerator
+ * @param {Object} config - Configuration object
+ */
+async function generateNewHeroSprites(config) {
+    console.log('🎨 Generating new 128x128 hero sprites...');
+    const heroGenerator = new HeroSpriteGenerator();
+    
+    // Generate heroes for each class/bloodline (including hunter and shaman)
+    const heroTypes = ['paladin', 'warrior', 'mage', 'rogue', 'priest', 'druid', 'warlock', 'hunter', 'shaman'];
+    const outputDir = config.OUTPUT_DIR;
+    
+    for (const heroType of heroTypes) {
+        const heroData = {
+            appearance: {
+                skinColor: '#FFDBAC',
+                hairColor: '#8B4513',
+                eyeColor: '#4A90E2',
+                class: heroType
+            }
+        };
+        
+        // Generate at 256x256 design size, export at 128x128
+        const designCanvas = heroGenerator.generate(heroData, heroType);
+        const exportCanvas = heroGenerator.exportSprite(designCanvas);
+        
+        const pngPath = path.join(outputDir, `${heroType}_128x128.png`);
+        const jsonPath = path.join(outputDir, `${heroType}_128x128.json`);
+        
+        savePNG(exportCanvas, pngPath);
+        saveMetadata({
+            asset_type: 'hero_sprite',
+            profile: 'hero_sprite',
+            base_size: [128, 128],
+            design_size: [256, 256],
+            hero_type: heroType,
+            generatedAt: new Date().toISOString(),
+            version: '2.0.0'
+        }, jsonPath);
+        
+        console.log(`  ✓ Generated ${heroType}_128x128.png`);
+    }
+    
+    console.log('✓ New 128x128 hero sprites generated\n');
+}
+
+/**
+ * Generate Paladin sprite (legacy 64x64)
  */
 async function generatePaladin(config, styleConfig = null) {
     const generator = new PaladinGenerator(config.SEED, styleConfig);
@@ -291,11 +347,12 @@ async function generatePaladin(config, styleConfig = null) {
  */
 function generateHumanoids(config) {
     const results = [];
+    console.log(`Generating ${config.SPRITE_COUNT} humanoid sprites...`);
 
     for (let i = 0; i < config.SPRITE_COUNT; i++) {
         const seed = config.SEED + i;
         const rng = new SeededRNG(seed);
-        const canvas = createCanvas(48, 48); // Fixed to 48x48
+        const canvas = createCanvas(512, 512); // High resolution 512x512
         const generator = new HumanoidGenerator(canvas, rng, { paletteName: 'warm' });
         const result = generator.generate();
 
@@ -313,9 +370,15 @@ function generateHumanoids(config) {
 
         savePNG(canvas, pngPath);
         saveMetadata(metadata, jsonPath);
+        
+        if (i === 0 || (i + 1) % 5 === 0) {
+            console.log(`  Generated humanoid_${i}.png`);
+        }
 
         results.push({ pngPath, jsonPath });
     }
+    
+    console.log(`✓ Generated ${results.length} humanoid sprites`);
 
     return results;
 }
@@ -337,7 +400,7 @@ function generateBloodlineSprites(config) {
     bloodlines.forEach((bloodline, index) => {
         const seed = config.SEED + 1000 + index;
         const rng = new SeededRNG(seed);
-        const canvas = createCanvas(48, 48); // Fixed to 48x48
+        const canvas = createCanvas(512, 512); // High resolution 512x512
         const generator = new HumanoidGenerator(canvas, rng, { bloodline });
         generator.generate();
 
@@ -434,13 +497,18 @@ async function main() {
     }
 
     try {
-        // Generate Paladin
+        // Generate 128x128 heroes using new HeroSpriteGenerator (NEW)
+        if (config.GENERATE_NEW_HEROES !== false) {
+            await generateNewHeroSprites(config);
+        }
+
+        // Generate Paladin (legacy 64x64)
         await generatePaladin(config, styleConfig);
 
-        // Generate bloodline-specific sprites
+        // Generate bloodline-specific sprites (legacy)
         generateBloodlineSprites(config);
 
-        // Generate generic humanoids
+        // Generate generic humanoids (512x512 - high resolution)
         if (config.SPRITE_COUNT > 0) {
             generateHumanoids(config);
         }

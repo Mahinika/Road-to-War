@@ -15,7 +15,8 @@ func _ready():
 func refresh_abilities():
 	# Clear existing
 	for child in ability_container.get_children():
-		child.queue_free()
+		if is_instance_valid(child):
+			child.queue_free()
 	ability_slots.clear()
 	
 	# Create slots for each hero in party
@@ -30,7 +31,7 @@ func _create_hero_abilities(hero: Hero):
 	# Hero Name (Small)
 	var name_label = Label.new()
 	name_label.text = hero.name.substr(0, 8)
-	name_label.theme_override_font_sizes/font_size = 10
+	name_label.add_theme_font_size_override("font_size", 10)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hero_box.add_child(name_label)
 	
@@ -60,14 +61,30 @@ func _create_ability_slot(hero_id: String, ability_name: String) -> Control:
 	panel.add_theme_stylebox_override("panel", UITheme.get_stylebox_panel(UITheme.COLORS["frame_dark"], color, 1))
 	container.add_child(panel)
 	
-	# Icon (Text for now)
-	var label = Label.new()
-	label.text = ability_name.left(1).to_upper()
-	label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.theme_override_font_sizes/font_size = 12
-	container.add_child(label)
+	# Load ability icon (use new spell icons)
+	var icon_path = "res://assets/icons/spells/%s.png" % ability_name
+	var icon_texture: Texture2D = null
+	if ResourceLoader.exists(icon_path):
+		icon_texture = load(icon_path)
+	
+	# Icon (TextureRect if available, otherwise fallback to text)
+	if icon_texture:
+		var icon_rect = TextureRect.new()
+		icon_rect.texture = icon_texture
+		icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+		icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		container.add_child(icon_rect)
+	else:
+		# Fallback to text if icon not found
+		var label = Label.new()
+		label.text = ability_name.left(1).to_upper()
+		label.set_anchors_preset(Control.PRESET_FULL_RECT)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.add_theme_font_size_override("font_size", 12)
+		container.add_child(label)
 	
 	# Cooldown Overlay
 	var cooldown_bar = ProgressBar.new()

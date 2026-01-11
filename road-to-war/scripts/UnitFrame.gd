@@ -30,27 +30,93 @@ func setup(p_hero_id: String):
 				shader_mat.shader = shader
 				portrait.material = shader_mat
 	
-	if name_label:
-		name_label.text = hero.name
-	
 	# Apply WoW styling from UITheme
 	var ut = get_node_or_null("/root/UITheme")
-	if has_node("Panel") and ut:
-		var class_color = ut.COLORS.get(hero.role, ut.COLORS["gold_border"])
-		$Panel.add_theme_stylebox_override("panel", ut.get_stylebox_panel(ut.COLORS["frame"], class_color))
+	if not ut: return
 	
-	if health_bar and ut:
+	# Style panel with role-based border color
+	if has_node("Panel"):
+		var role_color = ut.COLORS.get(hero.role, ut.COLORS["gold_border"])
+		$Panel.add_theme_stylebox_override("panel", ut.get_stylebox_panel(ut.COLORS["frame"], role_color, 2))
+	
+	# Style name label with better typography
+	if name_label:
+		name_label.text = hero.name
+		name_label.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+		name_label.add_theme_font_size_override("font_size", 13)
+		name_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		name_label.add_theme_constant_override("outline_size", 1)
+	
+	# Style level label
+	if level_label:
+		level_label.add_theme_color_override("font_color", Color(1.0, 0.84, 0.0))  # Gold
+		level_label.add_theme_font_size_override("font_size", 11)
+		level_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		level_label.add_theme_constant_override("outline_size", 1)
+	
+	# Style health bar with background
+	if health_bar:
 		health_bar.add_theme_stylebox_override("fill", ut.get_stylebox_bar(ut.COLORS["health"]))
-	if resource_bar and ut:
+		# Add dark background for health bar
+		var bg_sb = StyleBoxFlat.new()
+		bg_sb.bg_color = Color(0.1, 0.1, 0.1, 0.9)
+		bg_sb.border_width_left = 1
+		bg_sb.border_width_top = 1
+		bg_sb.border_width_right = 1
+		bg_sb.border_width_bottom = 1
+		bg_sb.border_color = Color(0, 0, 0, 0.8)
+		bg_sb.corner_radius_top_left = 2
+		bg_sb.corner_radius_bottom_left = 2
+		health_bar.add_theme_stylebox_override("background", bg_sb)
+	
+	# Style resource bar with background
+	if resource_bar:
 		var type = "mana"
 		var rm = get_node_or_null("/root/ResourceManager")
 		if rm: type = rm.get_resource_type(hero_id)
 		var res_color = ut.COLORS.get(type, ut.COLORS["mana"])
 		resource_bar.add_theme_stylebox_override("fill", ut.get_stylebox_bar(res_color))
-	if xp_bar and ut:
+		# Add dark background for resource bar
+		var bg_sb = StyleBoxFlat.new()
+		bg_sb.bg_color = Color(0.1, 0.1, 0.1, 0.9)
+		bg_sb.border_width_left = 1
+		bg_sb.border_width_top = 1
+		bg_sb.border_width_right = 1
+		bg_sb.border_width_bottom = 1
+		bg_sb.border_color = Color(0, 0, 0, 0.8)
+		bg_sb.corner_radius_top_left = 2
+		bg_sb.corner_radius_bottom_left = 2
+		resource_bar.add_theme_stylebox_override("background", bg_sb)
+	
+	# Style XP bar with background
+	if xp_bar:
 		xp_bar.add_theme_stylebox_override("fill", ut.get_stylebox_bar(ut.COLORS["xp"]))
-	if casting_bar and ut:
+		# Add dark background for XP bar
+		var bg_sb = StyleBoxFlat.new()
+		bg_sb.bg_color = Color(0.05, 0.05, 0.1, 0.9)
+		bg_sb.border_width_left = 1
+		bg_sb.border_width_top = 1
+		bg_sb.border_width_right = 1
+		bg_sb.border_width_bottom = 1
+		bg_sb.border_color = Color(0, 0, 0, 0.8)
+		bg_sb.corner_radius_top_left = 1
+		bg_sb.corner_radius_bottom_left = 1
+		xp_bar.add_theme_stylebox_override("background", bg_sb)
+	
+	# Style casting bar with background
+	if casting_bar:
 		casting_bar.add_theme_stylebox_override("fill", ut.get_stylebox_bar(ut.COLORS["casting"]))
+		# Add dark background for casting bar
+		var bg_sb = StyleBoxFlat.new()
+		bg_sb.bg_color = Color(0.1, 0.05, 0.0, 0.9)
+		bg_sb.border_width_left = 1
+		bg_sb.border_width_top = 1
+		bg_sb.border_width_right = 1
+		bg_sb.border_width_bottom = 1
+		bg_sb.border_color = Color(0, 0, 0, 0.8)
+		bg_sb.corner_radius_top_left = 2
+		bg_sb.corner_radius_bottom_left = 2
+		casting_bar.add_theme_stylebox_override("background", bg_sb)
 
 func _ready():
 	if hero_id != "":
@@ -65,26 +131,8 @@ func _process(_delta):
 	var hp = stats.get("health", 0)
 	var max_hp = stats.get("maxHealth", 100)
 	
-	# #region agent log
-	if int(Time.get_ticks_msec() / 500) % 10 == 0: # Log every ~5 seconds
-		var log_file = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
-		if log_file:
-			log_file.seek_end()
-			log_file.store_line(JSON.stringify({
-				"location": "UnitFrame.gd:68",
-				"message": "UnitFrame updating HP",
-				"data": {
-					"hero_id": hero_id,
-					"hp": hp,
-					"max_hp": max_hp,
-					"bar_value": health_bar.value if health_bar else -1
-				},
-				"timestamp": Time.get_ticks_msec(),
-				"sessionId": "debug-session",
-				"hypothesisId": "L,M,N"
-			}))
-			log_file.close()
-	# #endregion
+	# Removed structured logging from _process to prevent output overflow
+	# Logging should only occur on significant events, not every frame
 	
 	if health_bar:
 		health_bar.max_value = max_hp

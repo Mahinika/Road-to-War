@@ -1,12 +1,27 @@
 extends Control
 
-# Inventory.gd - Logic for displaying and managing inventory items
+# Inventory.gd - Logic for displaying and managing inventory items with WoW WotLK styling
 
-@onready var grid_container: GridContainer = $VBoxContainer/ScrollContainer/GridContainer
-@onready var info_label: Label = $VBoxContainer/InfoLabel
-@onready var back_button: Button = $VBoxContainer/BackButton
+@onready var main_panel: Panel = $MainPanel
+@onready var category_tabs: HBoxContainer = $MainPanel/CategoryTabs
+@onready var grid_container: GridContainer = $MainPanel/ScrollContainer/GridContainer
+@onready var info_label: Label = $MainPanel/InfoPanel/InfoLabel
+@onready var back_button: Button = $MainPanel/BackButton
+
+var ui_theme: Node = null
+var current_category: String = "all"
+var category_buttons: Dictionary = {}
 
 func _ready():
+	ui_theme = get_node_or_null("/root/UITheme")
+	
+	# Apply WoW styling
+	_apply_wow_styling()
+	
+	# Setup category tabs
+	_setup_category_tabs()
+	
+	# Connect signals
 	back_button.pressed.connect(_on_back_pressed)
 	refresh_inventory()
 	
@@ -14,39 +29,220 @@ func _ready():
 	if LootManager.has_signal("item_picked_up"):
 		LootManager.item_picked_up.connect(_on_item_picked_up)
 
+func _apply_wow_styling():
+	"""Apply WoW WotLK styling to Inventory UI"""
+	if not ui_theme: return
+	
+	# Style main panel
+	if main_panel:
+		main_panel.add_theme_stylebox_override("panel", ui_theme.get_stylebox_panel(
+			ui_theme.COLORS["frame_dark"],
+			ui_theme.COLORS["gold_border"],
+			2
+		))
+	
+	# Style title
+	var title = get_node_or_null("MainPanel/Title")
+	if title:
+		title.add_theme_color_override("font_color", Color.GOLD)
+		title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		title.add_theme_constant_override("outline_size", 2)
+	
+	# Style info panel
+	var info_panel = get_node_or_null("MainPanel/InfoPanel")
+	if info_panel and ui_theme:
+		info_panel.add_theme_stylebox_override("panel", ui_theme.get_stylebox_panel(
+			Color(0.05, 0.05, 0.05, 0.9),
+			ui_theme.COLORS["gold_border"],
+			1
+		))
+	
+	if info_label:
+		info_label.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+		info_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		info_label.add_theme_constant_override("outline_size", 1)
+		info_label.add_theme_font_size_override("font_size", 14)
+	
+	# Style back button
+	if back_button and ui_theme:
+		var normal_sb = ui_theme.get_stylebox_panel(
+			ui_theme.COLORS["frame_dark"],
+			ui_theme.COLORS["gold_border"],
+			1
+		)
+		var hover_sb = ui_theme.get_stylebox_panel(
+			Color(0.15, 0.15, 0.18, 0.95),
+			ui_theme.COLORS["gold"],
+			1
+		)
+		back_button.add_theme_stylebox_override("normal", normal_sb)
+		back_button.add_theme_stylebox_override("hover", hover_sb)
+		back_button.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+		back_button.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		back_button.add_theme_constant_override("outline_size", 1)
+
+func _setup_category_tabs():
+	"""Create category filter tabs (ALL, Weapons, Armor, Accessories, Consumables)"""
+	if not category_tabs: return
+	
+	# Clear existing tabs
+	for child in category_tabs.get_children():
+		child.queue_free()
+	category_buttons.clear()
+	
+	var categories = ["all", "weapons", "armor", "accessories", "consumables"]
+	var category_names = {
+		"all": "ALL",
+		"weapons": "WEAPONS",
+		"armor": "ARMOR",
+		"accessories": "ACCESSORIES",
+		"consumables": "CONSUMABLES"
+	}
+	
+	if not ui_theme: return
+	
+	for category in categories:
+		var btn = Button.new()
+		btn.custom_minimum_size = Vector2(100, 30)
+		btn.text = category_names.get(category, category.to_upper())
+		btn.pressed.connect(_on_category_selected.bind(category))
+		
+		# Style tab button
+		var normal_sb = ui_theme.get_stylebox_panel(
+			ui_theme.COLORS["frame_dark"],
+			ui_theme.COLORS["gold_border"],
+			1
+		)
+		var hover_sb = ui_theme.get_stylebox_panel(
+			Color(0.15, 0.15, 0.18, 0.95),
+			ui_theme.COLORS["gold"],
+			1
+		)
+		btn.add_theme_stylebox_override("normal", normal_sb)
+		btn.add_theme_stylebox_override("hover", hover_sb)
+		btn.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+		btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		btn.add_theme_constant_override("outline_size", 1)
+		btn.add_theme_font_size_override("font_size", 12)
+		
+		category_tabs.add_child(btn)
+		category_buttons[category] = btn
+	
+	# Set initial selection (ALL)
+	_on_category_selected("all")
+
+func _on_category_selected(category: String):
+	"""Handle category tab selection"""
+	current_category = category
+	
+	# Update button styles (selected = gold border, others = normal)
+	for cat in category_buttons:
+		var btn = category_buttons[cat]
+		if not btn: continue
+		
+		if cat == category:
+			# Selected category - gold border, brighter background
+			if ui_theme:
+				var selected_sb = ui_theme.get_stylebox_panel(
+					Color(0.2, 0.15, 0.1, 0.95),
+					Color.GOLD,
+					2
+				)
+				btn.add_theme_stylebox_override("normal", selected_sb)
+				btn.add_theme_color_override("font_color", Color.GOLD)
+		else:
+			# Unselected category - normal styling
+			if ui_theme:
+				var normal_sb = ui_theme.get_stylebox_panel(
+					ui_theme.COLORS["frame_dark"],
+					ui_theme.COLORS["gold_border"],
+					1
+				)
+				btn.add_theme_stylebox_override("normal", normal_sb)
+				btn.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+	
+	# Refresh inventory display for selected category
+	refresh_inventory()
+
 func _on_item_picked_up(_item):
 	refresh_inventory()
 
 func refresh_inventory():
 	# Clear grid
 	for child in grid_container.get_children():
-		child.queue_free()
+		if is_instance_valid(child):
+			child.queue_free()
 		
 	var inventory = LootManager.get_inventory()
-	info_label.text = "Inventory: %d/%d" % [inventory.size(), LootManager.max_inventory_size]
 	
-	var ui_builder = get_node_or_null("/root/UIBuilder")
-	for i in range(inventory.size()):
-		var item = inventory[i]
+	# Filter by category
+	var filtered_inventory = []
+	for item in inventory:
+		var item_data = item.get("data", {})
+		var item_type = item_data.get("type", "").to_lower()
+		var item_slot = item_data.get("slot", "").to_lower()
+		
+		if current_category == "all":
+			filtered_inventory.append(item)
+		elif current_category == "weapons" and item_type == "weapon":
+			filtered_inventory.append(item)
+		elif current_category == "armor" and item_slot in ["chest", "helmet", "boots", "gloves"]:
+			filtered_inventory.append(item)
+		elif current_category == "accessories" and item_slot in ["ring", "amulet"]:
+			filtered_inventory.append(item)
+		elif current_category == "consumables" and item_type == "consumable":
+			filtered_inventory.append(item)
+	
+	info_label.text = "Items: %d/%d" % [filtered_inventory.size(), LootManager.max_inventory_size]
+	
+	for i in range(filtered_inventory.size()):
+		var item = filtered_inventory[i]
+		var item_id = item.get("id", "")
 		var item_data = item.get("data", {})
 		var rarity = item.get("quality", "common")
 		
-		# Use UIBuilder for inventory item buttons
-		var item_btn: Button
-		if ui_builder:
-			item_btn = ui_builder.create_button(grid_container, item_data.get("name", "Unknown"), Vector2(80, 80), Vector2.ZERO, {
-				"bg_color": Color(0.05, 0.05, 0.05, 0.8),
-				"border_color": Color(0.3, 0.3, 0.3)
-			})
+		# Create inventory item button with WoW styling
+		var item_btn: Button = Button.new()
+		item_btn.custom_minimum_size = Vector2(80, 80)
+		
+		# Style item button with rarity border
+		var rarity_color = _get_rarity_color(rarity)
+		if ui_theme:
+			var item_sb = ui_theme.get_stylebox_panel(
+				Color(0.1, 0.1, 0.1, 0.9),
+				rarity_color,
+				2
+			)
+			item_btn.add_theme_stylebox_override("normal", item_sb)
+			var hover_sb = ui_theme.get_stylebox_panel(
+				Color(0.15, 0.15, 0.18, 0.95),
+				rarity_color,
+				3
+			)
+			item_btn.add_theme_stylebox_override("hover", hover_sb)
+		
+		grid_container.add_child(item_btn)
+		
+		# Try to load item icon from new location
+		var icon_path = "res://assets/sprites/equipment/%s.png" % item_id
+		var icon_tex: Texture2D = null
+		if ResourceLoader.exists(icon_path):
+			icon_tex = load(icon_path)
+		# Fallback to old texture field
+		elif item_data.has("texture") and ResourceLoader.exists(item_data["texture"]):
+			icon_tex = load(item_data["texture"])
+		
+		if icon_tex:
+			item_btn.icon = icon_tex
+			item_btn.expand_icon = true
 		else:
-			# Fallback to manual creation
-			item_btn = Button.new()
-			item_btn.custom_minimum_size = Vector2(80, 80)
-			item_btn.text = item_data.get("name", "Unknown")
-			grid_container.add_child(item_btn)
+			# Fallback to text
+			item_btn.text = item_data.get("name", item_id).left(2)
+			item_btn.add_theme_font_size_override("font_size", 12)
+			item_btn.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
 		
 		item_btn.tooltip_text = _get_item_tooltip(item)
-		item_btn.modulate = _get_rarity_color(rarity)
+		item_btn.modulate = Color.WHITE  # Reset modulate so icon colors show correctly
 		item_btn.pressed.connect(_on_item_pressed.bind(item, i))
 
 func _get_item_tooltip(item: Dictionary) -> String:
@@ -217,7 +413,9 @@ func _equip_on_hero(hero_id: String, item: Dictionary):
 			print("Equipped %s on %s" % [item_id, hero_id])
 			
 	if has_node("EquipPopup"):
-		get_node("EquipPopup").queue_free()
+		var popup = get_node("EquipPopup")
+		if is_instance_valid(popup):
+			popup.queue_free()
 		
 	refresh_inventory()
 

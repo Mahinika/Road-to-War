@@ -192,8 +192,9 @@ func _on_combat_action_executed(data: Dictionary):
 		var projectile_speed: float = 1400.0
 		var ability_type: String = "attack"
 		var ability_range: float = 0.0
+		var def: Dictionary = {} # Ability definition (empty fallback for non-hero units)
 		if ability_manager and actor_id.begins_with("hero"):
-			var def: Dictionary = ability_manager.get_ability_definition(actor_id, action)
+			def = ability_manager.get_ability_definition(actor_id, action)
 			ability_type = str(def.get("type")) if def.has("type") else "attack"
 			ability_range = float(def.get("range", 0.0))
 			if ability_type in ["heal", "buff", "aoe_heal", "hot", "shield"]:
@@ -235,6 +236,28 @@ func _on_combat_action_executed(data: Dictionary):
 		if projectile_style == "bolt" and school != "nature":
 			projectile_style = "orb"
 		
+		# Procedural VFX System: Generate visuals from ability data
+		# visuals_data is reserved for future use when procedural VFX generation is implemented
+		# var _visuals_data: Dictionary = {}
+		# if def.has("visuals") and def.get("visuals") is Dictionary:
+		# 	_visuals_data = def.get("visuals")
+		
+		# Build spell data for procedural generation
+		var spell_data := {
+			"element": school,
+			"delivery": delivery,
+			"style": projectile_style,
+			"power": float(def.get("damageMultiplier", 1.0)),
+			"speed": projectile_speed
+		}
+		
+		# Add duration for channeled/ground AOE spells
+		if ability_type in ["dot", "dot_attack", "dot_heal"] or def.has("channeled"):
+			spell_data["duration"] = float(def.get("duration", 12.0))
+		if ability_type == "aoe" or def.has("aoeRadius"):
+			spell_data["aoe_radius"] = float(def.get("aoeRadius", 200.0))
+			spell_data["delivery"] = "ground_aoe"
+		
 		# Projectile: travel from caster -> target, then delay damage VFX until it "hits"
 		if target_node and delivery == "projectile" and school != "physical" and particle_manager.has_method("create_spell_projectile"):
 			var pair_key := "%s->%s" % [actor_id, target_id]
@@ -253,6 +276,36 @@ func _on_combat_action_executed(data: Dictionary):
 				projectile_speed,
 				func():
 					_on_projectile_arrived(actor_id, target_id)
+			)
+		# Beam: channeled spell (Arcane Missiles, Mind Flay)
+		elif target_node and delivery == "beam" and particle_manager.has_method("create_spell_beam"):
+			spell_data["duration"] = float(def.get("channelDuration", 3.0))
+			particle_manager.create_spell_beam(
+				actor_node.global_position + Vector2(0, -40),
+				target_node.global_position + Vector2(0, -40),
+				school_color,
+				projectile_style,
+				spell_data["duration"],
+				spell_data["power"]
+			)
+		# Ground AOE: persistent area effect (Blizzard, Rain of Fire)
+		elif (ability_type == "aoe" or spell_data.has("aoe_radius")) and particle_manager.has_method("create_ground_aoe_effect"):
+			var aoe_radius = spell_data.get("aoe_radius", 200.0)
+			var aoe_duration = spell_data.get("duration", 5.0)
+			particle_manager.create_ground_aoe_effect(
+				target_node.global_position if target_node else actor_node.global_position,
+				school_color,
+				aoe_radius,
+				aoe_duration,
+				school
+			)
+		# Self-buff: visual aura around caster
+		elif ability_type in ["buff", "shield"] and target_id == actor_id and particle_manager.has_method("create_self_buff_effect"):
+			particle_manager.create_self_buff_effect(
+				actor_node.global_position,
+				school_color,
+				projectile_style,
+				spell_data["power"]
 			)
 		else:
 			# Instant Impact effect: target spells (damage). Heals already have their own green effect.
@@ -368,6 +421,15 @@ func _infer_school(ability_id: String, def: Dictionary) -> String:
 		return str(def.get("school")).to_lower()
 	# Heuristic by ability id (good enough for first pass)
 	var a := ability_id.to_lower()
+	# Lightning / storm spells (nature)
+	if "lightning" in a or "thunder" in a or "storm" in a:
+		return "nature"
+	# Shadow mind spells
+	if "mind" in a:
+		return "shadow"
+	# Arcane should win before generic "blast" rules
+	if "arcane" in a:
+		return "arcane"
 	if "fire" in a or "flame" in a or "pyro" in a or "lava" in a or "blast" in a:
 		return "fire"
 	if "frost" in a or "ice" in a:
@@ -378,8 +440,6 @@ func _infer_school(ability_id: String, def: Dictionary) -> String:
 		return "holy"
 	if "nature" in a or "wrath" in a or "star" in a or "rejuv" in a or "poison" in a:
 		return "nature"
-	if "arcane" in a:
-		return "arcane"
 	return "physical"
 
 func _handle_unit_death(unit_id: String, unit_node: Node, _is_hero: bool):  # _is_hero unused - kept for future hero death handling

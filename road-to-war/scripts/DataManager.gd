@@ -11,7 +11,7 @@ func load_all_data():
 	var data_files = [
 		"abilities", "achievements", "animation-config", "bloodlines",
 		"classes", "enemies", "items", "keyframe-configs",
-		"prestige-config", "skill-gems", "specializations",
+		"prestige-config", "quests", "skill-gems", "specializations",
 		"stats-config", "talents", "world-config"
 	]
 	

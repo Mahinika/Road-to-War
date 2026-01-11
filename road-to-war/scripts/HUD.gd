@@ -45,6 +45,17 @@ func _ready():
 			bottom_menu_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 			bottom_menu_panel.position.y = get_viewport_rect().size.y - bottom_menu_panel.size.y
 	
+	# Update currency displays periodically
+	_update_gold_display()
+	_update_prestige_display()
+	# Set up timer to update currency displays
+	var timer = Timer.new()
+	timer.wait_time = 0.5  # Update every 0.5 seconds
+	timer.timeout.connect(_update_gold_display)
+	timer.timeout.connect(_update_prestige_display)
+	timer.autostart = true
+	add_child(timer)
+	
 	# Connect buttons
 	var char_btn = get_node_or_null("BottomMenuPanel/BottomMenu/CharacterButton")
 	if char_btn and sm: char_btn.pressed.connect(_on_character_pressed)
@@ -95,30 +106,58 @@ func _apply_wow_hud_style():
 		mile_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 		mile_label.add_theme_constant_override("outline_size", 2)
 	
-	# Currency labels (keep them short + consistent)
+	# Currency labels with better styling and formatting
 	var gold_label: Label = get_node_or_null("TopBar/CurrencyContainer/GoldLabel")
 	if gold_label:
+		gold_label.add_theme_color_override("font_color", ut.COLORS["gold"])  # Gold color
 		gold_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 		gold_label.add_theme_constant_override("outline_size", 1)
 		gold_label.add_theme_font_size_override("font_size", 16)
+		gold_label.text = "Gold: 0"  # Will be updated in _update_currency_display
 	
 	var pp_label: Label = get_node_or_null("TopBar/CurrencyContainer/PrestigeLabel")
 	if pp_label:
+		pp_label.add_theme_color_override("font_color", Color(0, 1, 1))  # Cyan for prestige
 		pp_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 		pp_label.add_theme_constant_override("outline_size", 1)
 		pp_label.add_theme_font_size_override("font_size", 16)
+		pp_label.text = "PP: 0"  # Will be updated in _update_currency_display
 	
-	# Progress bar styling
+	# Progress bar styling with better WoW aesthetic
 	if world_progress_bar:
 		var sb_bg = StyleBoxFlat.new()
-		sb_bg.bg_color = Color(0.05, 0.05, 0.05, 0.7)
-		sb_bg.border_color = Color(0, 0, 0, 0.8)
-		sb_bg.border_width_left = 1
-		sb_bg.border_width_top = 1
-		sb_bg.border_width_right = 1
-		sb_bg.border_width_bottom = 1
+		sb_bg.bg_color = Color(0.05, 0.05, 0.05, 0.85)
+		sb_bg.border_color = Color(0, 0, 0, 0.9)
+		sb_bg.border_width_left = 2
+		sb_bg.border_width_top = 2
+		sb_bg.border_width_right = 2
+		sb_bg.border_width_bottom = 2
+		sb_bg.corner_radius_top_left = 3
+		sb_bg.corner_radius_top_right = 3
+		sb_bg.corner_radius_bottom_right = 3
+		sb_bg.corner_radius_bottom_left = 3
+		sb_bg.shadow_size = 1
+		sb_bg.shadow_color = Color(0, 0, 0, 0.5)
 		world_progress_bar.add_theme_stylebox_override("background", sb_bg)
 		world_progress_bar.add_theme_stylebox_override("fill", ut.get_stylebox_bar(ut.COLORS["gold"]))
+	
+	# Style CombatLog panel
+	var combat_log = get_node_or_null("CombatLog")
+	if combat_log and combat_log is Control:
+		var combat_log_panel = combat_log.get_node_or_null("Panel")
+		if not combat_log_panel:
+			# Create panel for CombatLog if it doesn't exist
+			combat_log_panel = Panel.new()
+			combat_log_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+			combat_log.add_child(combat_log_panel)
+			combat_log.move_child(combat_log_panel, 0)  # Move to front
+		
+		if combat_log_panel and combat_log_panel is Panel:
+			combat_log_panel.add_theme_stylebox_override("panel", ut.get_stylebox_panel(
+				Color(0.05, 0.05, 0.05, 0.85),
+				Color(0.2, 0.5, 1.0),  # Blue border for combat log
+				2
+			))
 	
 	# Bottom menu buttons: WoW-ish framed buttons
 	var bottom_menu = get_node_or_null("BottomMenuPanel/BottomMenu")
@@ -259,7 +298,7 @@ func _update_prestige_display():
 	var prestige_label: Label = get_node_or_null("TopBar/CurrencyContainer/PrestigeLabel")
 	if prestige_label:
 		var prestige_level = prestige_m.get_prestige_level()
-		prestige_label.text = "PP: %d" % prestige_level
+		prestige_label.text = "PP: %s" % _format_number(prestige_level)
 	
 	# Find or create essence label inside the currency container
 	var currency_container: HBoxContainer = get_node_or_null("TopBar/CurrencyContainer")
@@ -288,6 +327,28 @@ func _update_prestige_display():
 		essence_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 		essence_label.add_theme_constant_override("outline_size", 1)
 		essence_label.add_theme_font_size_override("font_size", 16)
+	
+	# Update gold display
+	_update_gold_display()
+
+func _update_gold_display():
+	var shop_m = get_node_or_null("/root/ShopManager")
+	var gold_label: Label = get_node_or_null("TopBar/CurrencyContainer/GoldLabel")
+	if gold_label and shop_m:
+		var gold = shop_m.get_gold() if shop_m.has_method("get_gold") else 0
+		gold_label.text = "Gold: %s" % _format_number(gold)
+
+func _format_number(num: int) -> String:
+	# Format number with commas for readability (e.g., 1234567 -> "1,234,567")
+	var str_num = str(num)
+	var formatted = ""
+	var count = 0
+	for i in range(str_num.length() - 1, -1, -1):
+		if count > 0 and count % 3 == 0:
+			formatted = "," + formatted
+		formatted = str_num[i] + formatted
+		count += 1
+	return formatted
 
 func _update_brutal_mode_display():
 	# Add brutal mode indicator to HUD
@@ -384,4 +445,3 @@ func _update_spellbook_button_badge():
 	if not spellbook_btn:
 		return
 	spellbook_btn.text = "Spellbook *" if _spellbook_has_new else "Spellbook"
-

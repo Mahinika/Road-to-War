@@ -1,9 +1,8 @@
 {
-  "id": "humanoid_17",
-  "tier": 3,
-  "tierName": "Master",
-  "size": 64,
-  "primaryColor": "#9932cc",
-  "generator": "lpc-style",
-  "timestamp": "2026-01-07T10:14:40.451Z"
+  "seed": 12362,
+  "type": "humanoid",
+  "palette": "warm",
+  "equipment": {},
+  "generatedAt": "2026-01-08T12:15:57.352Z",
+  "version": "1.1.0"
 }

@@ -48,11 +48,16 @@ var combat_paused: bool = false # paused when player opens menu scenes (inventor
 # Real-time combat tracking
 var hero_attack_cooldowns: Dictionary = {}  # hero_id -> time_until_next_attack
 var enemy_attack_cooldowns: Dictionary = {}  # enemy_instance_id -> time_until_next_attack
+var pet_attack_cooldowns: Dictionary = {}  # hero_id -> time_until_next_attack (pets attack with their owner)
 var combat_delta_accumulator: float = 0.0
+
+# Channeled spell tracking
+var active_channels: Dictionary = {}  # hero_id -> {ability_name, target_id, channel_duration, tick_interval, ticks_remaining, last_tick_time, damage_per_tick, is_heal}
 
 # RuneScape-style targeting: units keep attacking the same target until it dies.
 var hero_target_lock: Dictionary = {}   # hero_id -> enemy_instance_id
 var enemy_target_lock: Dictionary = {}  # enemy_instance_id -> hero_id
+var pet_target_lock: Dictionary = {}  # hero_id -> enemy_instance_id (pets attack same target as owner)
 
 func _ready():
 	_log_info("CombatManager", "Initialized with Real-Time Multi-Enemy combat")
@@ -79,6 +84,17 @@ func _process(delta):
 	for enemy_id in enemy_attack_cooldowns.keys():
 		enemy_attack_cooldowns[enemy_id] = max(0, enemy_attack_cooldowns[enemy_id] - delta)
 	
+	for hero_id in pet_attack_cooldowns.keys():
+		pet_attack_cooldowns[hero_id] = max(0, pet_attack_cooldowns[hero_id] - delta)
+	
+	# Process DoT ticks
+	var dot_mgr = get_node_or_null("/root/DoTManager")
+	if dot_mgr:
+		dot_mgr.process_dots(delta)
+	
+	# Process channeled spells (Arcane Missiles, Mind Flay, etc.)
+	_process_channeled_spells(delta)
+	
 	# #region agent log - Removed health log to reduce noise
 	# #endregion
 	
@@ -99,6 +115,8 @@ func _on_damage_applied(attacker, target, amount, is_crit):
 		attacker_id = attacker.get("instance_id", attacker.get("id", "unknown"))
 	elif attacker is Object:
 		attacker_id = attacker.get("id") if attacker.get("id") else "unknown"
+	elif attacker is String:
+		attacker_id = attacker  # Handle DoT caster IDs as strings
 		
 	var target_id = "unknown"
 	if target is Dictionary:
@@ -123,6 +141,10 @@ func _on_healing_applied(healer, target, amount):
 		
 	healing_applied.emit(healer_id, target_id, amount)
 
+# @CRITICAL: Combat initialization - called by WorldManager, sets up all combat state
+# Used by: WorldManager, CombatHandler, World.gd
+# Changing this requires: Update all combat flow, ensure party detection logic remains
+# Performance: Called once per combat, not performance-critical
 func start_party_combat(enemy_group: Array):
 	_log_info("CombatManager", "start_party_combat called with %d enemies" % enemy_group.size())
 	
@@ -172,16 +194,32 @@ func start_party_combat(enemy_group: Array):
 	for enemy in enemy_group:
 		enemy_attack_cooldowns[enemy["instance_id"]] = 0.5  # Small delay before first enemy attack
 	
+	# Initialize pet attack cooldowns
+	var ps = get_node_or_null("/root/PetSystem")
+	if ps and pm:
+			for hero in pm.heroes:
+				if ps.has_pet(hero.id):
+					var pet = ps.get_pet(hero.id)
+					var pet_stats = pet.get("pet_stats", {})
+					var attack_speed = float(pet_stats.get("attack_speed", 2.0))
+					pet_attack_cooldowns[hero.id] = attack_speed * 0.5  # Pets start with half cooldown
+	
 	_log_info("CombatManager", "Emitting combat_started signal for group")
 	combat_started.emit(enemy_group)
 
+# @CRITICAL: Main combat loop - called every frame during combat, handles all combat actions
+# Used by: CombatManager._process() during active combat
+# Changing this requires: Maintain real-time timing, cooldown system, status effect processing
+# Performance: Called every frame during combat, must be optimized (<5ms per frame)
 func _process_realtime_combat(_delta: float):
 	"""Real-time combat: heroes and enemies attack when cooldowns ready"""
+	# Declare variables at function level to avoid scope warnings
+	var pm = get_node_or_null("/root/PartyManager")
+	
 	if not in_combat: 
 		return
 	
 	var combat_time = Time.get_ticks_msec() - current_combat.get("start_time", 0)
-	var pm = get_node_or_null("/root/PartyManager")
 	
 	# Process status effects periodically (every ~1 second)
 	if int(combat_delta_accumulator * 10) % 10 == 0:
@@ -195,10 +233,13 @@ func _process_realtime_combat(_delta: float):
 				if has_node("/root/CombatAI"):
 					CombatAI.update_ai_state(enemy["instance_id"], enemy, combat_time)
 	
-	# Heroes attack when cooldown ready
+	# Heroes attack when cooldown ready (skip if channeling)
 	if pm:
 		for hero in pm.heroes:
 			if hero.current_stats.get("health", 0) > 0:
+				# Skip attack if hero is currently channeling
+				if active_channels.has(hero.id):
+					continue
 				if hero_attack_cooldowns.get(hero.id, 999) <= 0:
 					_execute_hero_attack(hero)
 	
@@ -207,28 +248,29 @@ func _process_realtime_combat(_delta: float):
 		if enemy.get("current_health", 0) > 0:
 			if enemy_attack_cooldowns.get(enemy["instance_id"], 999) <= 0:
 				_execute_enemy_attack(enemy)
+	
+	# Pets attack when cooldown ready
+	if pm:
+		for hero in pm.heroes:
+			if hero.current_stats.get("health", 0) > 0:
+				var ps = get_node_or_null("/root/PetSystem")
+				if ps and ps.has_pet(hero.id):
+					if pet_attack_cooldowns.get(hero.id, 999) <= 0:
+						_execute_pet_attack(hero)
 
 func _execute_hero_attack(hero):
 	"""Execute a single hero's attack in real-time combat"""
-	# #region agent log
+	# Structured logging via CursorLogManager
 	var h_hp = hero.current_stats.get("health", 0)
-	var log_file_att = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.READ_WRITE)
-	if log_file_att:
-		log_file_att.seek_end()
-		log_file_att.store_line(JSON.stringify({
-			"location": "CombatManager.gd:213",
-			"message": "HERO ATTACKING",
-			"data": {
-				"hero_id": hero.id,
-				"hp": h_hp,
-				"is_dead": h_hp <= 0
-			},
-			"timestamp": Time.get_ticks_msec(),
-			"sessionId": "debug-session",
-			"hypothesisId": "BB,G"
-		}))
-		log_file_att.close()
-	# #endregion
+	var log_manager = get_node_or_null("/root/CursorLogManager")
+	if log_manager:
+		log_manager.log_structured(
+			"CombatManager.gd:213",
+			"HERO ATTACKING",
+			{"hero_id": hero.id, "hp": h_hp, "is_dead": h_hp <= 0},
+			"debug-session",
+			"BB,G"
+		)
 	# Build alive enemy list
 	var alive_enemies: Array = []
 	for enemy in current_combat.get("enemies", []):
@@ -240,12 +282,13 @@ func _execute_hero_attack(hero):
 	# Ability selection (WotLK-style ability kits; data-driven via classes/specs/abilities.json)
 	var am = get_node_or_null("/root/AbilityManager")
 	var dc = get_node_or_null("/root/DamageCalculator")
+	# Declare pm at function level to avoid scope warning
+	var pm = get_node_or_null("/root/PartyManager")
 	if not am or not dc:
 		return
 	
 	# Party state for healers/utility selection
 	var party_state: Array = []
-	var pm = get_node_or_null("/root/PartyManager")
 	if pm:
 		for h in pm.heroes:
 			party_state.append({
@@ -294,9 +337,79 @@ func _execute_hero_attack(hero):
 			rm.consume_resource(hero.id, res_type, cost)
 	
 	var ability_type: String = str(ability_def.get("type", "attack"))
+	var attack_speed: float = 1.5  # Declare at function level to avoid scope warning
 	
-	# Heal targeting (for heal / heal_attack)
-	if ability_type in ["heal", "aoe_heal", "heal_attack"]:
+	# Channeled spell handling (Arcane Missiles, Mind Flay, Blizzard, etc.)
+	if ability_type == "channeled":
+		# Check if hero is already channeling
+		if active_channels.has(hero.id):
+			return  # Can't start new channel while already channeling
+		
+		var channel_duration = float(ability_def.get("channelDuration", 3.0))
+		var tick_interval = float(ability_def.get("tickInterval", 0.5))
+		var ticks_per_channel = int(ability_def.get("ticksPerChannel", 6))
+		var damage_per_tick = float(ability_def.get("damageMultiplier", 0.35))
+		var is_heal = ability_def.get("healMultiplier", 0.0) > 0.0
+		
+		# For healing channeled spells, use healMultiplier instead
+		if is_heal:
+			damage_per_tick = float(ability_def.get("healMultiplier", 1.0))
+		
+		# Determine target (enemy for damage, party member for healing)
+		var target_id: String = ""
+		var target_obj = null
+		
+		if is_heal:
+			# Healing: target lowest HP party member
+			if pm:
+				var lowest_pct = 1.1
+				for h in pm.heroes:
+					var max_hp = float(h.current_stats.get("maxHealth", 100))
+					var hp = float(h.current_stats.get("health", 0))
+					var pct = hp / max(1.0, max_hp)
+					if pct < lowest_pct:
+						lowest_pct = pct
+						target_id = h.id
+						target_obj = h
+		else:
+			# Damage: target enemy
+			target_id = str(target_enemy.get("instance_id", ""))
+			target_obj = target_enemy
+		
+		if target_id == "" or target_obj == null:
+			return  # No valid target
+		
+		# Start channeling
+		active_channels[hero.id] = {
+			"ability_name": ability_name,
+			"target_id": target_id,
+			"target_obj": target_obj,
+			"channel_duration": channel_duration,
+			"tick_interval": tick_interval,
+			"ticks_remaining": ticks_per_channel,
+			"last_tick_time": Time.get_ticks_msec() / 1000.0,
+			"damage_per_tick": damage_per_tick,  # Store multiplier, calculate actual damage per tick
+			"is_heal": is_heal,
+			"start_time": Time.get_ticks_msec() / 1000.0,
+			"hero_stats": hero.current_stats.duplicate()  # Store hero stats for damage calculation
+		}
+		
+		# Emit action for channel start
+		combat_action_executed.emit({
+			"actor": hero.id,
+			"action": ability_name,
+			"target": target_id,
+			"channeled": true,
+			"duration": channel_duration
+		})
+		
+		# Set cooldown to channel duration (hero can't attack while channeling)
+		hero_attack_cooldowns[hero.id] = channel_duration
+		am.set_cooldown(hero.id, ability_name)
+		return
+	
+	# Heal targeting (for heal / heal_attack / bounce_heal)
+	if ability_type in ["heal", "aoe_heal", "heal_attack", "bounce_heal"]:
 		var chosen_target = hero
 		var lowest_pct = 1.1
 		if pm:
@@ -312,26 +425,71 @@ func _execute_hero_attack(hero):
 		if ability_type == "heal_attack" and lowest_pct >= 0.85:
 			ability_type = "attack"
 		else:
-			var amount = 0.0
-			var heal_percent = float(ability_def.get("healPercent", 0.0))
-			if heal_percent > 0.0:
-				amount = float(chosen_target.current_stats.get("maxHealth", 100)) * heal_percent
-			else:
-				var heal_mult = float(ability_def.get("healMultiplier", 1.5))
-				var base_power = float(hero.current_stats.get("spellPower", hero.current_stats.get("attack", 10)))
-				amount = base_power * heal_mult
+			var heal_mult = float(ability_def.get("healMultiplier", 1.5))
+			var base_power = float(hero.current_stats.get("spellPower", hero.current_stats.get("attack", 10)))
+			var base_amount = base_power * heal_mult
 			
-			# Emit action BEFORE applying healing so visuals (cast/projectile) can start first.
-			combat_action_executed.emit({
-				"actor": hero.id,
-				"action": ability_name,
-				"target": chosen_target.id,
-				"healing": amount
-			})
-			dc.deal_healing(hero, chosen_target, amount)
+			# Handle bounce_heal (Prayer of Mending)
+			if ability_type == "bounce_heal":
+				var max_bounces = int(ability_def.get("maxBounces", 5))
+				var _bounce_range = float(ability_def.get("bounceRange", 800))  # Range for future bounce distance logic
+				var healed_targets: Array = []
+				var current_target = chosen_target
+				var remaining_bounces = max_bounces
+				
+				# Bounce heal through party members
+				while remaining_bounces > 0 and current_target != null:
+					var amount = base_amount
+					
+					# Emit action for each bounce
+					combat_action_executed.emit({
+						"actor": hero.id,
+						"action": ability_name,
+						"target": current_target.id,
+						"healing": amount,
+						"bounce": max_bounces - remaining_bounces + 1
+					})
+					
+					dc.deal_healing(hero, current_target, amount)
+					healed_targets.append(current_target.id)
+					remaining_bounces -= 1
+					
+					# Find next target (lowest HP party member not yet healed)
+					if remaining_bounces > 0 and pm:
+						current_target = null
+						var next_lowest_pct = 1.1
+						for h in pm.heroes:
+							if h.id in healed_targets or h.current_stats.get("health", 0) <= 0:
+								continue
+							var max_hp = float(h.current_stats.get("maxHealth", 100))
+							var hp = float(h.current_stats.get("health", 0))
+							var pct = hp / max(1.0, max_hp)
+							if pct < next_lowest_pct:
+								next_lowest_pct = pct
+								current_target = h
+						if current_target == null:
+							break  # No more valid targets
+			else:
+				# Standard heal
+				var amount = 0.0
+				var heal_percent = float(ability_def.get("healPercent", 0.0))
+				if heal_percent > 0.0:
+					amount = float(chosen_target.current_stats.get("maxHealth", 100)) * heal_percent
+				else:
+					amount = base_amount
+				
+				# Emit action BEFORE applying healing so visuals (cast/projectile) can start first.
+				combat_action_executed.emit({
+					"actor": hero.id,
+					"action": ability_name,
+					"target": chosen_target.id,
+					"healing": amount
+				})
+				dc.deal_healing(hero, chosen_target, amount)
+			
 			am.set_cooldown(hero.id, ability_name)
 			# GCD / attack pacing (keep existing attack_speed pacing)
-			var attack_speed = hero.current_stats.get("attackSpeed", 1.5)
+			attack_speed = hero.current_stats.get("attackSpeed", 1.5)
 			hero_attack_cooldowns[hero.id] = attack_speed
 			return
 	
@@ -372,8 +530,111 @@ func _execute_hero_attack(hero):
 			am.set_cooldown(hero.id, ability_name)
 	
 	# Reset cooldown based on attack speed
-	var attack_speed = hero.current_stats.get("attackSpeed", 1.5)  # seconds between attacks
+	attack_speed = hero.current_stats.get("attackSpeed", 1.5)  # seconds between attacks
 	hero_attack_cooldowns[hero.id] = attack_speed
+
+func _execute_pet_attack(owner_hero):
+	"""Execute a pet's attack - pets attack the same target as their owner"""
+	var ps = get_node_or_null("/root/PetSystem")
+	if not ps or not ps.has_pet(owner_hero.id):
+		return
+	
+	var pet = ps.get_pet(owner_hero.id)
+	if pet.get("current_health", 0) <= 0:
+		return  # Pet is dead
+	
+	var pet_stats = pet.get("pet_stats", {})
+	var pet_type = pet.get("pet_type", "")
+	var pet_def = ps.pet_definitions.get(pet_type, {})
+	
+	# Build alive enemy list
+	var alive_enemies: Array = []
+	for enemy in current_combat.get("enemies", []):
+		if enemy.get("current_health", 0) > 0:
+			alive_enemies.append(enemy)
+	if alive_enemies.is_empty():
+		return
+	
+	# Pet targets same enemy as owner (or tank's target if owner is healer/DPS)
+	var target_enemy: Dictionary = {}
+	var owner_target_id = str(hero_target_lock.get(owner_hero.id, ""))
+	# Declare pm at function level to avoid scope warning
+	var pm = get_node_or_null("/root/PartyManager")
+	
+	# If owner has no target, find tank's target
+	if owner_target_id == "":
+		if pm:
+			for hero in pm.heroes:
+				if hero.role == "tank" and hero.current_stats.get("health", 0) > 0:
+					var tank_target_id = str(hero_target_lock.get(hero.id, ""))
+					if tank_target_id != "":
+						owner_target_id = tank_target_id
+						break
+	
+	# Find target enemy
+	if owner_target_id != "":
+		for e in alive_enemies:
+			if str(e.get("instance_id", "")) == owner_target_id:
+				target_enemy = e
+				break
+	
+	# Fallback: pick lowest HP enemy
+	if target_enemy.is_empty():
+		target_enemy = alive_enemies[0]
+		for e in alive_enemies:
+			if int(e.get("current_health", 0)) < int(target_enemy.get("current_health", 0)):
+				target_enemy = e
+		pet_target_lock[owner_hero.id] = str(target_enemy.get("instance_id", ""))
+	
+	# Calculate pet damage
+	var dc = get_node_or_null("/root/DamageCalculator")
+	if not dc:
+		return
+	
+	# Pet stats for damage calculation
+	var pet_attack = float(pet_stats.get("attack", 50))
+	var pet_defense = float(pet_stats.get("defense", 20))
+	var pet_attack_stats = {
+		"attack": pet_attack,
+		"defense": pet_defense
+	}
+	
+	var result = dc.calculate_damage(pet_attack_stats, target_enemy.get("stats", {}), null, target_enemy)
+	if not result.get("miss", false):
+		var damage = float(result.get("damage", 0))
+		
+		# Apply pet damage
+		dc.deal_damage(null, target_enemy, damage, bool(result.get("is_crit", false)))
+		
+		# Add threat (pets generate threat for their owner)
+		var threat_mult = 1.0
+		if pet_def.get("role", "") == "tank":
+			threat_mult = 2.0  # Tank pets generate more threat
+		
+		var ts = get_node_or_null("/root/ThreatSystem")
+		if ts:
+			ts.add_threat(target_enemy.get("instance_id", ""), owner_hero.id, damage, threat_mult)
+		
+		# Visual feedback
+		var part_m = get_node_or_null("/root/ParticleManager")
+		if part_m:
+			var world = get_node_or_null("/root/World")
+			if world and world.has_method("_find_unit_node"):
+				var target_node = world._find_unit_node(target_enemy.get("instance_id", ""))
+				if target_node:
+					part_m.create_floating_text(target_node.global_position + Vector2(0, -20), str(int(damage)), Color.ORANGE)
+		
+		# Emit combat action for visuals
+		combat_action_executed.emit({
+			"actor": owner_hero.id + "_pet",
+			"action": "pet_attack",
+			"target": target_enemy.get("instance_id", ""),
+			"damage": damage
+		})
+	
+	# Set pet attack cooldown
+	var attack_speed = float(pet_stats.get("attack_speed", 2.0))
+	pet_attack_cooldowns[owner_hero.id] = attack_speed
 
 func _execute_enemy_attack(enemy: Dictionary):
 	"""Execute a single enemy's attack in real-time combat"""
@@ -387,13 +648,19 @@ func _execute_enemy_attack(enemy: Dictionary):
 		if hero.current_stats.get("health", 0) > 0:
 			alive_heroes.append(hero)
 	
-	# #region agent log
+	# Structured logging via CursorLogManager
 	var hero_healths = []
 	for hero in pm.heroes:
 		hero_healths.append(hero.current_stats.get("health", 0))
-	var log_file = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
-	if log_file: log_file.seek_end(); log_file.store_line(JSON.stringify({"location":"CombatManager.gd:238","message":"Enemy attacking - hero status","data":{"total_heroes":pm.heroes.size(),"alive_heroes":alive_heroes.size(),"hero_healths":hero_healths},"timestamp":Time.get_ticks_msec(),"sessionId":"debug-session","hypothesisId":"Q"})); log_file.close()
-	# #endregion
+	var log_manager = get_node_or_null("/root/CursorLogManager")
+	if log_manager:
+		log_manager.log_structured(
+			"CombatManager.gd:238",
+			"Enemy attacking - hero status",
+			{"total_heroes": pm.heroes.size(), "alive_heroes": alive_heroes.size(), "hero_healths": hero_healths},
+			"debug-session",
+			"Q"
+		)
 	
 	if alive_heroes.is_empty():
 		return
@@ -434,6 +701,83 @@ func _execute_enemy_attack(enemy: Dictionary):
 	var attack_speed = enemy.get("stats", {}).get("attackSpeed", 2.0)
 	enemy_attack_cooldowns[enemy["instance_id"]] = attack_speed
 
+func _process_channeled_spells(_delta: float):
+	"""Process active channeled spells and apply tick damage/healing"""
+	var current_time = Time.get_ticks_msec() / 1000.0
+	var to_remove: Array = []
+	var dc = get_node_or_null("/root/DamageCalculator")
+	var pm = get_node_or_null("/root/PartyManager")
+	if not dc:
+		return
+	
+	for hero_id in active_channels.keys():
+		var channel = active_channels[hero_id]
+		var time_since_last_tick = current_time - channel["last_tick_time"]
+		
+		# Get hero for stat calculations
+		var hero = null
+		if pm:
+			hero = pm.get_hero_by_id(hero_id)
+		
+		# Check if it's time for a tick
+		if time_since_last_tick >= channel["tick_interval"]:
+			var target = channel["target_obj"]
+			var damage_mult = float(channel["damage_per_tick"])  # This is the multiplier from ability
+			var is_heal = channel["is_heal"]
+			
+			# Apply tick damage or healing
+			if is_heal:
+				if target and "current_stats" in target:
+					# Heal party member - use stored hero stats
+					var hero_stats = channel.get("hero_stats", {})
+					var base_power = float(hero_stats.get("spellPower", hero_stats.get("attack", 10)))
+					var heal_mult = float(channel["damage_per_tick"])  # Reused field for heal multiplier
+					var tick_heal = base_power * heal_mult
+					var heal_source = hero if hero else channel
+					dc.deal_healing(heal_source, target, tick_heal)
+			else:
+				if target and target is Dictionary and hero:
+					# Damage enemy - use proper damage calculation per tick
+					var hero_stats = channel.get("hero_stats", hero.current_stats)
+					var result = dc.calculate_damage(hero_stats, target.get("stats", {}), hero, target)
+					if not result.get("miss", false):
+						# Apply channeled damage multiplier (damage_mult is per-tick multiplier)
+						var base_damage = float(result.get("damage", 0))
+						var dmg = base_damage * damage_mult
+						dc.deal_damage(hero, target, dmg, false)
+						
+						# Add threat for channeled damage
+						var ts = get_node_or_null("/root/ThreatSystem")
+						if ts:
+							var threat_mult = 2.0 if hero.role == "tank" else 1.0
+							ts.add_threat(target.get("instance_id", ""), hero_id, dmg, threat_mult)
+						
+						# Emit action for visual feedback
+						combat_action_executed.emit({
+							"actor": hero_id,
+							"action": channel["ability_name"],
+							"target": target.get("instance_id", ""),
+							"damage": dmg,
+							"channel_tick": true
+						})
+			
+			# Update tick tracking
+			channel["ticks_remaining"] -= 1
+			channel["last_tick_time"] = current_time
+			
+			# Check if channel expired
+			var elapsed_time = current_time - channel["start_time"]
+			if channel["ticks_remaining"] <= 0 or elapsed_time >= channel["channel_duration"]:
+				to_remove.append(hero_id)
+				
+				# Clear attack cooldown when channel finishes (hero can attack again)
+				hero_attack_cooldowns[hero_id] = 0.0
+	
+	# Remove expired channels
+	for hero_id in to_remove:
+		active_channels.erase(hero_id)
+		_log_debug("CombatManager", "Hero %s finished channeling" % hero_id)
+
 func _process_status_effects(combatant_id: String):
 	var sem = get_node_or_null("/root/StatusEffectsManager")
 	var dc = get_node_or_null("/root/DamageCalculator")
@@ -470,6 +814,10 @@ func _get_combatant_by_id(id: String) -> Dictionary:
 	
 	return {}
 
+# @CRITICAL: Combat end detection - must check both party and single-hero combat structures
+# Used by: CombatManager._process_realtime_combat()
+# Changing this requires: Ensure party detection logic (check for "party" key before single-hero logic)
+# Performance: Called frequently during combat, must be fast (<1ms)
 func _check_combat_end() -> Dictionary:
 	var enemies = current_combat.get("enemies", [])
 	var all_enemies_dead = true
@@ -479,23 +827,16 @@ func _check_combat_end() -> Dictionary:
 			break
 			
 	if all_enemies_dead:
-		# #region agent log
-		var log_file_end = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.READ_WRITE)
-		if log_file_end:
-			log_file_end.seek_end()
-			log_file_end.store_line(JSON.stringify({
-				"location": "CombatManager.gd:350",
-				"message": "COMBAT END CHECK - ALL ENEMIES DEAD",
-				"data": {
-					"all_enemies_dead": true,
-					"all_heroes_dead": false # Implicit
-				},
-				"timestamp": Time.get_ticks_msec(),
-				"sessionId": "debug-session",
-				"hypothesisId": "J,K"
-			}))
-			log_file_end.close()
-		# #endregion
+		# Structured logging via CursorLogManager
+		var log_manager = get_node_or_null("/root/CursorLogManager")
+		if log_manager:
+			log_manager.log_structured(
+				"CombatManager.gd:350",
+				"COMBAT END CHECK - ALL ENEMIES DEAD",
+				{"all_enemies_dead": true, "all_heroes_dead": false},
+				"debug-session",
+				"J,K"
+			)
 		return {"ended": true, "victory": true}
 		
 	var all_heroes_dead = true
@@ -507,23 +848,16 @@ func _check_combat_end() -> Dictionary:
 				break
 			
 	if all_heroes_dead:
-		# #region agent log
-		var log_file_end = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.READ_WRITE)
-		if log_file_end:
-			log_file_end.seek_end()
-			log_file_end.store_line(JSON.stringify({
-				"location": "CombatManager.gd:361",
-				"message": "COMBAT END CHECK - ALL HEROES DEAD",
-				"data": {
-					"all_enemies_dead": false,
-					"all_heroes_dead": true
-				},
-				"timestamp": Time.get_ticks_msec(),
-				"sessionId": "debug-session",
-				"hypothesisId": "J,K"
-			}))
-			log_file_end.close()
-		# #endregion
+		# Structured logging via CursorLogManager
+		var log_manager = get_node_or_null("/root/CursorLogManager")
+		if log_manager:
+			log_manager.log_structured(
+				"CombatManager.gd:361",
+				"COMBAT END CHECK - ALL HEROES DEAD",
+				{"all_enemies_dead": false, "all_heroes_dead": true},
+				"debug-session",
+				"J,K"
+			)
 		return {"ended": true, "victory": false}
 		
 	return {"ended": false, "victory": false}
@@ -532,22 +866,35 @@ func _end_combat(victory: bool):
 	in_combat = false
 	var enemies = current_combat.get("enemies", [])
 	
-	# #region agent log
-	var log_file_ec = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.READ_WRITE)
-	if log_file_ec:
-		log_file_ec.seek_end()
-		log_file_ec.store_line(JSON.stringify({
-			"location": "CombatManager.gd:367",
-			"message": "COMBAT ENDED",
-			"data": {
-				"victory": victory
-			},
-			"timestamp": Time.get_ticks_msec(),
-			"sessionId": "debug-session",
-			"hypothesisId": "K"
-		}))
-		log_file_ec.close()
-	# #endregion
+	# Clear all DoTs when combat ends
+	var dot_mgr = get_node_or_null("/root/DoTManager")
+	if dot_mgr:
+		# Clear DoTs from all heroes
+		var party_mgr = get_node_or_null("/root/PartyManager")
+		if party_mgr:
+			for hero in party_mgr.heroes:
+				dot_mgr.clear_target_dots(hero.id)
+		
+		# Clear DoTs from all enemies
+		for enemy in enemies:
+			var enemy_id = enemy.get("instance_id", "")
+			if enemy_id != "":
+				dot_mgr.clear_target_dots(enemy_id)
+	
+	# Clear pet attack cooldowns
+	pet_attack_cooldowns.clear()
+	pet_target_lock.clear()
+	
+	# Structured logging via CursorLogManager
+	var log_manager = get_node_or_null("/root/CursorLogManager")
+	if log_manager:
+		log_manager.log_structured(
+			"CombatManager.gd:367",
+			"COMBAT ENDED",
+			{"victory": victory},
+			"debug-session",
+			"K"
+		)
 	
 	# REVIVE/HEAL HEROES: Ensure heroes aren't left at 0 HP
 	var pm = get_node_or_null("/root/PartyManager")

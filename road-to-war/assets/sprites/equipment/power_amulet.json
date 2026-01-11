@@ -1,0 +1,11 @@
+{
+  "asset_type": "equipment_sprite",
+  "profile": "equipment_overlay",
+  "base_size": [
+    128,
+    128
+  ],
+  "glow_color": "#0070DD",
+  "rarity": "rare",
+  "outline": true
+}

@@ -33,7 +33,7 @@ func _log_debug(source: String, message: String):
 
 # Prestige.gd - Prestige system menu
 
-@onready var prestige_label: Label = $MainPanel/StatsPanel/PrestigeLabel
+@onready var prestige_label: RichTextLabel = $MainPanel/StatsPanel/PrestigeLabel
 @onready var upgrade_grid: GridContainer = $MainPanel/ScrollContainer/UpgradeGrid
 @onready var prestige_button: Button = $MainPanel/PrestigeButton
 @onready var back_button: Button = $MainPanel/BackButton
@@ -61,49 +61,108 @@ func _populate_upgrades():
 	for child in upgrade_grid.get_children():
 		child.queue_free()
 		
-	var dm = get_node_or_null("/root/DataManager")
 	var prem = get_node_or_null("/root/PrestigeManager")
 	var ut = get_node_or_null("/root/UITheme")
 	
-	if not dm or not prem or not ut: return
+	if not prem or not ut: return
 	
-	var config = dm.get_data("prestige-config")
-	if not config: return
+	# Get all upgrades with their status
+	var all_upgrades = prem.get_all_upgrades()
 	
-	var upgrades = config.get("upgrades", [])
-	for up_data in upgrades:
-		# Use UIBuilder for upgrade buttons
-		var ui_builder = get_node_or_null("/root/UIBuilder")
-		var btn: Button
-		var up_id = up_data.get("id")
-		var is_purchased = prem.has_upgrade(up_id)
+	for up_data in all_upgrades:
+		var up_id = up_data.get("id", "")
+		if up_id == "":
+			continue
 		
-		if ui_builder:
-			var bg_color = ut.COLORS["frame"] if is_purchased else ut.COLORS["frame_dark"]
-			var border_color = Color.GREEN if is_purchased else ut.COLORS["gold_border"]
-			var border_width = 2 if is_purchased else 1
-			
-			btn = ui_builder.create_button(upgrade_grid, "%s\nCost: %d\n%s" % [up_data.get("name"), up_data.get("cost"), up_data.get("description")], Vector2(250, 100), Vector2.ZERO, {
-				"bg_color": bg_color,
-				"border_color": border_color
-			})
-		else:
-			# Fallback to manual creation
-			btn = Button.new()
-			btn.custom_minimum_size = Vector2(250, 100)
-			btn.text = "%s\nCost: %d\n%s" % [up_data.get("name"), up_data.get("cost"), up_data.get("description")]
-			upgrade_grid.add_child(btn)
+		var is_purchased = up_data.get("purchased", false)
+		var can_afford = up_data.get("can_afford", false)
+		var cost = up_data.get("cost", 0)
+		var upgrade_name = up_data.get("name", "Unknown")
+		var description = up_data.get("description", "")
 		
-		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		# Create upgrade panel with WoW styling
+		var panel = Panel.new()
+		panel.custom_minimum_size = Vector2(280, 120)
 		
-		# Check if purchased
+		# Determine colors based on state
+		var bg_color: Color
+		var border_color: Color
+		var border_width: int
+		
 		if is_purchased:
-			if not ui_builder:
-				btn.add_theme_stylebox_override("normal", ut.get_stylebox_panel(ut.COLORS["frame"], Color.GREEN, 2))
-			btn.disabled = true
+			bg_color = Color(0.1, 0.3, 0.1, 0.9)  # Dark green background
+			border_color = Color.GREEN
+			border_width = 2
+		elif can_afford:
+			bg_color = ut.COLORS["frame_dark"]
+			border_color = ut.COLORS["gold"]
+			border_width = 2
 		else:
-			if not ui_builder:
-				btn.add_theme_stylebox_override("normal", ut.get_stylebox_panel(ut.COLORS["frame_dark"], ut.COLORS["gold_border"], 1))
+			bg_color = Color(0.1, 0.1, 0.1, 0.7)  # Very dark background
+			border_color = Color(0.3, 0.3, 0.3)  # Gray border
+			border_width = 1
+		
+		panel.add_theme_stylebox_override("panel", ut.get_stylebox_panel(bg_color, border_color, border_width))
+		upgrade_grid.add_child(panel)
+		
+		# Create content container
+		var vbox = VBoxContainer.new()
+		vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+		vbox.add_theme_constant_override("separation", 5)
+		vbox.add_theme_constant_override("offset_left", 8)
+		vbox.add_theme_constant_override("offset_top", 8)
+		vbox.add_theme_constant_override("offset_right", -8)
+		vbox.add_theme_constant_override("offset_bottom", -8)
+		panel.add_child(vbox)
+		
+		# Name label (bold, gold if can afford)
+		var name_label = Label.new()
+		if can_afford and not is_purchased:
+			name_label.add_theme_color_override("font_color", Color.GOLD)
+		elif is_purchased:
+			name_label.add_theme_color_override("font_color", Color.GREEN)
+		else:
+			name_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+		name_label.add_theme_font_size_override("font_size", 14)
+		name_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		name_label.add_theme_constant_override("outline_size", 1)
+		name_label.text = upgrade_name
+		vbox.add_child(name_label)
+		
+		# Cost label
+		var cost_label = Label.new()
+		if can_afford and not is_purchased:
+			cost_label.add_theme_color_override("font_color", Color.GOLD)
+		else:
+			cost_label.add_theme_color_override("font_color", Color(0.8, 0.6, 0.2))
+		cost_label.add_theme_font_size_override("font_size", 12)
+		cost_label.text = "Cost: %d Points" % cost
+		vbox.add_child(cost_label)
+		
+		# Description label
+		var desc_label = Label.new()
+		desc_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+		desc_label.add_theme_font_size_override("font_size", 11)
+		desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		desc_label.text = description
+		desc_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		vbox.add_child(desc_label)
+		
+		# Status indicator
+		if is_purchased:
+			var status_label = Label.new()
+			status_label.add_theme_color_override("font_color", Color.GREEN)
+			status_label.add_theme_font_size_override("font_size", 12)
+			status_label.text = "✓ PURCHASED"
+			vbox.add_child(status_label)
+		
+		# Make panel clickable if not purchased
+		if not is_purchased:
+			var btn = Button.new()
+			btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+			btn.flat = true
+			btn.mouse_filter = Control.MOUSE_FILTER_PASS  # Allow clicks to pass through
+			panel.add_child(btn)
 			btn.pressed.connect(_on_upgrade_button_pressed.bind(up_id))
 
 func _on_upgrade_button_pressed(upgrade_id: String):
@@ -115,21 +174,47 @@ func _update_display():
 	if not prem: return
 	
 	var points = prem.get_prestige_points()
-	var text = "Available Points: %d\n" % points
-	text += "Prestige Level: %d\n" % prem.get_prestige_level()
-	text += "Next Prestige: +%d Points" % _calculate_pending_points()
-	prestige_label.text = text
+	var prestige_level = prem.get_prestige_level()
 	
-	# Enable/disable prestige button based on availability
-	prestige_button.disabled = !prem.can_prestige()
+	# Get detailed pending points breakdown
+	var breakdown = prem.get_pending_prestige_points_breakdown()
+	
+	var text = "[color=#FFD700]Available Points: %d[/color]\n" % points
+	text += "[color=#FFD700]Prestige Level: %d[/color]\n" % prestige_level
+	text += "\n[color=#00FF00]Next Prestige Rewards:[/color]\n"
+	text += "  Base: %d\n" % breakdown.get("base", 0)
+	if breakdown.get("level_bonus", 0) > 0:
+		text += "  Level Bonus: +%d\n" % breakdown.get("level_bonus", 0)
+	if breakdown.get("equipment_bonus", 0) > 0:
+		text += "  Equipment: +%d\n" % breakdown.get("equipment_bonus", 0)
+	if breakdown.get("achievement_bonus", 0) > 0:
+		text += "  Achievements: +%d\n" % breakdown.get("achievement_bonus", 0)
+	if breakdown.get("essence_bonus", 0) > 0:
+		text += "  Essence: +%d\n" % breakdown.get("essence_bonus", 0)
+	if breakdown.get("mile_bonus", 0) > 0:
+		text += "  Miles: +%d\n" % breakdown.get("mile_bonus", 0)
+	
+	var multiplier = breakdown.get("multiplier", 1.0)
+	if multiplier > 1.0:
+		text += "  [color=#FFA500]Multiplier: %.2fx[/color]\n" % multiplier
+	
+	text += "[color=#FFD700]Total: +%d Points[/color]" % breakdown.get("total", 0)
+	
+	if prestige_label:
+		prestige_label.bbcode_enabled = true
+		prestige_label.text = text
+	
+	# Enable/disable prestige button based on availability and requirements
+	var can_prestige = prem.can_prestige() and breakdown.get("total", 0) > 0
+	if prestige_button:
+		prestige_button.disabled = !can_prestige
 
 func _calculate_pending_points() -> int:
-	# Simplified logic for now
-	var pm = get_node_or_null("/root/PartyManager")
-	if not pm: return 0
-	var total_levels = 0
-	for h in pm.heroes: total_levels += h.level
-	return int(total_levels / 10.0)
+	# Use PrestigeManager's full calculation
+	var prem = get_node_or_null("/root/PrestigeManager")
+	if not prem: return 0
+	var breakdown = prem.get_pending_prestige_points_breakdown()
+	return breakdown.get("total", 0)
 
 func _on_upgrade_purchased(upgrade_id: String):
 	var prem = get_node_or_null("/root/PrestigeManager")
@@ -141,8 +226,148 @@ func _on_upgrade_purchased(upgrade_id: String):
 		if am: am.play_sfx("buy_item")
 
 func _on_prestige_pressed():
-	"""Handle prestige reset"""
+	"""Handle prestige reset with confirmation dialog"""
 	_log_info("Prestige", "Prestige reset requested")
+	var prem = get_node_or_null("/root/PrestigeManager")
+	if not prem: return
+	
+	var breakdown = prem.get_pending_prestige_points_breakdown()
+	var pending_points = breakdown.get("total", 0)
+	
+	if pending_points <= 0:
+		_log_warn("Prestige", "Cannot prestige - no points pending")
+		return
+	
+	# Show confirmation dialog
+	_show_prestige_confirmation_dialog(pending_points, breakdown)
+
+func _show_prestige_confirmation_dialog(pending_points: int, breakdown: Dictionary):
+	"""Show WoW-style confirmation dialog for prestige"""
+	var ui_builder = get_node_or_null("/root/UIBuilder")
+	var ui_theme = get_node_or_null("/root/UITheme")
+	if not ui_builder or not ui_theme:
+		# Fallback: Direct prestige without dialog
+		_confirm_prestige()
+		return
+	
+	# Create confirmation dialog panel
+	var dialog_panel = Panel.new()
+	dialog_panel.set_anchors_preset(Control.PRESET_CENTER)
+	dialog_panel.custom_minimum_size = Vector2(500, 350)
+	dialog_panel.position = Vector2(-250, -175)
+	dialog_panel.z_index = 1000
+	dialog_panel.add_theme_stylebox_override("panel", ui_theme.get_stylebox_panel(
+		ui_theme.COLORS["frame_dark"],
+		ui_theme.COLORS["gold_border"],
+		3
+	))
+	add_child(dialog_panel)
+	
+	# Title
+	var title = Label.new()
+	title.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	title.offset_top = 20
+	title.offset_left = 20
+	title.offset_right = -20
+	title.offset_bottom = 60
+	title.add_theme_color_override("font_color", Color.GOLD)
+	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	title.add_theme_constant_override("outline_size", 2)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.text = "PRESTIGE CONFIRMATION"
+	dialog_panel.add_child(title)
+	
+	# Message with breakdown
+	var message = RichTextLabel.new()
+	message.set_anchors_preset(Control.PRESET_FULL_RECT)
+	message.offset_left = 30
+	message.offset_top = 70
+	message.offset_right = -30
+	message.offset_bottom = -100
+	message.bbcode_enabled = true
+	message.fit_content = true
+	message.scroll_active = true
+	
+	var msg_text = "[color=#FFFFFF]Are you sure you want to Prestige?\n\n[/color]"
+	msg_text += "[color=#FFD700]You will gain:[/color]\n"
+	msg_text += "  [color=#00FF00]+%d Prestige Points[/color]\n" % pending_points
+	msg_text += "\n[color=#FFA500]Breakdown:[/color]\n"
+	msg_text += "  Base: %d\n" % breakdown.get("base", 0)
+	if breakdown.get("level_bonus", 0) > 0:
+		msg_text += "  Level Bonus: +%d\n" % breakdown.get("level_bonus", 0)
+	if breakdown.get("equipment_bonus", 0) > 0:
+		msg_text += "  Equipment: +%d\n" % breakdown.get("equipment_bonus", 0)
+	if breakdown.get("achievement_bonus", 0) > 0:
+		msg_text += "  Achievements: +%d\n" % breakdown.get("achievement_bonus", 0)
+	if breakdown.get("essence_bonus", 0) > 0:
+		msg_text += "  Essence: +%d\n" % breakdown.get("essence_bonus", 0)
+	if breakdown.get("mile_bonus", 0) > 0:
+		msg_text += "  Miles: +%d\n" % breakdown.get("mile_bonus", 0)
+	var multiplier = breakdown.get("multiplier", 1.0)
+	if multiplier > 1.0:
+		msg_text += "  [color=#FFA500]Multiplier: %.2fx[/color]\n" % multiplier
+	msg_text += "\n[color=#FF0000]All progress will reset![/color]"
+	
+	message.text = msg_text
+	dialog_panel.add_child(message)
+	
+	# Buttons
+	var button_container = HBoxContainer.new()
+	button_container.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	button_container.offset_left = 30
+	button_container.offset_right = -30
+	button_container.offset_bottom = -20
+	button_container.offset_top = -80
+	button_container.add_theme_constant_override("separation", 20)
+	button_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	dialog_panel.add_child(button_container)
+	
+	# Confirm button
+	var confirm_btn = Button.new()
+	confirm_btn.custom_minimum_size = Vector2(150, 40)
+	confirm_btn.text = "CONFIRM"
+	confirm_btn.add_theme_stylebox_override("normal", ui_theme.get_stylebox_panel(
+		Color(0.2, 0.6, 0.2, 0.9),
+		Color.GREEN,
+		2
+	))
+	confirm_btn.add_theme_stylebox_override("hover", ui_theme.get_stylebox_panel(
+		Color(0.3, 0.7, 0.3, 0.9),
+		Color.GREEN,
+		2
+	))
+	confirm_btn.add_theme_color_override("font_color", Color.WHITE)
+	confirm_btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	confirm_btn.add_theme_constant_override("outline_size", 1)
+	confirm_btn.pressed.connect(_confirm_prestige.bind(dialog_panel))
+	button_container.add_child(confirm_btn)
+	
+	# Cancel button
+	var cancel_btn = Button.new()
+	cancel_btn.custom_minimum_size = Vector2(150, 40)
+	cancel_btn.text = "CANCEL"
+	cancel_btn.add_theme_stylebox_override("normal", ui_theme.get_stylebox_panel(
+		ui_theme.COLORS["frame_dark"],
+		ui_theme.COLORS["gold_border"],
+		1
+	))
+	cancel_btn.add_theme_stylebox_override("hover", ui_theme.get_stylebox_panel(
+		Color(0.15, 0.15, 0.18, 0.95),
+		ui_theme.COLORS["gold"],
+		1
+	))
+	cancel_btn.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+	cancel_btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	cancel_btn.add_theme_constant_override("outline_size", 1)
+	cancel_btn.pressed.connect(dialog_panel.queue_free)
+	button_container.add_child(cancel_btn)
+
+func _confirm_prestige(dialog_panel: Node = null):
+	"""Actually perform prestige reset"""
+	if dialog_panel:
+		dialog_panel.queue_free()
+	
 	var prem = get_node_or_null("/root/PrestigeManager")
 	var sm = get_node_or_null("/root/SceneManager")
 	

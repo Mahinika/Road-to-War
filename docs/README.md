@@ -38,18 +38,15 @@ Research documents, analysis findings, and investigation reports:
 - Pixel art sprite size research
 - And more...
 
-#### Plans (`plans/`)
-Implementation plans and roadmaps:
-- 5-man team implementation plan
-- Toolset consolidation phases (PHASE1-PHASE7)
-
 #### Architecture (`architecture/`)
 System architecture documentation (to be organized)
 
-#### Toolset (`toolset/`)
-Toolset consolidation planning:
-- TOOLSET-CONSOLIDATION-MASTER-PLAN.md
-- TOOLSET-INDEX.md
+### Tools & Assets
+
+#### Asset Generation
+- **[ASSET_GENERATION_TOOL.md](ASSET_GENERATION_TOOL.md)** - Comprehensive documentation for the asset generation tool (`generate-all-assets.js`)
+- **[ASSET_GENERATION_SUMMARY.md](ASSET_GENERATION_SUMMARY.md)** - Summary of generated assets
+- **[ASSET_INTEGRATION_COMPLETE.md](ASSET_INTEGRATION_COMPLETE.md)** - Asset integration status
 
 ### Reference (`reference/`)
 Reference materials:
@@ -67,9 +64,7 @@ docs/
 │   ├── implementation/   # Implementation reports and bug fixes
 │   └── guides/          # Setup and usage guides
 ├── research/            # Research documents and analysis
-├── plans/               # Implementation plans
 ├── architecture/        # Architecture documentation
-├── toolset/            # Toolset consolidation docs
 └── reference/          # Reference materials
 ```
 
@@ -81,7 +76,6 @@ docs/
 **Bug Fixes**: See `consolidated/implementation/BUGS_FOUND_AND_FIXED.md`
 **Setup Guides**: See `consolidated/guides/`
 **Research**: See `research/`
-**Plans**: See `plans/`
 
 ### By File Type
 
@@ -102,7 +96,7 @@ The **memory-bank/** directory contains the project's living documentation:
 ## Contributing
 
 When adding new documentation:
-1. Place in appropriate category (`consolidated/`, `research/`, `plans/`, etc.)
+1. Place in appropriate category (`consolidated/`, `research/`, etc.)
 2. Update this README if adding new major sections
 3. Link from relevant existing docs
 4. Follow existing naming conventions

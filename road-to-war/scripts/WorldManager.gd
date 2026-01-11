@@ -35,11 +35,14 @@ func _log_debug(source: String, message: String):
 
 signal mile_changed(current_mile, max_mile_reached, previous_mile)
 signal combat_triggered(enemy)
+signal shop_encountered(shop_data)
+signal treasure_encountered(treasure_data)
+signal quest_encountered(quest_data)
 signal mile_100_arrived()
 signal victory_achieved()
 
 var current_segment: int = 0
-var current_mile: int = 0
+var current_mile: int = 1  # Start at mile 1 to show enemy variety immediately
 var max_mile_reached: int = 0
 var distance_traveled: float = 0.0
 var segments: Dictionary = {}
@@ -50,7 +53,7 @@ var claimed_milestones: Array = []
 var encounter_cooldown: float = 0.0 # Time in seconds until next possible encounter
 var awaiting_final_boss_victory: bool = false
 
-var scroll_speed: float = 200.0
+var scroll_speed: float = 300.0  # Increased from 200 for faster mile progression
 var segment_width: float = 800.0
 var segment_height: float = 1080.0
 
@@ -97,22 +100,59 @@ func update_movement(delta: float):
 
 func _trigger_random_encounter():
 	_log_info("WorldManager", "Attempting to trigger random encounter...")
-	
+
+	# Check encounter type probabilities from world-config
+	var dm = get_node_or_null("/root/DataManager")
+	if not dm:
+		_log_error("WorldManager", "DataManager not found")
+		_trigger_combat_encounter()
+		return
+
+	var world_config = dm.get_data("world-config")
+	var encounter_config = world_config.get("encounters", {}) if world_config else {}
+
+	var rand_val = randf()
+	var cumulative = 0.0
+
+	# Shop encounters
+	cumulative += encounter_config.get("shopSpawnChance", 0.1)
+	if rand_val < cumulative:
+		_trigger_shop_encounter()
+		return
+
+	# Treasure encounters
+	cumulative += encounter_config.get("treasureSpawnChance", 0.15)
+	if rand_val < cumulative:
+		_trigger_treasure_encounter()
+		return
+
+	# Quest encounters
+	cumulative += encounter_config.get("questSpawnChance", 0.05)
+	if rand_val < cumulative:
+		_trigger_quest_encounter()
+		return
+
+	# Default: Combat encounter
+	_trigger_combat_encounter()
+
+func _trigger_combat_encounter():
+	_log_info("WorldManager", "Triggering combat encounter")
+
 	var group_size = randi_range(1, 2)
 	if current_mile >= 20: group_size = randi_range(4, 6)
 	elif current_mile >= 10: group_size = randi_range(3, 5)
 	elif current_mile >= 5: group_size = randi_range(2, 4)
-	
+
 	var enemy_group = []
 	var roles_needed = []
-	
+
 	if group_size > 1:
 		roles_needed.append("melee") # At least one melee
 		if group_size >= 3:
 			roles_needed.append("ranged")
 		if group_size >= 4:
 			roles_needed.append("healer")
-	
+
 	for i in range(group_size):
 		var preferred_role = roles_needed[i] if i < roles_needed.size() else ""
 		var enemy = _get_random_enemy(preferred_role)
@@ -121,10 +161,137 @@ func _trigger_random_encounter():
 			# Ensure unique instance ID for combat logic
 			enemy_instance["instance_id"] = "%s_%d_%d" % [enemy_instance["id"], current_mile, i]
 			enemy_group.append(enemy_instance)
-	
+
 	if not enemy_group.is_empty():
 		trigger_combat(enemy_group)
 		encounter_cooldown = 3.0 # Significantly reduced downtime between fights
+
+func _trigger_shop_encounter():
+	_log_info("WorldManager", "Triggering shop encounter")
+
+	# Generate shop data based on mile
+	var shop_data = _generate_shop_data()
+	shop_encountered.emit(shop_data)
+	encounter_cooldown = 5.0 # Shops take longer to complete
+
+func _trigger_treasure_encounter():
+	_log_info("WorldManager", "Triggering treasure encounter")
+
+	var treasure_data = _generate_treasure_data()
+	treasure_encountered.emit(treasure_data)
+	encounter_cooldown = 2.0
+
+func _trigger_quest_encounter():
+	_log_info("WorldManager", "Triggering quest encounter")
+
+	var quest_data = _generate_quest_data()
+	quest_encountered.emit(quest_data)
+	encounter_cooldown = 4.0
+
+func _generate_shop_data() -> Dictionary:
+	# Generate shop inventory based on current mile
+	var dm = get_node_or_null("/root/DataManager")
+	var items_data = {}
+	if dm:
+		items_data = dm.get_data("items")
+	var shop_items = []
+
+	if not items_data or items_data.is_empty():
+		return {
+			"type": "general_store",
+			"name": "Traveling Merchant",
+			"items": [],
+			"mile": current_mile
+		}
+
+	# Select 4-6 random items appropriate for current mile
+	# Items are organized by categories: weapons, armor, accessories, consumables
+	var max_item_level = current_mile * 2
+	var available_items = []
+
+	# Iterate through item categories
+	var categories = ["weapons", "armor", "accessories", "consumables"]
+	for category in categories:
+		if not items_data.has(category):
+			continue
+		
+		var category_items = items_data[category]
+		if not category_items is Dictionary:
+			continue
+		
+		# Iterate through items in this category
+		for item_id in category_items:
+			var item = category_items[item_id]
+			if not item is Dictionary:
+				continue
+			
+			# Create a copy of item to avoid modifying the original
+			var shop_item = item.duplicate()
+			
+			# Ensure item has id field (use item_id if missing)
+			if not shop_item.has("id"):
+				shop_item["id"] = item_id
+			
+			# Check item level (items use "level" not "itemLevel", default to 1 if missing)
+			var item_level = shop_item.get("level", 1)
+			if item_level <= max_item_level:
+				# Normalize buyPrice - items.json uses "buyValue" for consumables, ShopManager expects "buyPrice"
+				if not shop_item.has("buyPrice"):
+					if shop_item.has("buyValue"):
+						shop_item["buyPrice"] = shop_item["buyValue"]
+					elif shop_item.has("sellValue"):
+						shop_item["buyPrice"] = shop_item["sellValue"] * 2  # Default: buy price is 2x sell value
+				
+				available_items.append(shop_item)
+
+	# Randomly select items for the shop (4-6 items, but at least 1 if any available)
+	var num_items_to_select = min(randi_range(4, 6), available_items.size())
+	if num_items_to_select <= 0 and available_items.size() > 0:
+		num_items_to_select = 1  # At least 1 item if any available
+	elif num_items_to_select <= 0:
+		num_items_to_select = 0  # No items available
+	
+	for i in range(num_items_to_select):
+		if available_items.size() > 0:
+			var random_index = randi() % available_items.size()
+			shop_items.append(available_items[random_index])
+			available_items.remove_at(random_index)
+
+	return {
+		"type": "general_store",
+		"name": "Traveling Merchant",
+		"items": shop_items,
+		"mile": current_mile
+	}
+
+func _generate_treasure_data() -> Dictionary:
+	var gold_amount = current_mile * 10 + randi_range(5, 20)
+
+	# Sometimes include an item
+	var items = []
+	if randf() < 0.3: # 30% chance for item
+		var dm = get_node_or_null("/root/DataManager")
+		var items_data = {}
+		if dm:
+			items_data = dm.get_data("items")
+		if items_data and items_data.size() > 0:
+			var item_keys = items_data.keys()
+			var random_item_key = item_keys[randi() % item_keys.size()]
+			items.append(items_data[random_item_key])
+
+	return {
+		"type": "treasure_chest",
+		"gold": gold_amount,
+		"items": items
+	}
+
+func _generate_quest_data() -> Dictionary:
+	return {
+		"type": "quest_offer",
+		"quest_id": "mile_%d_quest" % current_mile,
+		"title": "Road Challenge",
+		"description": "Defeat enemies along the road to earn rewards."
+	}
 
 func _get_random_enemy(preferred_role: String = "") -> Dictionary:
 	var enemies_data = {}
@@ -146,12 +313,13 @@ func _get_random_enemy(preferred_role: String = "") -> Dictionary:
 		var enemy_type = enemy_info.get("type", "basic")
 		var enemy_role = enemy_info.get("role", "melee")
 		
-		# Define level thresholds for miles
+		# Define level thresholds for miles - adjusted for more variety early game
 		var min_mile = 0
-		if enemy_level >= 50: min_mile = 20
-		elif enemy_level >= 15: min_mile = 10
-		elif enemy_level >= 5: min_mile = 5
-		elif enemy_level >= 2: min_mile = 2
+		if enemy_level >= 50: min_mile = 15  # Dragon appears earlier
+		elif enemy_level >= 15: min_mile = 8   # Elite orc appears earlier
+		elif enemy_level >= 8: min_mile = 4    # Dark knight appears earlier
+		elif enemy_level >= 5: min_mile = 2    # Orc types appear earlier
+		elif enemy_level >= 2: min_mile = 0    # Goblins appear from start
 		
 		# Skip if mile too low for level
 		if mile < min_mile:
@@ -176,7 +344,9 @@ func _get_random_enemy(preferred_role: String = "") -> Dictionary:
 			return _apply_brutal_scaling(enemies_data[enemies_data.keys()[0]].duplicate(), mile)
 	
 	var pool = role_matches if not role_matches.is_empty() else possible_enemies
+	_log_debug("WorldManager", "Enemy selection for mile %d: %d possible enemies (%d role matches)" % [mile, possible_enemies.size(), role_matches.size()])
 	var random_key = pool[randi() % pool.size()]
+	_log_debug("WorldManager", "Selected enemy: %s" % random_key)
 	var enemy = enemies_data[random_key].duplicate()
 	
 	if not enemy.has("id"):
@@ -186,17 +356,17 @@ func _get_random_enemy(preferred_role: String = "") -> Dictionary:
 	enemy = _apply_brutal_scaling(enemy, mile)
 	
 	# Make enemies tankier for better real-time combat visibility
-	# Apply a health multiplier based on mile to make combat last longer
+	# Apply health and defense scaling for progression
 	if enemy.has("stats"):
 		var stats = enemy["stats"]
 		var base_health = stats.get("health", 100)
-		var health_multiplier = 3.0 + (mile * 0.5)  # 3.5x at mile 1, scales up
+		var health_multiplier = 2.0 + (mile * 0.2)  # 2.2x at mile 1, 6.0x at mile 20
 		stats["health"] = int(base_health * health_multiplier)
 		stats["maxHealth"] = stats["health"]
-		
-		# Also reduce hero damage effectiveness by boosting enemy defense
+
+		# Scale enemy defense more reasonably
 		var base_defense = stats.get("defense", 0)
-		stats["defense"] = base_defense + (mile * 2)
+		stats["defense"] = base_defense + (mile * 0.5)  # Much gentler scaling
 	
 	_log_info("WorldManager", "Selected random enemy: %s (Lv %d %s %s) for mile %d. Pool size: %d. HP: %d" % [random_key, enemy.get("level", 1), enemy.get("type", "basic"), enemy.get("role", "melee"), mile, pool.size(), enemy.get("stats", {}).get("health", 0)])
 	return enemy

@@ -39,6 +39,10 @@ func recalculate_hero_stats(hero):
 	else:
 		hero.current_stats = final_stats
 
+# @CRITICAL: Hero stat calculation - core formula used by CombatManager, EquipmentManager, TalentManager
+# Used by: CombatManager (combat calculations), EquipmentManager (equip item), TalentManager (talent allocation)
+# Changing this requires: Update all three systems, recalculate all hero stats, verify combat balance
+# Performance: Called 5x per frame (once per hero), cached during combat, must be optimized (<0.1ms per call)
 func calculate_final_stats(hero, equipment_stats: Dictionary = {}, talent_bonuses: Dictionary = {}) -> Dictionary:
 	var final_stats = {}
 	var base_stats = {}
@@ -95,7 +99,43 @@ func calculate_final_stats(hero, equipment_stats: Dictionary = {}, talent_bonuse
 			final_stats[stat] += talent_bonuses[stat]
 		else:
 			final_stats[stat] = talent_bonuses[stat]
-
+	
+	# Apply party buffs (Arcane Intellect, Power Word: Fortitude, Auras, etc.)
+	var pbs = get_node_or_null("/root/PartyBuffSystem")
+	if pbs:
+		var party_buff_modifiers = pbs.get_stat_modifiers()
+		for stat_name in party_buff_modifiers.keys():
+			var modifier = party_buff_modifiers[stat_name]
+			if final_stats.has(stat_name):
+				# Apply percentage modifier
+				final_stats[stat_name] = int(final_stats[stat_name] * (1.0 + modifier))
+			elif stat_name == "ranged_attack" and final_stats.has("attack"):
+				# Ranged attack modifier applies to attack for hunters
+				final_stats["attack"] = int(final_stats["attack"] * (1.0 + modifier))
+			elif stat_name == "movement_speed":
+				# Movement speed is handled separately, not in final_stats
+				pass
+	
+	# Apply form/stance modifiers (Druid forms, Warrior stances, Rogue stealth)
+	var fs = get_node_or_null("/root/FormSystem")
+	if fs:
+		var form_modifiers = fs.get_stat_modifiers(hero.id if hero is Dictionary == false else hero.get("id", ""))
+		for stat_name in form_modifiers.keys():
+			var modifier = form_modifiers[stat_name]
+			if final_stats.has(stat_name):
+				# Apply multiplier (e.g., 3.0 = 300% = 3x)
+				final_stats[stat_name] = int(final_stats[stat_name] * modifier)
+			elif stat_name == "spell_power" and final_stats.has("intellect"):
+				# Spell power modifier applies to intellect-derived spell power
+				# This will be handled in derived stats
+				pass
+			elif stat_name == "healing" or stat_name == "damage_taken" or stat_name == "threat":
+				# These are combat modifiers, not stat modifiers
+				pass
+			elif stat_name == "attack_speed" or stat_name == "movement_speed":
+				# These are handled separately
+				pass
+			
 	var derived = calculate_derived_stats(final_stats, equipment_stats, talent_bonuses)
 	for stat in derived:
 		if stat == "health":

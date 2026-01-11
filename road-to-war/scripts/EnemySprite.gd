@@ -153,27 +153,35 @@ func setup(p_enemy_data):
 func _apply_visual_style():
 	if not sprite: return
 	
-	var texture_file = "humanoid_9.png" # Default enemy
+	# Try new enemy sprite directory first
+	var texture_file = ""
+	var full_path = ""
 	
 	if enemy_data and "id" in enemy_data:
-		var type_id = str(enemy_data.id).to_lower()
-		if "orc" in type_id: texture_file = "humanoid_8.png"
-		elif "wolf" in type_id: texture_file = "humanoid_7.png"
-		elif "boss" in type_id: texture_file = "humanoid_6.png"
-		
-	var full_path = "res://assets/sprites/" + texture_file
+		var enemy_id = str(enemy_data.id).to_lower()
+		full_path = "res://assets/sprites/enemies/%s.png" % enemy_id
 	
-	if FileAccess.file_exists(full_path):
+	# Load texture
+	if ResourceLoader.exists(full_path):
 		var tex = load(full_path)
 		if tex:
 			sprite.texture = tex
 			sprite.centered = true
-			sprite.offset = Vector2(0, -tex.get_height() / 2.0)
-			sprite.scale = Vector2(1, 1) # Consistent scale of 1
+			# Offset is in local coordinates. With 1.0x scale, -height/2 keeps bottom alignment
+			var tex_height = tex.get_height()
+			sprite.offset = Vector2(0, -tex_height / 2.0)
+			
+			# Scale to match hero size (256x256 visual size)
+			# Heroes use scale 1.0 for 256px sprites, so enemies should match
+			if tex_height == 512:
+				sprite.scale = Vector2(0.5, 0.5)  # 512 * 0.5 = 256, same as heroes
+			else:
+				sprite.scale = Vector2(1.0, 1.0) # Match hero scale for 256px sprites
+			
 			sprite.flip_h = true
 			
-			# Temporary: Disable outlines to debug solid boxes issue
-			if false and sprite.material and sprite.material is ShaderMaterial:
+			# Apply outline shader if available
+			if sprite.material and sprite.material is ShaderMaterial:
 				var mat = sprite.material as ShaderMaterial
 				mat.set_shader_parameter("outline_color", Color(0.8, 0.2, 0.2)) # Enemy Red
 				mat.set_shader_parameter("outline_width", 1.0)
@@ -208,7 +216,8 @@ func _update_status_icons():
 	_last_effects = active.duplicate(true)
 	
 	for child in status_container.get_children():
-		child.queue_free()
+		if is_instance_valid(child):
+			child.queue_free()
 		
 	for type in active:
 		var def = sem.effect_types.get(type, {})

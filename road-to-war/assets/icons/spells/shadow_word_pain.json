@@ -1,0 +1,11 @@
+{
+  "asset_type": "spell_icon",
+  "profile": "spell_icon",
+  "base_size": [
+    48,
+    48
+  ],
+  "glow_color": "#AA44FF",
+  "cooldown_style": "radial",
+  "outline": true
+}

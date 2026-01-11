@@ -4,6 +4,8 @@
  * Based on Dragumagu-style pixel art specifications
  */
 
+import { hexToRgbArray } from './color-utils.js';
+
 export class GlowRenderer {
     constructor() {
         // Class-specific glow colors from style guide
@@ -161,11 +163,7 @@ export class GlowRenderer {
      * @private
      */
     hexToRgb(hex) {
-        return [
-            (hex >> 16) & 0xFF,
-            (hex >> 8) & 0xFF,
-            hex & 0xFF
-        ];
+        return hexToRgbArray(hex);
     }
 
     /**

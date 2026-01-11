@@ -286,7 +286,16 @@ func handle_encounter_interaction(encounter: Dictionary):
 # Handle shop interaction
 func handle_shop_interaction(encounter: Dictionary):
 	if shop_manager and shop_manager.has_method("open_shop"):
-		shop_manager.open_shop(encounter.get("shop_data", {}))
+		# Open the shop with the encounter data
+		var shop_type = encounter.get("type", "general_store")
+		var items = encounter.get("items", [])
+		shop_manager.open_shop(shop_type, items)
+
+		# Transition to shop scene
+		if scene_manager:
+			_fade_transition(true, 0.3, func():
+				scene_manager.change_scene("res://scenes/Shop.tscn", 0.0)
+				_fade_transition(false, 0.3))
 
 # Handle quest interaction
 func handle_quest_interaction(encounter: Dictionary):
@@ -377,26 +386,34 @@ func _fade_transition(fade_out: bool, duration: float, callback: Callable = Call
 			callback.call()
 		return
 	
-	# Create fade overlay
+	# Create fade overlay - add to root so it survives scene transitions
 	var fade_overlay = ColorRect.new()
 	fade_overlay.color = Color.BLACK
 	fade_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	world_scene.add_child(fade_overlay)
+	get_tree().root.add_child(fade_overlay)
 	
 	var start_alpha = 0.0 if fade_out else 1.0
 	var end_alpha = 1.0 if fade_out else 0.0
 	
 	fade_overlay.modulate.a = start_alpha
 	
-	var tween = world_scene.create_tween()
+	# Create tween from root to avoid issues with scene transitions
+	var tween = get_tree().root.create_tween()
 	tween.tween_property(fade_overlay, "modulate:a", end_alpha, duration)
 	if callback.is_valid():
 		tween.tween_callback(func():
-			callback.call()
-			fade_overlay.queue_free())
+			# Validate before accessing captured references
+			if is_instance_valid(fade_overlay):
+				fade_overlay.queue_free()
+			if callback.is_valid():
+				callback.call()
+		)
 	else:
-		tween.tween_callback(fade_overlay.queue_free)
+		tween.tween_callback(func():
+			if is_instance_valid(fade_overlay):
+				fade_overlay.queue_free()
+		)
 
 # Check all interaction zones for proximity
 func check_all_interactions(party_position: Vector2) -> Array:

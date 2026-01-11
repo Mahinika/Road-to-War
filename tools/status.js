@@ -17,18 +17,17 @@ async function main() {
 
   const checks = [
     ["package.json", await exists("package.json")],
-    ["vite.config.js", await exists("vite.config.js")],
-    ["public/index.html", await exists("public/index.html")],
-    ["src/main.js", await exists("src/main.js")],
-    ["electron/main.js", await exists("electron/main.js")],
+    ["road-to-war/project.godot", await exists("road-to-war/project.godot")],
+    ["road-to-war/scripts/", await exists("road-to-war/scripts/")],
+    ["road-to-war/scenes/", await exists("road-to-war/scenes/")],
   ];
 
   const pad = (s, n) => (s + " ".repeat(n)).slice(0, n);
 
-  console.log(`${pkg.name}@${pkg.version}`);
+  console.log(`${pkg.name}@${pkg.version} - Godot Game`);
   console.log(`node ${process.version}`);
   console.log("");
-  console.log("Key files:");
+  console.log("Godot Project Status:");
   for (const [p, ok] of checks) {
     console.log(`- ${pad(p, 22)} ${ok ? "OK" : "MISSING"}`);
   }

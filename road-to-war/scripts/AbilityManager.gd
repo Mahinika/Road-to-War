@@ -153,6 +153,30 @@ func _select_tank_ability(hero, available: Array, enemies: Array, _target: Dicti
 	var self_hp_pct: float = float(hero.current_stats.get("health", 0)) / max(1.0, max_hp)
 	var target_casting := _is_target_casting(_target)
 	
+	# Check if tank needs to taunt (enemy is not targeting tank)
+	var needs_taunt := false
+	if not _target.is_empty():
+		var ts = get_node_or_null("/root/ThreatSystem")
+		var cm = get_node_or_null("/root/CombatManager")
+		if ts and cm and cm.in_combat and not cm.current_combat.is_empty():
+			var enemy_instance_id = _target.get("instance_id", _target.get("id", ""))
+			var highest_threat_hero = ts.get_highest_threat_hero(enemy_instance_id)
+			if highest_threat_hero.is_empty() or highest_threat_hero.get("id", "") != hero.id:
+				needs_taunt = true
+	
+	# Prioritize taunt if needed
+	if needs_taunt:
+		if hero.class_id == "warrior":
+			if "taunt" in available and _can_afford(hero.id, "taunt", rm):
+				return "taunt"
+			if "challenging_shout" in available and _can_afford(hero.id, "challenging_shout", rm) and enemy_count >= 2:
+				return "challenging_shout"
+		elif hero.class_id == "paladin":
+			if "righteous_defense" in available and _can_afford(hero.id, "righteous_defense", rm):
+				return "righteous_defense"
+			if "hand_of_reckoning" in available and _can_afford(hero.id, "hand_of_reckoning", rm):
+				return "hand_of_reckoning"
+	
 	var best_ability := "auto_attack"
 	var best_score := -999999.0
 	var scored: Array = [] # [{name: String, score: float}]
@@ -161,6 +185,17 @@ func _select_tank_ability(hero, available: Array, enemies: Array, _target: Dicti
 		var def := get_ability_definition(hero.id, ability_name)
 		if ability_name != "auto_attack" and def.is_empty():
 			continue
+		
+		# Skip abilities that require conditions not met
+		if def.get("requiresLowHP", false):
+			var target_hp_pct: float = 1.0
+			if not _target.is_empty():
+				var target_max_hp = float(_target.get("stats", {}).get("maxHealth", 100))
+				var target_current_hp = float(_target.get("current_health", 0))
+				target_hp_pct = target_current_hp / max(1.0, target_max_hp)
+			var threshold = def.get("lowHPThreshold", 0.2)
+			if target_hp_pct > threshold:
+				continue  # Skip Execute if target HP is too high
 		
 		var score := _score_tank_candidate(hero, ability_name, def, enemy_count, aoe_needed, self_hp_pct, target_casting, rm)
 		scored.append({"name": ability_name, "score": score})
@@ -376,11 +411,12 @@ func _score_healer_candidate(hero, ability_name: String, def: Dictionary, metric
 	const W_SINGLE_HEAL := 210.0
 	const W_AOE_HEAL := 180.0
 	const W_SHIELD := 150.0
-	const W_DAMAGE_SAFE := 35.0
+	const W_DAMAGE_SAFE := 8.0  # Reduced from 35.0 - healers should prioritize healing over DPS
 	const W_DAMAGE_UNSAFE_PENALTY := 210.0
 	const W_COST_PENALTY := 35.0
 	const W_OVERHEAL_PENALTY := 55.0
 	const W_LOW_MANA_PENALTY := 60.0
+	const W_HEALING_PREFERENCE := 30.0  # Base preference for healing abilities even when safe
 	
 	var lowest_hp_pct := float(metrics.get("lowest_hp_pct", 1.0))
 	var count_wounded := int(metrics.get("count_wounded", 0))
@@ -423,6 +459,8 @@ func _score_healer_candidate(hero, ability_name: String, def: Dictionary, metric
 		if count_critical >= 2:
 			score += 45.0
 		score -= W_OVERHEAL_PENALTY * overheal
+		# Prefer healing abilities even when safe (preventive healing)
+		score += W_HEALING_PREFERENCE
 	elif ability_type in ["heal", "heal_attack"]:
 		score += 25.0
 		score += W_SINGLE_HEAL * need_single
@@ -431,10 +469,15 @@ func _score_healer_candidate(hero, ability_name: String, def: Dictionary, metric
 		score -= (W_OVERHEAL_PENALTY * 0.75) * overheal
 		if ability_type == "heal_attack" and safe_to_dps:
 			score += 20.0
+		# Prefer healing abilities even when safe (preventive healing)
+		score += W_HEALING_PREFERENCE
 	elif is_shield_like:
 		score += 15.0
 		score += W_SHIELD * need_single
 		score += 60.0 * danger
+		# Prefer shields even when safe (preventive mitigation)
+		if safe_to_dps:
+			score += W_HEALING_PREFERENCE * 0.5
 	
 	# Damage preference (when safe).
 	var is_healing_or_mitigation := (ability_type in ["heal", "aoe_heal", "heal_attack"]) or is_shield_like
@@ -495,9 +538,31 @@ func _select_dps_ability(hero, available: Array, enemies: Array, _target: Dictio
 			if "aimed_shot" in available and _can_afford(hero.id, "aimed_shot", rm): return "aimed_shot" # Burst
 			if "steady_shot" in available and _can_afford(hero.id, "steady_shot", rm): return "steady_shot" # Filler
 		"warrior":
+			# Execute when target is low HP
+			if "execute" in available:
+				var execute_def = get_ability_definition(hero.id, "execute")
+				if not execute_def.is_empty() and _can_afford(hero.id, "execute", rm):
+					var target_hp_pct: float = 1.0
+					if not _target.is_empty():
+						var target_max_hp = float(_target.get("stats", {}).get("maxHealth", 100))
+						var target_current_hp = float(_target.get("current_health", 0))
+						target_hp_pct = target_current_hp / max(1.0, target_max_hp)
+					var threshold = execute_def.get("lowHPThreshold", 0.2)
+					if target_hp_pct <= threshold:
+						return "execute"
 			if "mortal_strike" in available and _can_afford(hero.id, "mortal_strike", rm): return "mortal_strike" # Spender
 			if "bloodthirst" in available and _can_afford(hero.id, "bloodthirst", rm): return "bloodthirst" # Spender
 			if "rend" in available and _can_afford(hero.id, "rend", rm): return "rend" # DOT
+		"rogue":
+			# Check combo points for finishers
+			var cps = get_node_or_null("/root/ComboPointSystem")
+			if cps:
+				# Use finisher if we have combo points
+				if cps.has_combo_points(hero.id, 3) and "eviscerate" in available and _can_afford(hero.id, "eviscerate", rm):
+					return "eviscerate"
+				# Build combo points
+				if "mutilate" in available and _can_afford(hero.id, "mutilate", rm): return "mutilate" # Strong Builder
+				if "sinister_strike" in available and _can_afford(hero.id, "sinister_strike", rm): return "sinister_strike" # Builder
 			
 	return available[0]
 
@@ -574,6 +639,11 @@ func get_available_abilities(hero) -> Array:
 		if rm and ability_name != "auto_attack":
 			if not _can_afford(hero.id, ability_name, rm):
 				continue
+		
+		# Form/stance gating (check if ability is allowed in current form)
+		var fs = get_node_or_null("/root/FormSystem")
+		if fs and not fs.is_ability_allowed(hero.id, ability_name):
+			continue
 		
 		filtered.append(ability_name)
 	

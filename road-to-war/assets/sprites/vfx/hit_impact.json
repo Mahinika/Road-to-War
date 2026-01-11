@@ -1,0 +1,11 @@
+{
+  "asset_type": "impact_fx",
+  "profile": "projectile_magic",
+  "base_size": [
+    64,
+    64
+  ],
+  "glow_color": "#ffffff",
+  "pulse_strength": 0.15,
+  "outline": false
+}

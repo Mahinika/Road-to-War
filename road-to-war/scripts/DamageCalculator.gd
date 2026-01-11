@@ -113,7 +113,7 @@ func calculate_damage(attacker_stats: Dictionary, target_stats: Dictionary, atta
 	return {"damage": damage_val, "is_crit": is_crit, "miss": false}
 
 func deal_damage(attacker, target, damage: float, is_crit: bool):
-	# #region agent log
+	# Get IDs and health values for logging
 	var target_health_before = 0
 	var target_id_str = "unknown"
 	if target is Dictionary:
@@ -128,7 +128,9 @@ func deal_damage(attacker, target, damage: float, is_crit: bool):
 		attacker_id_str = attacker.get("id", "unknown")
 	elif attacker is Object:
 		attacker_id_str = attacker.get("id") if attacker.has_method("get") and attacker.get("id") else (attacker.id if "id" in attacker else "unknown")
-	# #endregion
+	
+	# Structured logging via CursorLogManager (get once for reuse in function)
+	var log_manager = get_node_or_null("/root/CursorLogManager")
 	
 	if target is Dictionary:
 		var key = "current_health" if "current_health" in target else "health"
@@ -138,42 +140,41 @@ func deal_damage(attacker, target, damage: float, is_crit: bool):
 		var health_before = target.current_stats.get(key, 100)
 		target.current_stats[key] = max(0, health_before - damage)
 		
-		# #region agent log
-		var log_file_hit = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
-		if log_file_hit: log_file_hit.seek_end(); log_file_hit.store_line(JSON.stringify({"location":"DamageCalculator.gd:136","message":"Hero took damage","data":{"hero_id":target_id_str,"damage":damage,"health_before":health_before,"health_after":target.current_stats[key],"is_dead":target.current_stats[key] <= 0},"timestamp":Time.get_ticks_msec(),"sessionId":"debug-session","hypothesisId":"Q,R"})); log_file_hit.close()
-		# #endregion
+		# Structured logging via CursorLogManager (hero took damage)
+		if log_manager:
+			log_manager.log_structured(
+				"DamageCalculator.gd:136",
+				"Hero took damage",
+				{"hero_id": target_id_str, "damage": damage, "health_before": health_before, "health_after": target.current_stats[key], "is_dead": target.current_stats[key] <= 0},
+				"debug-session",
+				"Q,R"
+			)
 	
-	# #region agent log
+	# Get target health after damage
 	var target_health_after = 0
 	if target is Dictionary:
 		target_health_after = target.get("current_health", target.get("health", 0))
 	elif target is Object and "current_stats" in target:
 		target_health_after = target.current_stats.get("health", target.current_stats.get("current_health", 0))
 	
-	print("[COMBAT DEBUG] Damage dealt: ", attacker_id_str, " -> ", target_id_str, " dmg:", damage, " health:", target_health_before, "->", target_health_after, " killed:", target_health_after <= 0)
-	var log_file_dd = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
-	if log_file_dd: log_file_dd.seek_end(); log_file_dd.store_line(JSON.stringify({"location":"DamageCalculator.gd:117","message":"Damage dealt","data":{"attacker":attacker_id_str,"target":target_id_str,"damage":damage,"is_crit":is_crit,"health_before":target_health_before,"health_after":target_health_after,"killed":target_health_after <= 0},"timestamp":Time.get_ticks_msec(),"sessionId":"debug-session","hypothesisId":"M,N,O"})); log_file_dd.close()
-	# #endregion
+	# Structured logging via CursorLogManager (damage dealt - reuse log_manager from above)
+	if log_manager:
+		log_manager.log_structured(
+			"DamageCalculator.gd:117",
+			"Damage dealt",
+			{"attacker": attacker_id_str, "target": target_id_str, "damage": damage, "is_crit": is_crit, "health_before": target_health_before, "health_after": target_health_after, "killed": target_health_after <= 0},
+			"debug-session",
+			"M,N,O"
+		)
 		
-	# #region agent log
-	var log_file_emit = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.READ_WRITE)
-	if log_file_emit:
-		log_file_emit.seek_end()
-		log_file_emit.store_line(JSON.stringify({
-			"location": "DamageCalculator.gd:156",
-			"message": "EMITTING damage_applied",
-			"data": {
-				"attacker": attacker_id_str,
-				"target": target_id_str,
-				"damage": damage,
-				"is_crit": is_crit
-			},
-			"timestamp": Time.get_ticks_msec(),
-			"sessionId": "debug-session",
-			"hypothesisId": "I,M"
-		}))
-		log_file_emit.close()
-	# #endregion
+		# Structured logging via CursorLogManager (emitting signal - reuse log_manager from above)
+		log_manager.log_structured(
+			"DamageCalculator.gd:156",
+			"EMITTING damage_applied",
+			{"attacker": attacker_id_str, "target": target_id_str, "damage": damage, "is_crit": is_crit},
+			"debug-session",
+			"I,M"
+		)
 		
 	damage_applied.emit(attacker, target, damage, is_crit)
 	

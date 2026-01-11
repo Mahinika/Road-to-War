@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dpnpts0uj5gei"]
 
-[ext_resource type="Script" path="res://scripts/World.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://bu172lu44r7uj" path="res://scripts/World.gd" id="1_script"]
 
 [node name="World" type="Node2D"]
 script = ExtResource("1_script")
@@ -10,4 +10,3 @@ script = ExtResource("1_script")
 [node name="HeroGroup" type="Node2D" parent="."]
 
 [node name="EnemyGroup" type="Node2D" parent="."]
-position = Vector2(0, 0)

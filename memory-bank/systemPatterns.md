@@ -23,7 +23,7 @@ Central managers coordinate major game systems:
     - Managers communicate via Signals (Godot's event system)
     - Consistent data access via `DataManager` singleton
     - Initialization handled in `_ready()` lifecycle method
-  - **Adoption**: All managers are Autoloads: EquipmentManager, CombatManager, AbilityManager, AnimationManager, AudioManager, CameraManager, BloodlineManager, InteractionManager, MovementManager, ParticleManager, ResourceManager, StatusEffectsManager, PrestigeManager, ShopManager, TalentManager, AchievementManager, LootManager, StatisticsManager, PartyManager, WorldManager
+  - **Adoption**: All managers are Autoloads: EquipmentManager, CombatManager, AbilityManager, AnimationManager, AudioManager, CameraManager, BloodlineManager, InteractionManager, MovementManager, ParticleManager, ResourceManager, StatusEffectsManager, PrestigeManager, ShopManager, TalentManager, AchievementManager, LootManager, StatisticsManager, PartyManager, WorldManager, QuestManager
   - **Benefits**: Automatic singleton access, Godot-native signal system, consistent lifecycle, easier scene integration
 - **Scene Architecture**: Modular scene-based architecture:
   - `road-to-war/scenes/`: All game scenes (`.tscn` files)
@@ -38,14 +38,20 @@ Central managers coordinate major game systems:
   - **Travel Mode**: Handles party formation and road-following
   - **Formation Calculation**: Uses `PartyManager` hero positions for formation calculations
 - **CameraManager**: Dynamic camera system that keeps all 5 party members visible
-- **AbilityManager**: Per-hero abilities, mana system, and ability selection
+- **AbilityManager**: Per-hero abilities, mana system, and ability selection - Enhanced with WotLK ability systems (Execute for Warriors, Combo Points for Rogues, Forms/Stances integration)
 - **StatusEffectsManager**: Status effects system (stun, bleed, poison, shield, regeneration, buffs/debuffs)
+- **ThreatSystem** (`road-to-war/scripts/ThreatSystem.gd`): Threat and aggro management - Enhanced with WotLK taunt system (Warriors: Taunt, Challenging Shout; Paladins: Righteous Defense, Hand of Reckoning), integrated into CombatActions
+- **ComboPointSystem** (`road-to-war/scripts/ComboPointSystem.gd`): Rogue combo point system - Generates combo points from builders, finishers consume combo points, singleton Autoload
+- **FormSystem** (`road-to-war/scripts/FormSystem.gd`): Form/stance system - Druid Forms (Bear, Cat, Moonkin, Tree of Life), Warrior Stances (Battle, Defensive, Berserker), Rogue Stealth, ability filtering based on form/stance, singleton Autoload
+- **PetSystem** (`road-to-war/scripts/PetSystem.gd`): Pet management system - Hunter Pets (Wolf, Cat, Bear), Warlock Demons (Imp, Voidwalker, Succubus, Felhunter, Felguard), pet summoning, healing, damage tracking, singleton Autoload
+- **PartyBuffSystem** (`road-to-war/scripts/PartyBuffSystem.gd`): Party-wide buff management - Arcane Intellect (Mage), Power Word: Fortitude (Priest), Devotion Aura/Retribution Aura (Paladin), Aspect of the Hawk/Cheetah (Hunter), integrated into StatCalculator
 - **LootManager**: Item drops and loot distribution
 - **EquipmentManager**: Per-hero equipment management (heroId → equipment Map)
 - **TalentManager**: Talent point allocation per hero (TBC/WotLK-style trees) - 235 lines
 - **ShopManager**: Shop encounters and item purchasing
+- **QuestManager** (`road-to-war/scripts/QuestManager.gd`): Quest system and meta-task tracking - Handles kill-tasks and distance-tasks (reach_mile), tracks quest progress, grants rewards (gold, experience, talent points), connects to WorldManager (mile changes) and CombatManager (combat ended) for automatic progress updates
 - **AudioManager**: Sound effects and audio management (programmatic generation)
-- **ParticleManager**: Visual effects and particle systems - Enhanced with object pooling for floating text, particle throttling, comprehensive cleanup, emitter validation, and automatic emitter recreation
+- **ParticleManager**: Visual effects and particle systems - Enhanced with object pooling for floating text, particle throttling, comprehensive cleanup, emitter validation, automatic emitter recreation, and comprehensive spell VFX system (projectiles, beams, AOE, self-buffs) with sprite-based fallback support
 - **StatisticsManager**: Player statistics tracking
 - **AchievementManager**: Achievement system and progress tracking
 - **PrestigeManager**: Prestige system and meta-progression - Enhanced with gear/talent integration (`getItemQualityBonus()`, `getItemLevelBoost()`, `getGearEffectiveness()`, `getTalentCostReduction()`, `getPrestigeTalentPoints()`, `getCombatBonus()`)
@@ -62,6 +68,14 @@ Central managers coordinate major game systems:
   - Uses Godot's Sprite2D nodes with layered equipment
   - AnimationPlayer for animations (idle, walk, attack, death)
   - Equipment visuals applied via texture modulation
+  - **Visibility Enforcement (January 2026)**: Explicit `visible = true` and `modulate = Color.WHITE` in `_ready()` and `setup()` to ensure sprites are always visible
+  - **Dynamic Texture Scaling**: `_set_layer_texture()` handles any texture size with calculated scale factors
+  - **Marker2D Anatomy-Based Equipment Attachment (January 2026)**: Equipment layers attach to Marker2D nodes positioned dynamically based on hero body anatomy
+    - `_update_attachment_markers()` calculates Marker2D positions from body sprite dimensions
+    - Positions markers at anatomical locations (head, neck, shoulders, chest, legs, arms, hips)
+    - Equipment layers reparent to markers for proper alignment during animations
+    - Equipment centers on markers (offset 0,0) since markers are at anatomical centers
+    - Markers update automatically when body sprite changes (tier evolution)
 - **AnimationManager** (`road-to-war/scripts/AnimationManager.gd`): Animation system management
   - Uses Godot's AnimationPlayer nodes
   - Loads animation configs from `road-to-war/data/animation-config.json`
@@ -149,6 +163,13 @@ All gameplay values come from external data:
   - Rarity modulation via Color parsing from HEX strings
   - Glow shader parameter application for visual effects
   - Class restriction validation before visual application
+  - **Marker2D Attachment System (January 2026)**: Equipment layers attach to Marker2D nodes for anatomy-based positioning
+    - 9 Marker2D nodes: WeaponAttachment, OffhandAttachment, ChestAttachment, HeadAttachment, LegsAttachment, ShoulderAttachment, NeckAttachment, RingAttachment, TrinketAttachment
+    - Marker positions calculated dynamically in `_update_attachment_markers()` based on body sprite dimensions
+    - Anatomical percentages: Head (-28%), Neck (-30%), Shoulders (-5%), Chest (0%), Legs (15%), Arms (±35%), Hips (±20%)
+    - Equipment layers reparent to markers via `_apply_layer_pose()` for proper alignment
+    - Equipment centers on markers (offset 0,0) since markers are positioned at anatomical centers
+    - Markers update automatically when body sprite texture changes (tier evolution)
 - **Animation System**: Programmatic AnimationPlayer with SOP v3.0 compliant durations:
   - Idle: 2.0s loop, 4 frames, ±5px vertical bob
   - Walk: 0.8s loop, 8 frames, ±10px bob
@@ -223,6 +244,10 @@ World Scene (road-to-war/scenes/World.tscn)
 │   └── HeroCreationLogic (internal)
 ├── ShopManager (Autoload)
 │   └── ItemGenerator (internal)
+├── QuestManager (Autoload)
+│   ├── PlayerQuestTracking (Dictionary<quest_id, {current, completed}>)
+│   ├── QuestProgressUpdates (connects to WorldManager, CombatManager)
+│   └── QuestRewards (gold, experience, talent_points)
 ├── AudioManager (Autoload)
 │   └── AudioStreamPlayer nodes (internal)
 ├── ParticleManager (Autoload)
@@ -230,6 +255,20 @@ World Scene (road-to-war/scenes/World.tscn)
 └── HeroSprite (Node2D - per hero instance)
     ├── Equipment Visual Mapper (internal)
     └── AnimationPlayer (internal)
+
+HUD Scene (road-to-war/scenes/HUD.tscn)
+├── QuestTracker (Control - Quest UI component)
+│   ├── QuestPanel (Panel - semi-transparent dark background)
+│   ├── ScrollContainer (scrollable quest list)
+│   ├── QuestContainer (VBoxContainer - quest entries)
+│   └── Connected to QuestManager signals (quest_progress_updated, quest_completed, quests_loaded)
+├── PartyPanel (Panel - left side party frames)
+│   └── PartyContainer (VBoxContainer - unit frames)
+├── TopBar (Panel - top HUD bar)
+│   ├── MileLabel (Label - current mile display)
+│   ├── WorldProgressBar (ProgressBar - 0-100 mile progress)
+│   └── CurrencyContainer (HBoxContainer - gold, prestige, essence)
+└── BottomMenuPanel (Panel - bottom menu buttons)
 
 SaveManager (Autoload Singleton)
 ├── FileAccess API (Godot native)
@@ -284,9 +323,11 @@ CursorLogManager (Autoload)
 9. `_apply_item_visual()` loads texture from JSON `texture` field (or falls back to old system)
 10. Modulate color applied from JSON `modulate` field (or rarity-based fallback)
 11. Glow shader parameter set from JSON `glow_shader_param` field (if shader supports it)
-12. Layer nodes updated with new textures, colors, and effects
-13. GameScene UI reflects changes via events (stats display, equipment panel)
-14. SaveManager persists game state including party data (all 5 heroes with equipment) via Godot FileAccess
+12. `_apply_layer_pose()` attaches equipment layer to Marker2D node at anatomical position
+13. Equipment layer reparented to marker, centered on marker (offset 0,0)
+14. Layer nodes updated with new textures, colors, and effects
+15. GameScene UI reflects changes via events (stats display, equipment panel)
+16. SaveManager persists game state including party data (all 5 heroes with equipment) via Godot FileAccess
 
 **Key Features:**
 - **JSON-Driven Visuals**: Equipment textures, colors, and glow effects defined in items.json
@@ -331,6 +372,9 @@ CursorLogManager (Autoload)
 - Safe defaults for corrupted data
 - User-friendly error messages
 - Automatic state recovery
+- **Godot 4 API Compliance**: Use correct emission shape constants (`EMISSION_SHAPE_SPHERE` not `EMISSION_SHAPE_CIRCLE`)
+- **Variable Scope Management**: Declare variables at appropriate scope levels (function scope for variables used across multiple blocks)
+- **Node Property Access**: Use direct property access (`node.property`) instead of Dictionary methods (`.has()`) on Node objects
 
 ## Memory Management Patterns
 - Object pooling for frequently created/destroyed entities
@@ -358,6 +402,28 @@ CursorLogManager (Autoload)
 
 ## Generator System
 
+**⚠️ CRITICAL ARCHITECTURAL PRINCIPLE (January 2026) ⚠️**:
+**ALL asset generation MUST go through the unified asset generation system (`tools/unified-asset-generator.js`).**
+- **DO NOT** create new separate generators or asset systems
+- **DO NOT** create new entry points for asset generation
+- **DO** extend the unified system by adding new generator classes in `tools/generators/`
+- **DO** use shared utilities from `tools/utils/canvas-utils.js` and `tools/utils/color-utils.js`
+- **DO** extend `BaseGenerator` for all new generators
+- **Violation of this principle will result in architectural debt and code duplication**
+
+**How to Add New Asset Types:**
+1. Create a new generator class in `tools/generators/` that extends `BaseGenerator`
+2. Implement the `generate()` method following the existing pattern
+3. Add the new generator to `UnifiedAssetGenerator` constructor
+4. Add a case in `UnifiedAssetGenerator.generate()` to dispatch to your generator
+5. Update documentation in `tools/README.md` and memory bank
+
+**Legacy Generators (Still Used, But Being Migrated):**
+- `tools/generate-all-assets.js` - Refactored with shared utilities, being migrated to unified system
+- `tools/generate-assets.js` - Legacy character generator, still used but new generators should use unified system
+
+### Unified Asset Generation System (tools/ - January 2026)
+
 ### Runtime Generators (road-to-war/scripts/)
 - **ProceduralItemGenerator**: Dynamic item generation with modifiers - Enhanced with `generate_item_for_mile()` method, tier calculation (`calculate_tier()`), prestige integration, mile-based item level scaling
 - **AnimationGenerator**: Animation sequence generation using Godot AnimationPlayer
@@ -365,10 +431,50 @@ CursorLogManager (Autoload)
 - **TerrainGenerator**: Terrain/background generation
 - **UIGenerator**: UI element generation
 
-### Build-Time Generators (tools/generators/)
-- **PaladinGenerator**: Build-time Paladin sprite generator (reference/testing)
-- **HumanoidGenerator**: Humanoid sprite generation
-- **EquipmentGenerator**: Equipment sprite generation
+### Unified Asset Generation System (tools/ - January 2026)
+**CRITICAL ARCHITECTURAL PRINCIPLE**: All asset generation MUST go through the unified asset generation system. Do NOT create new separate generators or asset systems. Extend the unified system by adding new generator classes, not by creating new entry points.
+
+**Unified Entry Point**:
+- `tools/unified-asset-generator.js` - Single orchestrator for all asset types
+  - Provides `generate(type, data, options)` method for all asset types
+  - Extends by adding new generator classes to `tools/generators/`
+  - All new asset types must be added here, NOT as separate entry points
+
+**Base Architecture**:
+- `tools/generators/base-generator.js` - Shared base class for all generators
+  - Provides common utilities (canvas operations, color operations)
+  - All generators MUST extend this class for consistency
+  - Access to shared utilities: `tools/utils/canvas-utils.js`, `tools/utils/color-utils.js`
+
+**Specialized Generators** (tools/generators/):
+- `hero-sprite-generator.js` - 256×256 hero sprite generator (NEW - January 2026)
+- `spell-icon-generator.js` - Spell/ability icon generator (NEW - extracted from generate-all-assets.js)
+- `paladin-generator.js` - Paladin sprite generation (legacy, still used)
+- `humanoid-generator.js` - Humanoid sprite generation (legacy, still used)
+- `equipment-generator.js` - Equipment sprite generation (used by paladin-generator)
+- `gem-generator.js` - Gem icon generation (still used)
+- `animation-generator.js` - Animation strip generation (still used)
+
+**Shared Utilities** (tools/utils/):
+- `canvas-utils.js` - Shared canvas operations (setupCanvasContext, drawIconPlate, resolveResPathToDisk, isMeaningfulTexture)
+- `color-utils.js` - Shared color operations (hexToRgb, rgbToHex, mixHex, lightenHex, darkenHex, getLuma, ensureVisibleFill, clamp, normalizeHex, hexToRgbArray, hexToRgbaArray)
+- All other utilities updated to use shared color utilities (pixel-drawer.js, material-classifier.js, glow-renderer.js, color-quantizer.js)
+
+**Legacy Generators** (still used, but refactored):
+- `tools/generate-all-assets.js` - Comprehensive asset generator (refactored with shared utilities) - **NOTE**: This is being migrated to unified system. New generators should extend unified-asset-generator.js, not create new entry points.
+- `tools/generate-assets.js` - Build-time character/bloodline generator - **NOTE**: Legacy generator, still used for character sprites, but new generators should use unified system.
+
+**Architectural Rules**:
+1. **Single Entry Point**: All asset generation must go through `unified-asset-generator.js`
+2. **Extend, Don't Create**: Add new generators by creating classes in `tools/generators/` that extend `BaseGenerator`
+3. **No Duplicate Utilities**: Use shared utilities from `tools/utils/`, do not duplicate functionality
+4. **Consistent Interface**: All generators follow the same pattern (extend BaseGenerator, implement generate() method)
+5. **Documentation**: All new generators must be documented in `tools/README.md` and memory bank
+
+**Obsolete Files** (deleted):
+- `tools/regenerate-heroes.js` - DELETED (obsolete for Phaser 3, Godot handles regeneration automatically)
+- `public/regenerate-hero.js` - DELETED (obsolete Phaser-specific browser console tool)
+- See `tools/OBSOLETE_FILES.md` for complete tracking
 
 ## Utility System (road-to-war/scripts/)
 - **AsyncHelpers.gd**: Async operation utilities (await/async patterns)
@@ -385,6 +491,7 @@ CursorLogManager (Autoload)
 - **StatCalculator.gd**: Stat calculation utilities
 - **TextureHelper.gd**: Texture management utilities
 - **TooltipManager.gd**: Tooltip system - Enhanced with item level/tier display, set bonus previews (`is_item_in_set()`, `get_item_set_info()`), comparison functionality
+- **QuestTracker.gd** (`road-to-war/scripts/QuestTracker.gd`): Quest UI component - Displays active quests on right side of HUD with WoW WotLK aesthetic, real-time progress updates, auto-hides when no quests, scrollable quest list, connected to QuestManager signals (quest_progress_updated, quest_completed, quests_loaded)
 - **TypeValidators.gd**: Type validation utilities
 - **UITheme.gd**: UI theming system (WoW WOTLK color palette)
 - **UIBuilder.gd**: WoW-specific UI creation functions (create_frame, create_button, create_progress_bar)
@@ -469,8 +576,8 @@ CursorLogManager (Autoload)
 **Automatic Log Analysis and Fix Workflow:**
 - User command: **"check logs"**
 - AI automatically reads:
-  1. `%APPDATA%\Godot\app_userdata\Road to war\cursor_logs.txt` (Primary Godot Log)
-  2. `logs/game-output.log` (Legacy Phaser/Electron Log)
+  1. `user://cursor_logs.txt` (Primary Godot Log - via CursorLogManager.gd)
+  2. `logs/game-output.log` (Godot Logger output - historical reference only)
 - Analyzes all errors, warnings, and issues.
 - Automatically fixes problems found:
   - Godot runtime errors or script crashes.
@@ -478,8 +585,9 @@ CursorLogManager (Autoload)
   - Missing defensive guards and null checks.
 - Provides summary of issues found and fixes applied.
 
-**CursorLogManager System (Godot):**
+**CursorLogManager System (Godot 4.x):**
 - Real-time logging to `user://cursor_logs.txt` with timestamps.
+- Location: `road-to-war/scripts/CursorLogManager.gd` (Autoload)
 - Explicit `flush()` calls ensure real-time visibility in Cursor IDE.
 - Helper `log_hero_state(hero)` for diagnosing physics/movement jitter.
 - Integrated into `GameManager.gd` initialization.
@@ -494,25 +602,6 @@ CursorLogManager (Autoload)
   - **Root Cause**: Position source mismatch between systems
   - **Fix**: Use authoritative position source (PartyManager or WorldManager)
 - **Key Insight**: When multiple systems manage the same entity (WorldManager + MovementManager), ensure position source is authoritative
-
-## Development Workflow Patterns
-
-### Agent Manager System (December 2025)
-**Multi-lane parallel development workflow:**
-- **Lane-Based Architecture**: Three independent development lanes (gameplay, ui, infra)
-- **Agent Workflow**: Prep task → Generate lane-specific prompts → Agents produce unified diff patches → Ingest patches → Apply with git safety checks
-- **MCP Integration**: Agent manager exposed as Cursor MCP tools for seamless integration
-- **Patch Management**: Patches stored in `agent-out/patches/` with lane-based naming
-- **Configuration**: `agent-manager.config.json` defines lane scopes and instructions
-- **Context Management**: Includes PROJECT_INDEX.md and memory bank files in agent context
-
-**Agent Manager Components:**
-- `tools/agent-manager.js` - Core agent manager (prep/ingest/apply commands)
-- `tools/agent-manager.config.json` - Lane configuration (gameplay, ui, infra)
-- `tools/mcp-manager/server.js` - MCP server exposing tools to Cursor
-- `agent-out/prompts/` - Generated per-lane prompts
-- `agent-out/patches/` - Agent-produced unified diff patches
-- `agent-out/summary.json` - Task summary and metadata
 
 ## Future Expansion Patterns
 - Plugin architecture for new encounter types
@@ -542,6 +631,15 @@ CursorLogManager (Autoload)
 - ✅ Boss phase system with state machine (War Lord has 3 phases)
 - ✅ Endgame enemy types (Elite Orc Champion miles 80-90, Dark Knight miles 90-100, War Lord mile 100)
 - ✅ Enhanced enemy selection in `WorldManager.selectEnemyType()`
+
+**WotLK Ability Implementation (January 2026 - Phases 1 & 2 COMPLETE):**
+- ✅ **Taunt System**: Integrated into ThreatSystem - Warriors (Taunt, Challenging Shout), Paladins (Righteous Defense, Hand of Reckoning), integrated into CombatActions for proper tanking
+- ✅ **Execute System**: Warriors can Execute low-HP targets (≤20% HP), integrated into AbilityManager DPS selection logic
+- ✅ **Combo Point System**: Rogues generate combo points from builders (Sinister Strike, etc.), finishers consume combo points (Eviscerate, etc.), ComboPointSystem singleton created
+- ✅ **Party Buff System**: Arcane Intellect (Mage +10% Intellect), Power Word: Fortitude (Priest +10% Stamina), Devotion Aura/Retribution Aura (Paladin), Aspect of the Hawk/Cheetah (Hunter), integrated into StatCalculator for party-wide stat bonuses
+- ✅ **Form/Stance System**: Druid Forms (Bear, Cat, Moonkin, Tree of Life), Warrior Stances (Battle, Defensive, Berserker), Rogue Stealth, FormSystem singleton created with ability filtering based on form/stance
+- ✅ **Pet System**: Hunter Pets (Wolf, Cat, Bear), Warlock Demons (Imp, Voidwalker, Succubus, Felhunter, Felguard), pet summoning, healing, damage tracking, PetSystem singleton created
+- 🔄 **Phase 3 IN PROGRESS**: Adding missing rotational abilities (Moonfire, Insect Swarm, Arcane Missiles, Immolate, Flame Shock, Flash Heal, Prayer of Mending, etc.) - See `docs/WOTLK_ABILITY_AUDIT.md` and `docs/WOTLK_IMPLEMENTATION_SUMMARY.md`
 
 **Data Systems Integration (December 2025 - COMPLETE):**
 - ✅ **Abilities System**: Fully integrated - AbilityManager loads from `abilities.json`, uses `getAbilityDefinition()` for all class abilities (mana costs, cooldowns, scaling, types)
@@ -578,5 +676,6 @@ CursorLogManager (Autoload)
 - ✅ Progression tracking UI: current mile, average item level, talent points, sets completed, next milestone (HUD displays)
 
 **Reference Documents:**
-- Plan: `c:\Users\Ropbe\.cursor\plans\endgame_completion_roadmap_9988d6fb.plan.md`
 - Research: `docs/endgame-implementation-research.md` (implementation complete)
+- Asset Generation: `docs/ASSET_GENERATION_SUMMARY.md`, `docs/ASSET_INTEGRATION_COMPLETE.md`, `docs/ASSET_GENERATION_TOOL.md`
+- WotLK Implementation: `docs/WOTLK_ABILITY_AUDIT.md`, `docs/WOTLK_IMPLEMENTATION_SUMMARY.md`

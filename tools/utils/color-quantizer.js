@@ -4,6 +4,8 @@
  * Optimal for pixel art with small palettes (8-32 colors)
  */
 
+import { hexToRgbArray } from './color-utils.js';
+
 /**
  * ColorBox class for median cut algorithm
  */
@@ -185,11 +187,7 @@ export class ColorQuantizer {
      * @returns {Array<number>} [r, g, b]
      */
     hexToRgb(hex) {
-        return [
-            (hex >> 16) & 0xFF,
-            (hex >> 8) & 0xFF,
-            hex & 0xFF
-        ];
+        return hexToRgbArray(hex);
     }
 }
 

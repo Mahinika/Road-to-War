@@ -31,8 +31,6 @@ func _ready():
 
 # Called every physics frame
 func _physics_process(_delta: float) -> void:
-	# Example: log physics tick (optional)
-	# debug_log("Physics tick: delta=%f" % _delta)
 	pass
 
 
@@ -46,13 +44,15 @@ func debug_log(msg: String) -> void:
 	]
 	var line = timestamp + msg
 
-	# Print to console
+	# Print to console (only once - Logger no longer double-prints)
 	print(line)
 
-	# Write to file
+	# Write to file (limit buffer to prevent overflow)
 	if file:
 		file.store_line(line)
-		file.flush()  # immediately save for Cursor to read
+		# Only flush every 10 lines to reduce I/O overhead
+		if file.get_position() % 1000 < 200:  # Approximate check
+			file.flush()  # Periodically save for Cursor to read
 
 
 # Capture all Godot runtime errors/warnings
@@ -74,3 +74,30 @@ func log_hero_state(hero_node: Node) -> void:
 	if "velocity" in hero_node:
 		vel = hero_node.velocity
 	debug_log("Hero state: pos=%s, vel=%s" % [pos, vel])
+
+
+# Structured JSON logging for debug data (replaces hard-coded debug.log paths)
+# NOTE: This is very verbose - use sparingly to avoid output overflow
+func log_structured(location: String, message: String, data: Dictionary = {}, session_id: String = "default", hypothesis_id: String = "") -> void:
+	# Throttle structured logging to prevent output overflow
+	# Only log every 5 seconds maximum
+	var current_time = Time.get_ticks_msec()
+	if not has_meta("last_structured_log_time"):
+		set_meta("last_structured_log_time", current_time)
+	
+	var last_log_time = get_meta("last_structured_log_time", 0)
+	if current_time - last_log_time < 5000:  # Only log every 5 seconds
+		return  # Skip this log to prevent overflow
+	
+	set_meta("last_structured_log_time", current_time)
+	
+	var log_entry = {
+		"location": location,
+		"message": message,
+		"data": data,
+		"timestamp": current_time,
+		"sessionId": session_id,
+		"hypothesisId": hypothesis_id
+	}
+	var json_str = JSON.stringify(log_entry)
+	debug_log("[STRUCTURED] %s" % json_str)

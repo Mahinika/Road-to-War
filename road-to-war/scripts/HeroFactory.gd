@@ -126,11 +126,20 @@ func create_hero(class_id: String, spec_id: String, level: int = 1, hero_id: Str
 		"offhand": null
 	}
 	
+	# Equip default starter equipment
+	var default_equipment = get_default_equipment(hero)
+	var em = get_node_or_null("/root/EquipmentManager")
+	if em:
+		for slot in default_equipment:
+			var item_id = default_equipment[slot]
+			if item_id:
+				em.equip_item(hero_id, item_id, slot)
+
 	_log_info("HeroFactory", "Created hero: %s (%s %s, Level %d)" % [hero.name, class_id, spec_id, level])
 	return hero
 
 # Calculate base stats for a hero based on class, spec, and level
-func _calculate_base_stats(class_data: Dictionary, spec_data: Dictionary, level: int) -> Dictionary:
+func _calculate_base_stats(class_data: Dictionary, spec_data: Dictionary, _level: int) -> Dictionary:
 	var base_stats = {
 		"stamina": 10,
 		"strength": 10,
@@ -168,17 +177,8 @@ func _calculate_base_stats(class_data: Dictionary, spec_data: Dictionary, level:
 		if passives.has("intellectBonus"):
 			base_stats.intellect = int(base_stats.intellect * (1.0 + passives.intellectBonus))
 	
-	# Apply level scaling
-	var level_multiplier = 1.0 + (level - 1) * 0.1
-	base_stats.stamina = int(base_stats.stamina * level_multiplier)
-	base_stats.strength = int(base_stats.strength * level_multiplier)
-	base_stats.intellect = int(base_stats.intellect * level_multiplier)
-	base_stats.agility = int(base_stats.agility * level_multiplier)
-	base_stats.spirit = int(base_stats.spirit * level_multiplier)
-	base_stats.maxHealth = int(base_stats.maxHealth * level_multiplier)
-	base_stats.maxMana = int(base_stats.maxMana * level_multiplier)
-	base_stats.attack = int(base_stats.attack * level_multiplier)
-	base_stats.defense = int(base_stats.defense * level_multiplier)
+	# Note: Level scaling is handled by StatCalculator.calculate_final_stats()
+	# to avoid double-scaling issues. Base stats here represent level 1 values.
 	
 	return base_stats
 
@@ -217,8 +217,48 @@ func create_hero_from_save(save_data: Dictionary) -> Hero:
 	return hero
 
 # Get default equipment for a hero (starter gear)
-func get_default_equipment(_hero: Hero) -> Dictionary:
-	# Return empty equipment dictionary
-	# Equipment can be added via EquipmentManager
-	return {}
+func get_default_equipment(hero: Hero) -> Dictionary:
+	# Give heroes starter equipment based on their class
+	var equipment = {}
+	var class_id = hero.class_id
+
+	match class_id:
+		"warrior":
+			equipment = {
+				"weapon": "rusty_sword",
+				"chest": "leather_armor"
+			}
+		"paladin":
+			equipment = {
+				"weapon": "rusty_sword",
+				"chest": "leather_armor"
+			}
+		"rogue":
+			equipment = {
+				"weapon": "rusty_sword",
+				"chest": "leather_armor"
+			}
+		"mage":
+			equipment = {
+				"weapon": "rusty_sword",
+				"chest": "leather_armor"
+			}
+		"priest":
+			equipment = {
+				"weapon": "rusty_sword",
+				"chest": "leather_armor"
+			}
+		"warlock":
+			equipment = {
+				"weapon": "rusty_sword",
+				"chest": "leather_armor"
+			}
+		_:
+			# Default fallback
+			equipment = {
+				"weapon": "rusty_sword"
+			}
+
+	_log_info("HeroFactory", "Assigned starter equipment for %s %s: %s" % [hero.name, class_id, equipment])
+	return equipment
 

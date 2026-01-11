@@ -39,17 +39,33 @@ func _ready():
 	if CombatManager.has_signal("damage_dealt"):
 		CombatManager.damage_dealt.connect(_on_damage_dealt)
 
-	# Style the existing panel from the scene (avoid double-panels)
+	# Style the existing panel with WoW aesthetic
 	var ut = get_node_or_null("/root/UITheme")
 	var panel = get_node_or_null("Panel")
 	if ut and panel and panel is Panel:
-		panel.add_theme_stylebox_override("panel", ut.get_stylebox_panel(Color(0, 0, 0, 0.45), ut.COLORS["gold_border"], 1))
+		panel.add_theme_stylebox_override("panel", ut.get_stylebox_panel(
+			Color(0.05, 0.05, 0.05, 0.85),  # Darker, more opaque
+			Color(0.2, 0.5, 1.0),  # Blue border for combat log
+			2  # Thicker border
+		))
 	
 	if rich_text:
+		rich_text.bbcode_enabled = true
 		rich_text.add_theme_color_override("default_color", Color(0.95, 0.95, 0.95))
 		rich_text.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 		rich_text.add_theme_constant_override("outline_size", 1)
 		rich_text.add_theme_font_size_override("normal_font_size", 12)
+		# Add scrollbar styling
+		var v_scroll = rich_text.get_v_scroll_bar()
+		if v_scroll and ut:
+			var scroll_sb = StyleBoxFlat.new()
+			scroll_sb.bg_color = Color(0.1, 0.1, 0.1, 0.9)
+			scroll_sb.border_color = Color(0.2, 0.5, 1.0, 0.8)
+			scroll_sb.border_width_left = 1
+			scroll_sb.border_width_top = 1
+			scroll_sb.border_width_right = 1
+			scroll_sb.border_width_bottom = 1
+			v_scroll.add_theme_stylebox_override("background", scroll_sb)
 	
 	_log_info("CombatLog", "Initialized")
 

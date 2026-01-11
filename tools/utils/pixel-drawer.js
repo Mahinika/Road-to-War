@@ -3,6 +3,8 @@
  * Low-level pixel manipulation for pixel-art style drawing
  */
 
+import { hexToRgbaArray } from './color-utils.js';
+
 export class PixelDrawer {
     constructor(ctx, width, height) {
         this.ctx = ctx;
@@ -17,18 +19,7 @@ export class PixelDrawer {
      * @returns {Array<number>} [r, g, b, a]
      */
     hexToRgba(color) {
-        let hex;
-        if (typeof color === 'string') {
-            hex = parseInt(color.replace('#', ''), 16);
-        } else {
-            hex = color;
-        }
-        return [
-            (hex >> 16) & 0xFF,
-            (hex >> 8) & 0xFF,
-            hex & 0xFF,
-            255
-        ];
+        return hexToRgbaArray(color, 255);
     }
 
     /**
@@ -37,10 +28,11 @@ export class PixelDrawer {
      * @param {number} y - Y coordinate
      * @param {string|number} color - Hex color
      */
-    setPixel(x, y, color) {
+    setPixel(x, y, color, alpha = null) {
         if (x < 0 || x >= this.width || y < 0 || y >= this.height) return;
         
-        const [r, g, b, a] = this.hexToRgba(color);
+        const [r, g, b, defaultA] = this.hexToRgba(color);
+        const a = alpha !== null ? alpha : defaultA;
         const index = (y * this.width + x) * 4;
         this.imageData.data[index] = r;
         this.imageData.data[index + 1] = g;
@@ -117,6 +109,28 @@ export class PixelDrawer {
                     this.setPixel(centerX + x, centerY + y, color);
                 }
             }
+        }
+    }
+
+    /**
+     * Draw a circle outline (simplified, fast implementation)
+     * @param {number} centerX - Center X
+     * @param {number} centerY - Center Y
+     * @param {number} radius - Radius
+     * @param {string|number} color - Hex color
+     * @param {number} alpha - Alpha value (0-255, default 255)
+     */
+    drawCircleOutline(centerX, centerY, radius, color, alpha = 255) {
+        // Optimized: use fewer points for smaller circles
+        const circumference = 2 * Math.PI * radius;
+        const stepSize = Math.max(0.15, Math.min(0.3, 10 / radius)); // Adaptive step size
+        const numSteps = Math.floor((Math.PI * 2) / stepSize);
+        
+        for (let i = 0; i < numSteps; i++) {
+            const angle = (i / numSteps) * Math.PI * 2;
+            const x = Math.round(centerX + Math.cos(angle) * radius);
+            const y = Math.round(centerY + Math.sin(angle) * radius);
+            this.setPixel(x, y, color, alpha);
         }
     }
 

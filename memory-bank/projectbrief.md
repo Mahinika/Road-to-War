@@ -4,7 +4,7 @@
 Building an incremental prestige RPG with automatic progression and equipment-based advancement. Currently transitioning from a single-hero system to a 5-man dungeon group system with WoW TBC/WotLK-inspired classes, specializations, talents, and comprehensive stat systems.
 
 ## AI Operating Protocol
-This project uses the **MASTER PROMPT — IDLE RPG AUTO-ROUTER (MAX / CURSOR / ENHANCED)** (see `memory-bank/masterPrompt.md`) for ALL AI interactions. This is MANDATORY for every response. Every session must initialize by reading this protocol and adopting the Lead Producer/Auto-Router persona. The FIRST line of every response MUST be: "Active Role(s):"
+This project uses the **MASTER PROMPT — IDLE RPG AUTO-ROUTER (MAX / CURSOR / ENHANCED)** (see `.cursorrules` section "Road of War: Role-Based Development Prompts") for ALL AI interactions. This is MANDATORY for every response. Every session must initialize by reading this protocol and adopting the Lead Producer/Auto-Router persona. The FIRST line of every response MUST be: "Active Role(s):"
 
 ## Core Requirements
 - 2D side-scrolling RPG with automatic party movement
@@ -25,11 +25,12 @@ This project uses the **MASTER PROMPT — IDLE RPG AUTO-ROUTER (MAX / CURSOR / E
 - Single-player only
 
 ## Platform Strategy
-- Primary: PC Desktop (Windows EXE via Electron)
-- Secondary: Browser (web deployment)
+- Primary: PC Desktop (Native Godot executable)
+- Secondary: HTML5 export for browser play (optional)
 - Desktop-focused architecture optimized for PC gaming experience
-- Desktop: Standalone EXE file, no browser required
-- Browser: Traditional web deployment (secondary priority)
+- Desktop: Standalone executable generated via Godot Export (no runtime required)
+- Browser: HTML5 export available (secondary priority)
+- **Technology**: Pure Godot 4.x game with GDScript - no web/Electron dependencies
 
 ## Key Constraints
 - Asset-agnostic, data-driven design

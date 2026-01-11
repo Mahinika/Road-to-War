@@ -1,7 +1,7 @@
 extends Node
 
 # CombatRewards.gd - Handles reward calculation and loot generation
-# Migrated from src/managers/combat/combat-rewards.js
+# Godot 4.x combat reward calculation system
 
 func _get_logger():
 	return get_node_or_null("/root/Logger")

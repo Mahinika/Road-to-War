@@ -1,0 +1,8 @@
+{
+  "asset_type": "character",
+  "profile": "character_humanoid",
+  "base_size": [128, 128],
+  "glow_color": "#FF8800",
+  "pulse_strength": 0.05,
+  "outline": true
+}

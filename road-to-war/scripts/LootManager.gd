@@ -32,7 +32,7 @@ func _log_debug(source: String, message: String):
 		print("[%s] [DEBUG] %s" % [source, message])
 
 # LootManager.gd - Handles item drops, pickups, and inventory management
-# Adapted from the Phaser 3 LootManager
+# Godot 4.x loot and inventory management system
 
 signal item_picked_up(item)
 signal loot_spawned(loot_items)
@@ -228,6 +228,85 @@ func should_filter_item(rarity: String) -> bool:
 
 func get_inventory() -> Array:
 	return inventory.duplicate()
+
+func add_to_inventory(item_data: Variant) -> bool:
+	"""
+	Add an item directly to inventory without requiring position data.
+	Accepts either an item ID string, a simple item dictionary, or a full loot item dictionary.
+	"""
+	# Check inventory space
+	if inventory.size() >= max_inventory_size:
+		_log_warn("LootManager", "Inventory full, cannot add item")
+		return false
+	
+	var loot_item: Dictionary
+	
+	# Handle different input formats
+	if item_data is String:
+		# If it's just an item ID string, create a loot item from it
+		var dm = get_node_or_null("/root/DataManager")
+		var item_dict = {}
+		if dm:
+			var items_json = dm.get_data("items")
+			if items_json:
+				# Search through categories
+				for category in ["weapons", "armor", "accessories", "consumables"]:
+					if items_json.has(category) and items_json[category].has(item_data):
+						item_dict = items_json[category][item_data]
+						break
+		
+		loot_item = {
+			"id": item_data,
+			"data": item_dict,
+			"quantity": 1,
+			"value": item_dict.get("sellValue", 0),
+			"quality": item_dict.get("rarity", "common")
+		}
+	elif item_data is Dictionary:
+		# Check if it's already a full loot item (has position/spawn data) or simple item data
+		if item_data.has("x") or item_data.has("spawn_distance"):
+			# Already formatted as a full loot item (has position data)
+			loot_item = item_data
+		elif item_data.has("id") and item_data.has("data"):
+			# Already formatted as a loot item but without position data - use as-is
+			loot_item = item_data
+		else:
+			# Simple item data dictionary - wrap it into loot item format
+			var item_id = item_data.get("id", "")
+			if item_id == "":
+				_log_warn("LootManager", "Item dictionary missing 'id' field")
+				return false
+			
+			loot_item = {
+				"id": item_id,
+				"data": item_data,
+				"quantity": item_data.get("quantity", 1),
+				"value": item_data.get("sellValue", item_data.get("value", 0)),
+				"quality": item_data.get("rarity", item_data.get("quality", "common"))
+			}
+	else:
+		_log_warn("LootManager", "Invalid item data type for add_to_inventory: %s" % typeof(item_data))
+		return false
+	
+	# Add to inventory
+	inventory.append(loot_item)
+	item_picked_up.emit(loot_item)
+	
+	var item_name = "Item"
+	if loot_item.has("data") and loot_item["data"] is Dictionary and not loot_item["data"].is_empty():
+		item_name = loot_item["data"].get("name", "Item")
+	elif loot_item.has("id"):
+		item_name = loot_item["id"]
+	
+	_log_info("LootManager", "Added to inventory: %s" % item_name)
+	return true
+
+func award_item_to_party(item_data: Variant) -> bool:
+	"""
+	Alias for add_to_inventory for backwards compatibility.
+	Awards an item directly to the party inventory.
+	"""
+	return add_to_inventory(item_data)
 
 func remove_from_inventory(item_id: String, _quantity: int = 1) -> bool:
 	for i in range(inventory.size()):

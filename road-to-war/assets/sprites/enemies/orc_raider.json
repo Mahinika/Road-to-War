@@ -1,0 +1,10 @@
+{
+  "asset_type": "enemy_creature",
+  "profile": "character_humanoid",
+  "base_size": [
+    128,
+    128
+  ],
+  "glow_color": "#B22222",
+  "outline": true
+}

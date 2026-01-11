@@ -1,7 +1,7 @@
 extends Node
 
 # AnimationValidator.gd - Animation integrity checks
-# Migrated from src/utils/animation-validator.js
+# Godot 4.x animation validation utilities
 
 func _get_logger():
 	return get_node_or_null("/root/Logger")

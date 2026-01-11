@@ -58,5 +58,5 @@ func set_world_position(world_pos: Vector2, camera: Camera2D):
 		return
 	
 	var screen_pos = camera.to_screen_position(world_pos)
-	position = screen_pos + Vector2(-50, -60)  # Offset above combatant
+	position = screen_pos + Vector2(-50, -120)  # Offset above combatant (adjusted for 256px heroes)
 

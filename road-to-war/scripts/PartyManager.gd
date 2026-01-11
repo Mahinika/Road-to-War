@@ -47,6 +47,10 @@ var required_roles = {
 func _ready():
 	_log_info("PartyManager", "Initialized")
 
+# @CRITICAL: Hero addition - enforces 5-man party constraints (1 tank, 1 healer, 3 DPS)
+# Used by: CharacterCreation.gd, World.gd (test party), SaveManager (load from save)
+# Changing this requires: Maintain role constraints, update validation logic if party composition rules change
+# Performance: Called during party creation/loading, not performance-critical
 func add_hero(hero) -> bool:
 	if not hero or not "id" in hero or hero.id == "":
 		_log_error("PartyManager", "Invalid hero object")
@@ -149,6 +153,10 @@ func get_party_level(method: String = "average") -> int:
 		total_level += h.level
 	return int(round(float(total_level) / float(heroes.size())))
 
+# @CRITICAL: Save data collection - must capture all hero data for save persistence
+# Used by: SaveManager.collect_save_data()
+# Changing this requires: Update SaveManager if hero data structure changes, maintain backward compatibility
+# Performance: Called during save operations, not performance-critical
 func get_save_data() -> Dictionary:
 	var heroes_data = []
 	for hero in heroes:

@@ -17,7 +17,7 @@
             "resourceType": "mana",
             "cooldown": 8,
             "type": "attack",
-            "damageMultiplier": 1.5,
+            "damageMultiplier": 1.2,
             "scaling": "strength",
             "range": 600
         },
@@ -99,7 +99,7 @@
             "resourceType": "mana",
             "cooldown": 4,
             "type": "attack",
-            "damageMultiplier": 1.3,
+            "damageMultiplier": 1.2,
             "scaling": "strength",
             "range": 120
         },
@@ -109,7 +109,7 @@
             "resourceType": "mana",
             "cooldown": 10,
             "type": "aoe_heal",
-            "damageMultiplier": 1.1,
+            "damageMultiplier": 1.0,
             "healPercent": 0.25,
             "scaling": "strength",
             "range": 200
@@ -160,9 +160,36 @@
             "range": 120,
             "damageMultiplier": 1.3,
             "scaling": "strength"
+        },
+        "righteous_defense": {
+            "name": "Righteous Defense",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 8,
+            "type": "taunt",
+            "threatBonus": 1000,
+            "range": 600
+        },
+        "hand_of_reckoning": {
+            "name": "Hand of Reckoning",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 8,
+            "type": "taunt",
+            "threatBonus": 1000,
+            "range": 800
         }
     },
     "warrior": {
+        "taunt": {
+            "name": "Taunt",
+            "cost": 0,
+            "resourceType": "rage",
+            "cooldown": 8,
+            "type": "taunt",
+            "threatBonus": 1000,
+            "range": 600
+        },
         "charge": {
             "name": "Charge",
             "cost": 0,
@@ -201,7 +228,7 @@
             "resourceType": "rage",
             "cooldown": 4,
             "type": "attack_heal",
-            "damageMultiplier": 1.5,
+            "damageMultiplier": 1.4,
             "healPercent": 0.03,
             "scaling": "strength",
             "range": 120
@@ -212,7 +239,7 @@
             "resourceType": "rage",
             "cooldown": 6,
             "type": "attack",
-            "damageMultiplier": 2.2,
+            "damageMultiplier": 1.9,
             "healingReduced": 0.5,
             "scaling": "strength",
             "range": 120
@@ -326,6 +353,56 @@
             "damageMultiplier": 0.8,
             "aoeRadius": 200,
             "scaling": "strength"
+        },
+        "execute": {
+            "name": "Execute",
+            "cost": 15,
+            "resourceType": "rage",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 2.2,
+            "requiresLowHP": true,
+            "lowHPThreshold": 0.2,
+            "scaling": "strength",
+            "range": 120
+        },
+        "challenging_shout": {
+            "name": "Challenging Shout",
+            "cost": 0,
+            "resourceType": "rage",
+            "cooldown": 300,
+            "type": "taunt",
+            "threatBonus": 1000,
+            "aoe": true,
+            "aoeRadius": 400,
+            "range": 0
+        },
+        "battle_stance": {
+            "name": "Battle Stance",
+            "cost": 0,
+            "resourceType": "rage",
+            "cooldown": 0,
+            "type": "stance",
+            "formId": "battle_stance",
+            "range": 0
+        },
+        "defensive_stance": {
+            "name": "Defensive Stance",
+            "cost": 0,
+            "resourceType": "rage",
+            "cooldown": 0,
+            "type": "stance",
+            "formId": "defensive_stance",
+            "range": 0
+        },
+        "berserker_stance": {
+            "name": "Berserker Stance",
+            "cost": 0,
+            "resourceType": "rage",
+            "cooldown": 0,
+            "type": "stance",
+            "formId": "berserker_stance",
+            "range": 0
         }
     },
     "rogue": {
@@ -478,6 +555,7 @@
             "resourceType": "mana",
             "cooldown": 0,
             "type": "attack",
+            "school": "fire",
             "damageMultiplier": 2.0,
             "scaling": "intellect",
             "range": 800,
@@ -493,6 +571,7 @@
             "resourceType": "mana",
             "cooldown": 0,
             "type": "attack",
+            "school": "frost",
             "damageMultiplier": 1.6,
             "slowPercent": 0.4,
             "scaling": "intellect",
@@ -509,6 +588,7 @@
             "resourceType": "mana",
             "cooldown": 0,
             "type": "attack",
+            "school": "arcane",
             "damageMultiplier": 1.8,
             "stackingCost": true,
             "scaling": "intellect",
@@ -517,6 +597,26 @@
                 "delivery": "projectile",
                 "style": "arcane",
                 "speed": 1400
+            }
+        },
+        "arcane_missiles": {
+            "name": "Arcane Missiles",
+            "cost": 30,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "channeled",
+            "school": "arcane",
+            "channelDuration": 3.0,
+            "tickInterval": 0.5,
+            "ticksPerChannel": 6,
+            "damageMultiplier": 0.35,
+            "damagePerTick": true,
+            "scaling": "intellect",
+            "range": 800,
+            "visuals": {
+                "delivery": "beam",
+                "style": "arcane",
+                "duration": 3.0
             }
         },
         "counterspell": {
@@ -533,6 +633,7 @@
             "resourceType": "mana",
             "cooldown": 0,
             "type": "attack",
+            "school": "fire",
             "damageMultiplier": 3.5,
             "scaling": "intellect",
             "range": 800,
@@ -638,6 +739,15 @@
             "type": "buff",
             "range": 600,
             "duration": 10
+        },
+        "arcane_intellect": {
+            "name": "Arcane Intellect",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "party_buff",
+            "buffId": "arcane_intellect",
+            "range": 0
         }
     },
     "priest": {
@@ -647,6 +757,7 @@
             "resourceType": "mana",
             "cooldown": 0,
             "type": "attack",
+            "school": "holy",
             "damageMultiplier": 1.4,
             "scaling": "intellect",
             "range": 800,
@@ -662,6 +773,7 @@
             "resourceType": "mana",
             "cooldown": 10,
             "type": "dot_attack",
+            "school": "holy",
             "damageMultiplier": 1.2,
             "dotMultiplier": 0.4,
             "duration": 7,
@@ -682,6 +794,20 @@
             "healMultiplier": 3.0,
             "scaling": "intellect",
             "range": 800
+        },
+        "flash_heal": {
+            "name": "Flash Heal",
+            "cost": 25,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "heal",
+            "healMultiplier": 1.8,
+            "scaling": "intellect",
+            "range": 800,
+            "visuals": {
+                "delivery": "instant",
+                "style": "holy"
+            }
         },
         "renew": {
             "name": "Renew",
@@ -731,6 +857,7 @@
             "resourceType": "mana",
             "cooldown": 0,
             "type": "attack",
+            "school": "shadow",
             "range": 600,
             "damageMultiplier": 1.3,
             "scaling": "intellect",
@@ -769,6 +896,22 @@
             "range": 800,
             "healMultiplier": 2.0,
             "scaling": "intellect"
+        },
+        "prayer_of_mending": {
+            "name": "Prayer of Mending",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 10,
+            "type": "bounce_heal",
+            "healMultiplier": 1.5,
+            "maxBounces": 5,
+            "bounceRange": 800,
+            "scaling": "intellect",
+            "range": 800,
+            "visuals": {
+                "delivery": "instant",
+                "style": "holy"
+            }
         },
         "rapture": {
             "name": "Rapture",
@@ -819,6 +962,7 @@
             "resourceType": "mana",
             "cooldown": 0,
             "type": "attack",
+            "school": "shadow",
             "damageMultiplier": 1.8,
             "scaling": "intellect",
             "range": 800,
@@ -835,6 +979,7 @@
             "cooldown": 0,
             "type": "dot",
             "damageMultiplier": 0.3,
+            "dotMultiplier": 0.4,
             "duration": 18,
             "scaling": "intellect",
             "range": 800
@@ -857,6 +1002,7 @@
             "cooldown": 0,
             "type": "dot",
             "damageMultiplier": 0.5,
+            "dotMultiplier": 0.6,
             "duration": 15,
             "scaling": "intellect",
             "range": 800
@@ -867,6 +1013,7 @@
             "resourceType": "mana",
             "cooldown": 0,
             "type": "attack",
+            "school": "fire",
             "range": 600,
             "damageMultiplier": 1.3,
             "scaling": "intellect",
@@ -882,6 +1029,7 @@
             "resourceType": "mana",
             "cooldown": 0,
             "type": "attack",
+            "school": "shadow",
             "range": 600,
             "damageMultiplier": 1.3,
             "scaling": "intellect",
@@ -939,6 +1087,7 @@
             "resourceType": "mana",
             "cooldown": 0,
             "type": "attack",
+            "school": "fire",
             "range": 600,
             "damageMultiplier": 1.3,
             "scaling": "intellect",
@@ -968,13 +1117,167 @@
             "range": 600,
             "duration": 10
         },
-        "summon_demon": {
-            "name": "Summon Demon",
+        "summon_imp": {
+            "name": "Summon Imp",
             "cost": 0,
             "resourceType": "mana",
-            "cooldown": 10,
-            "type": "summon",
-            "range": 600
+            "cooldown": 0,
+            "type": "summon_pet",
+            "petType": "imp",
+            "range": 0
+        },
+        "summon_voidwalker": {
+            "name": "Summon Voidwalker",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "summon_pet",
+            "petType": "voidwalker",
+            "range": 0
+        },
+        "summon_succubus": {
+            "name": "Summon Succubus",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "summon_pet",
+            "petType": "succubus",
+            "range": 0
+        },
+        "summon_felhunter": {
+            "name": "Summon Felhunter",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "summon_pet",
+            "petType": "felhunter",
+            "range": 0
+        },
+        "summon_felguard": {
+            "name": "Summon Felguard",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "summon_pet",
+            "petType": "felguard",
+            "range": 0
+        },
+        "immolate": {
+            "name": "Immolate",
+            "cost": 25,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "dot_attack",
+            "school": "fire",
+            "damageMultiplier": 0.6,
+            "dotMultiplier": 0.4,
+            "duration": 15,
+            "scaling": "intellect",
+            "range": 800,
+            "visuals": {
+                "delivery": "projectile",
+                "style": "fire",
+                "speed": 1000
+            }
+        },
+        "conflagrate": {
+            "name": "Conflagrate",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 8,
+            "type": "attack",
+            "school": "fire",
+            "damageMultiplier": 1.8,
+            "consumesImmolate": true,
+            "scaling": "intellect",
+            "range": 800,
+            "visuals": {
+                "delivery": "instant",
+                "style": "fire_explosion"
+            }
+        },
+        "soul_fire": {
+            "name": "Soul Fire",
+            "cost": 40,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "school": "fire",
+            "damageMultiplier": 3.0,
+            "requiresLowHP": true,
+            "lowHPThreshold": 0.25,
+            "scaling": "intellect",
+            "range": 800,
+            "visuals": {
+                "delivery": "projectile",
+                "style": "fire_heavy",
+                "speed": 900
+            }
+        },
+        "shadowburn": {
+            "name": "Shadowburn",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "attack",
+            "school": "shadow",
+            "damageMultiplier": 2.0,
+            "requiresLowHP": true,
+            "lowHPThreshold": 0.2,
+            "scaling": "intellect",
+            "range": 800,
+            "visuals": {
+                "delivery": "projectile",
+                "style": "shadow",
+                "speed": 1100
+            }
+        },
+        "curse_of_agony": {
+            "name": "Curse of Agony",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "dot",
+            "school": "shadow",
+            "damageMultiplier": 0.3,
+            "duration": 24,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "curse_of_elements": {
+            "name": "Curse of Elements",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "debuff",
+            "school": "shadow",
+            "spellResistanceReduction": 0.1,
+            "duration": 300,
+            "range": 800
+        },
+        "life_tap": {
+            "name": "Life Tap",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "utility",
+            "convertsHPToMana": true,
+            "hpCost": 0.15,
+            "manaGain": 0.2,
+            "range": 0
+        },
+        "drain_life": {
+            "name": "Drain Life",
+            "cost": 30,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "dot_heal",
+            "school": "shadow",
+            "damageMultiplier": 0.2,
+            "healPercent": 0.1,
+            "duration": 5,
+            "scaling": "intellect",
+            "range": 800
         }
     },
     "hunter": {
@@ -1042,9 +1345,21 @@
             "name": "Call Pet",
             "cost": 0,
             "resourceType": "mana",
-            "cooldown": 10,
-            "type": "summon",
-            "range": 600
+            "cooldown": 0,
+            "type": "summon_pet",
+            "petType": "wolf",
+            "range": 0
+        },
+        "mend_pet": {
+            "name": "Mend Pet",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "heal",
+            "targetPet": true,
+            "healMultiplier": 1.5,
+            "scaling": "intellect",
+            "range": 800
         },
         "chimera_shot": {
             "name": "Chimera Shot",
@@ -1112,6 +1427,7 @@
             "resourceType": "mana",
             "cooldown": 0,
             "type": "attack",
+            "school": "nature",
             "damageMultiplier": 1.6,
             "scaling": "intellect",
             "range": 800,
@@ -1127,6 +1443,7 @@
             "resourceType": "mana",
             "cooldown": 8,
             "type": "attack",
+            "school": "fire",
             "damageMultiplier": 2.2,
             "scaling": "intellect",
             "range": 800,
@@ -1256,6 +1573,115 @@
             "range": 120,
             "damageMultiplier": 1.3,
             "scaling": "intellect"
+        },
+        "flame_shock": {
+            "name": "Flame Shock",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 6,
+            "type": "dot_attack",
+            "school": "fire",
+            "damageMultiplier": 0.5,
+            "dotMultiplier": 0.3,
+            "duration": 18,
+            "scaling": "intellect",
+            "range": 800,
+            "visuals": {
+                "delivery": "instant",
+                "style": "fire"
+            }
+        },
+        "frost_shock": {
+            "name": "Frost Shock",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 6,
+            "type": "attack",
+            "school": "frost",
+            "damageMultiplier": 1.0,
+            "slowPercent": 0.5,
+            "scaling": "intellect",
+            "range": 600
+        },
+        "lightning_shield": {
+            "name": "Lightning Shield",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "buff",
+            "school": "nature",
+            "charges": 3,
+            "damagePerCharge": 50,
+            "duration": 600,
+            "range": 0
+        },
+        "flametongue_weapon": {
+            "name": "Flametongue Weapon",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "weapon_enchant",
+            "school": "fire",
+            "fireDamageBonus": 0.15,
+            "duration": -1,
+            "range": 0
+        },
+        "windfury_weapon": {
+            "name": "Windfury Weapon",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "weapon_enchant",
+            "school": "nature",
+            "extraAttacks": 2,
+            "attackPowerBonus": 0.3,
+            "duration": -1,
+            "range": 0
+        },
+        "earth_shield": {
+            "name": "Earth Shield",
+            "cost": 30,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "shield",
+            "school": "nature",
+            "shieldMultiplier": 1.2,
+            "charges": 6,
+            "healOnHit": true,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "healing_stream_totem": {
+            "name": "Healing Stream Totem",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "totem",
+            "healPerTick": 50,
+            "tickInterval": 2,
+            "duration": 60,
+            "scaling": "intellect",
+            "range": 0
+        },
+        "mana_spring_totem": {
+            "name": "Mana Spring Totem",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "totem",
+            "manaPerTick": 20,
+            "tickInterval": 2,
+            "duration": 120,
+            "range": 0
+        },
+        "nature_swiftness": {
+            "name": "Nature's Swiftness",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 120,
+            "type": "buff",
+            "nextSpellInstant": true,
+            "range": 0
         }
     },
     "druid": {
@@ -1265,6 +1691,7 @@
             "resourceType": "mana",
             "cooldown": 0,
             "type": "attack",
+            "school": "nature",
             "damageMultiplier": 1.3,
             "scaling": "intellect",
             "range": 800,
@@ -1280,6 +1707,7 @@
             "resourceType": "mana",
             "cooldown": 0,
             "type": "attack",
+            "school": "arcane",
             "damageMultiplier": 2.4,
             "scaling": "intellect",
             "range": 800,
@@ -1335,7 +1763,7 @@
             "cooldown": 0,
             "type": "attack",
             "range": 120,
-            "damageMultiplier": 1.3,
+            "damageMultiplier": 1.5,
             "scaling": "intellect"
         },
         "regrowth": {
@@ -1375,7 +1803,7 @@
             "cooldown": 10,
             "type": "aoe",
             "range": 120,
-            "damageMultiplier": 0.8,
+            "damageMultiplier": 1.0,
             "aoeRadius": 200,
             "scaling": "intellect"
         },
@@ -1398,6 +1826,173 @@
             "range": 800,
             "healMultiplier": 2.0,
             "scaling": "intellect"
+        },
+        "moonfire": {
+            "name": "Moonfire",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "dot_attack",
+            "school": "arcane",
+            "damageMultiplier": 0.8,
+            "dotMultiplier": 0.3,
+            "duration": 12,
+            "scaling": "intellect",
+            "range": 800,
+            "visuals": {
+                "delivery": "instant",
+                "style": "arcane"
+            }
+        },
+        "insect_swarm": {
+            "name": "Insect Swarm",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "dot",
+            "school": "nature",
+            "damageMultiplier": 0.25,
+            "duration": 12,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "shred": {
+            "name": "Shred",
+            "cost": 40,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 2.2,
+            "requiresBehind": true,
+            "scaling": "agility",
+            "range": 120
+        },
+        "rake": {
+            "name": "Rake",
+            "cost": 35,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "dot",
+            "damageMultiplier": 0.3,
+            "duration": 9,
+            "scaling": "agility",
+            "range": 120
+        },
+        "rip": {
+            "name": "Rip",
+            "cost": 30,
+            "resourceType": "energy",
+            "cooldown": 0,
+            "type": "dot",
+            "damageMultiplier": 0.4,
+            "duration": 12,
+            "scaling": "agility",
+            "range": 120
+        },
+        "lacerate": {
+            "name": "Lacerate",
+            "cost": 15,
+            "resourceType": "rage",
+            "cooldown": 0,
+            "type": "dot",
+            "damageMultiplier": 0.2,
+            "duration": 15,
+            "threatMultiplier": 1.5,
+            "scaling": "strength",
+            "range": 120
+        },
+        "maul": {
+            "name": "Maul",
+            "cost": 10,
+            "resourceType": "rage",
+            "cooldown": 0,
+            "type": "attack",
+            "damageMultiplier": 1.2,
+            "threatMultiplier": 1.8,
+            "scaling": "strength",
+            "range": 120
+        },
+        "lifebloom": {
+            "name": "Lifebloom",
+            "cost": 25,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "hot",
+            "healMultiplier": 0.4,
+            "duration": 10,
+            "stackable": true,
+            "maxStacks": 3,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "swiftmend": {
+            "name": "Swiftmend",
+            "cost": 15,
+            "resourceType": "mana",
+            "cooldown": 15,
+            "type": "heal",
+            "healMultiplier": 2.5,
+            "consumesHot": true,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "nourish": {
+            "name": "Nourish",
+            "cost": 20,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "heal",
+            "healMultiplier": 1.8,
+            "scaling": "intellect",
+            "range": 800
+        },
+        "hurricane": {
+            "name": "Hurricane",
+            "cost": 40,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "aoe",
+            "damageMultiplier": 0.5,
+            "aoeRadius": 300,
+            "duration": 10,
+            "scaling": "intellect",
+            "range": 0
+        },
+        "bear_form": {
+            "name": "Bear Form",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "form",
+            "formId": "bear_form",
+            "range": 0
+        },
+        "cat_form": {
+            "name": "Cat Form",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "form",
+            "formId": "cat_form",
+            "range": 0
+        },
+        "moonkin_form": {
+            "name": "Moonkin Form",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "form",
+            "formId": "moonkin_form",
+            "range": 0
+        },
+        "tree_of_life": {
+            "name": "Tree of Life",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "form",
+            "formId": "tree_of_life",
+            "range": 0
         }
     }
 }

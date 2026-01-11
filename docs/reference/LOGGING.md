@@ -8,22 +8,18 @@ The game now has a comprehensive logging system that captures all console output
 - **Format**: Timestamped entries with log level and source
 - **Example**:
 ```
-[2025-12-27T13:45:00.000Z] [Renderer INFO] HeroFactory initialized
-[2025-12-27T13:45:01.000Z] [Main LOG] Game log file initialized
-[2025-12-27T13:45:02.000Z] [IPC WARN] Low mana warning
+[2026-01-10T22:14:27.639Z] [INFO] EventBus: Initialized
+[2026-01-10T22:14:27.700Z] [INFO] HeroFactory: Created hero: Warrior (warrior_warrior, Level 1)
+[2026-01-10T22:14:28.123Z] [WARN] CombatManager: Low mana warning for hero_12345
 ```
 
 ## How It Works
 
-### Browser Mode
-- Console logs are captured and stored in memory (`window.gameLogs`)
-- Persisted to localStorage for session continuity
-- Can be exported via `window.exportGameLogs()`
-
-### Electron/Desktop Mode
-- Renderer logs sent to main process via IPC
-- Main process logs captured and written to file
-- File is created/overwritten on each app start
+### Godot Logging System
+- All logs captured by Godot Logger singleton (Autoload)
+- Logs written to `logs/game-output.log` file with timestamps
+- File persists across game sessions
+- Structured logging with log levels (INFO, WARN, ERROR, DEBUG)
 
 ## Checking Logs
 
@@ -39,38 +35,30 @@ node scripts/check-logs.js 100
 node scripts/check-logs.js all
 ```
 
-### Method 2: Browser Console (Development)
-Open browser DevTools and run:
-```javascript
-// View all captured logs
-console.table(window.gameLogs);
-
-// Export logs to file
-window.exportGameLogs();
-
-// Clear logs
-window.clearGameLogs();
-```
+### Method 2: Godot Editor Console
+Open Godot Editor Output panel or run the game from editor to see real-time logs.
 
 ## Log Levels Captured
 - `LOG` - General information
 - `INFO` - Important events
 - `WARN` - Warnings
 - `ERROR` - Errors
-- `DEBUG` - Debug information (not sent to main process in Electron)
+- `DEBUG` - Debug information (available in Godot editor console)
 
 ## Usage Examples
 
 ### In Game Code
-```javascript
-// Normal logging (captured by system)
-console.log('Player leveled up to', level);
-console.warn('Low health warning');
-console.error('Failed to load save file');
+```gdscript
+# Normal logging (captured by Logger singleton)
+_log_info("HeroFactory", "Player leveled up to %d" % level)
+_log_warn("CombatManager", "Low health warning")
+_log_error("SaveManager", "Failed to load save file")
 
-// Structured logging with Logger class
-Logger.info('HeroFactory', 'Created hero:', hero.name);
-Logger.error('CombatManager', 'Invalid combat state');
+# Structured logging with Logger singleton methods
+var logger = get_node_or_null("/root/Logger")
+if logger:
+    logger.info("HeroFactory", "Created hero: %s" % hero.name)
+    logger.error("CombatManager", "Invalid combat state")
 ```
 
 ### Checking Logs During Development
@@ -86,24 +74,23 @@ tail -f logs/game-output.log
 
 ### No Logs Appearing
 1. Check if `logs/game-output.log` exists
-2. Verify Electron is running (not just browser)
-3. Check browser console for JavaScript errors
-4. Ensure Vite dev server is running on correct port
+2. Verify Godot game is running
+3. Check Godot editor console for errors
+4. Ensure Logger singleton is properly initialized
 
-### Electron Not Starting
-If Electron fails to start:
-1. Check Node.js version compatibility
-2. Verify all dependencies are installed: `npm install`
-3. Check for syntax errors in `electron/main.js`
-4. Try browser mode first: `npm run dev`
+### Game Not Starting
+If Godot fails to start:
+1. Check if Godot 4.x is installed
+2. Verify project.godot file exists and is valid
+3. Check Godot editor console for errors
+4. Try opening project directly in Godot editor
 
 ### Log File Not Updating
-1. Electron main process may have crashed
+1. Game process may have crashed
 2. File permissions issue
-3. Check terminal output for Electron errors
+3. Check Godot editor output for errors
 
 ## Log Files Created
-- `logs/game-output.log` - Main game log file
-- Browser downloads: `game-logs-YYYY-MM-DDTHH-MM-SS.txt` (when exported)
+- `logs/game-output.log` - Main game log file (automatically managed)
 
 The logging system is designed to be non-intrusive and automatically capture all relevant game activity for debugging and monitoring.

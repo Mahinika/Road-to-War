@@ -131,7 +131,9 @@ func _on_item_picked_up(_item):
 
 func _setup_hero_tabs():
 	if not hero_select_container: return
-	for child in hero_select_container.get_children(): child.queue_free()
+	for child in hero_select_container.get_children():
+		if is_instance_valid(child):
+			child.queue_free()
 	
 	var pm = get_node_or_null("/root/PartyManager")
 	var ut = get_node_or_null("/root/UITheme")
@@ -229,10 +231,16 @@ func _update_stats_display(hero):
 
 func _update_equipment_display(hero_id: String):
 	if not equipment_left or not equipment_right: return
-	for child in equipment_left.get_children(): child.queue_free()
-	for child in equipment_right.get_children(): child.queue_free()
+	for child in equipment_left.get_children():
+		if is_instance_valid(child):
+			child.queue_free()
+	for child in equipment_right.get_children():
+		if is_instance_valid(child):
+			child.queue_free()
 	if equipment_bottom:
-		for child in equipment_bottom.get_children(): child.queue_free()
+		for child in equipment_bottom.get_children():
+			if is_instance_valid(child):
+				child.queue_free()
 		
 	var eq = get_node_or_null("/root/EquipmentManager")
 	if not eq: return
@@ -273,11 +281,22 @@ func _create_slot_button(container: Control, slot_name: String, item_id):
 	if item_id:
 		var eq = get_node_or_null("/root/EquipmentManager")
 		var item_data = eq.get_item_data(item_id) if eq else {}
-		if item_data.has("icon"):
-			var icon_tex = load(item_data["icon"])
-			if icon_tex:
-				btn.icon = icon_tex
-				btn.expand_icon = true
+		
+		# Try to load item icon from new location
+		var icon_path = "res://assets/sprites/equipment/%s.png" % item_id
+		var icon_tex: Texture2D = null
+		if ResourceLoader.exists(icon_path):
+			icon_tex = load(icon_path)
+		# Fallback to old icon field if exists
+		elif item_data.has("icon"):
+			icon_tex = load(item_data["icon"]) if ResourceLoader.exists(item_data["icon"]) else null
+		# Fallback to texture field
+		elif item_data.has("texture"):
+			icon_tex = load(item_data["texture"]) if ResourceLoader.exists(item_data["texture"]) else null
+		
+		if icon_tex:
+			btn.icon = icon_tex
+			btn.expand_icon = true
 		else:
 			btn.text = item_data.get("name", item_id).left(2)
 		btn.tooltip_text = _get_equipment_tooltip(slot_name, item_data)
@@ -327,7 +346,9 @@ func _get_equipment_tooltip(slot_name: String, item_data: Dictionary) -> String:
 
 func _refresh_inventory():
 	if not inventory_grid or not inventory_info: return
-	for child in inventory_grid.get_children(): child.queue_free()
+	for child in inventory_grid.get_children():
+		if is_instance_valid(child):
+			child.queue_free()
 	
 	var lm = get_node_or_null("/root/LootManager")
 	if not lm: return
@@ -354,6 +375,8 @@ func _refresh_inventory():
 	var ui_builder = get_node_or_null("/root/UIBuilder")
 	for i in range(filtered_inventory.size()):
 		var item = filtered_inventory[i]
+		var item_id = item.get("id", "")
+		var data = item.get("data", {})
 		var item_btn: Button
 		
 		if ui_builder:
@@ -368,17 +391,25 @@ func _refresh_inventory():
 			item_btn.custom_minimum_size = Vector2(50, 50)
 			inventory_grid.add_child(item_btn)
 		
-		item_btn.set_script(TooltipButton)
-		var item_data = item.get("data", {})
-		if item_data.has("icon"):
-			var icon_tex = load(item_data["icon"])
-			if icon_tex:
-				item_btn.icon = icon_tex
-				item_btn.expand_icon = true
+		# Try to load item icon from new location
+		var icon_path = "res://assets/sprites/equipment/%s.png" % item_id
+		var icon_tex: Texture2D = null
+		if ResourceLoader.exists(icon_path):
+			icon_tex = load(icon_path)
+		# Fallback to old texture field
+		elif data.has("texture") and ResourceLoader.exists(data["texture"]):
+			icon_tex = load(data["texture"])
+		
+		if icon_tex:
+			item_btn.icon = icon_tex
+			item_btn.expand_icon = true
 		else:
-			item_btn.text = item_data.get("name", "Item").left(2)
+			# Fallback to text
+			item_btn.text = data.get("name", item_id).left(2)
+		
+		item_btn.set_script(TooltipButton)
 		item_btn.tooltip_text = _get_item_tooltip(item)
-		item_btn.modulate = _get_rarity_color(item.get("quality", "common"))
+		item_btn.modulate = Color.WHITE  # Reset modulate so icon colors show correctly
 		item_btn.pressed.connect(_on_item_pressed.bind(item, i))
 		# Button is already added to grid by UIBuilder.create_button() or in fallback path
 

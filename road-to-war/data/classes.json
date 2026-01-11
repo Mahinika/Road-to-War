@@ -56,6 +56,8 @@
       "smite",
       "holy_fire",
       "greater_heal",
+      "flash_heal",
+      "prayer_of_mending",
       "renew",
       "power_word_shield"
     ],
@@ -80,6 +82,7 @@
       "fireball",
       "frostbolt",
       "arcane_blast",
+      "arcane_missiles",
       "counterspell",
       "pyroblast",
       "arcane_explosion"
@@ -121,16 +124,17 @@
     "movementSpeed": 180,
     "preferredRange": 2
   },
-  "warlock": {
-    "id": "warlock",
-    "name": "Warlock",
-    "coreAbilities": [
-      "auto_attack",
-      "shadow_bolt",
-      "corruption",
-      "unstable_affliction",
-      "seed_of_corruption"
-    ],
+    "warlock": {
+        "id": "warlock",
+        "name": "Warlock",
+        "coreAbilities": [
+            "auto_attack",
+            "shadow_bolt",
+            "corruption",
+            "unstable_affliction",
+            "seed_of_corruption",
+            "summon_imp"
+        ],
     "availableSpecs": [
       "affliction",
       "demonology",
@@ -144,15 +148,17 @@
     "movementSpeed": 120,
     "preferredRange": 18
   },
-  "hunter": {
-    "id": "hunter",
-    "name": "Hunter",
-    "coreAbilities": [
-      "auto_attack",
-      "aimed_shot",
-      "steady_shot",
-      "explosive_trap"
-    ],
+    "hunter": {
+        "id": "hunter",
+        "name": "Hunter",
+        "coreAbilities": [
+            "auto_attack",
+            "aimed_shot",
+            "steady_shot",
+            "explosive_trap",
+            "call_pet",
+            "mend_pet"
+        ],
     "availableSpecs": [
       "beast_mastery",
       "marksmanship",

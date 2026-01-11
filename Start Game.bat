@@ -2,22 +2,32 @@
 cd /d "%~dp0"
 title Road of War
 
-REM Clean up any existing processes
-taskkill /F /IM node.exe >nul 2>&1
-taskkill /F /IM electron.exe >nul 2>&1
-timeout /t 1 /nobreak >nul
-
-echo Starting Road of War...
+echo ========================================
+echo   ROAD OF WAR - GODOT GAME
+echo ========================================
+echo.
+echo This game requires Godot 4.x to be installed.
+echo.
+echo To run the game:
+echo 1. Open Godot Editor 4.x
+echo 2. Open project: road-to-war\project.godot
+echo 3. Press F5 or click Play button
+echo.
+echo Alternatively, if Godot is in your PATH:
+echo   godot --path road-to-war --scene "scenes/Main.tscn"
 echo.
 
-REM Start Vite server in background (minimized)
-start /MIN "" cmd /c "cd /d %~dp0 && npx vite --port 3000"
+REM Try to start Godot directly if it's in PATH
+cd road-to-war
+godot --path . --scene "scenes/Main.tscn" 2>nul
+if %errorlevel% neq 0 (
+    echo.
+    echo ERROR: Godot executable not found in PATH.
+    echo Please install Godot 4.x and add it to your PATH,
+    echo or open the project manually in Godot Editor.
+    echo.
+    pause
+)
 
-REM Wait for server to be ready
-timeout /t 6 /nobreak >nul
-
-REM Start Electron (this will show the game window)
-npx cross-env NODE_ENV=development electron .
-
-REM Cleanup when game closes
-taskkill /F /IM node.exe >nul 2>&1
+echo.
+echo Game closed.

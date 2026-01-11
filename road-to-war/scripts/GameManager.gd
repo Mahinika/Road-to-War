@@ -25,15 +25,6 @@ func _ready():
 		get_node("/root/CursorLogManager").debug_log("GameManager initialized")
 	
 	_log_info("GameManager", "System started")
-	
-	# Run tests in debug mode
-	# if OS.is_debug_build():
-	# 	var test_script = load("res://tests/TestSuite.gd")
-	# 	if test_script:
-	# 		var test_suite = Node.new()
-	# 		test_suite.set_script(test_script)
-	# 		add_child(test_suite)
-	# 		test_suite.call_deferred("run_all_tests")
 
 func start_new_game():
 	_log_info("GameManager", "Starting new game")

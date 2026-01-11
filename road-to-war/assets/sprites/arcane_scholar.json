@@ -1,8 +1,7 @@
 {
-  "id": "arcane_scholar",
-  "description": "Robed mage with staff",
-  "size": 64,
-  "primaryColor": "#4169E1",
-  "generator": "lpc-style",
-  "timestamp": "2026-01-07T10:14:40.396Z"
+  "seed": 13346,
+  "type": "bloodline_hero",
+  "bloodline": "arcane_scholar",
+  "generatedAt": "2026-01-10T22:46:41.358Z",
+  "version": "1.1.0"
 }

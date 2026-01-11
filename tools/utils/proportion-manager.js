@@ -56,8 +56,8 @@ export class ProportionManager {
      */
     getTorsoBounds(centerX, centerY) {
         const torsoHeight = this.proportions.torso;
-        const torsoWidth = Math.floor(torsoHeight * 0.8); // Torso is slightly narrower than tall
-        const torsoTop = this.positions.torsoTop - 2; // Move torso up slightly to overlap with head
+        const torsoWidth = Math.floor(torsoHeight * 1.0); // Torso should be as wide as tall for pixel art
+        const torsoTop = this.positions.torsoTop - 3; // Move torso up more to overlap better with head
         const torsoCenterY = torsoTop + torsoHeight / 2;
         
         return {
@@ -79,14 +79,14 @@ export class ProportionManager {
      */
     getArmBounds(centerX, centerY, side = 'left') {
         const armLength = this.proportions.limbs;
-        const armWidth = Math.floor(armLength * 0.45); // Arms are a bit thicker
+        const armWidth = Math.floor(armLength * 0.7); // Arms need to be thicker for pixel art
         const torsoBounds = this.getTorsoBounds(centerX, centerY);
-        const armTop = torsoBounds.y + 2; // Start just below top of torso
+        const armTop = torsoBounds.y - 1; // Start overlapping with torso top for seamless connection
         
-        // Arms overlap with torso sides
+        // Arms overlap with torso sides more for better connection
         const armX = side === 'left' 
-            ? torsoBounds.x - armWidth + 2
-            : torsoBounds.x + torsoBounds.width - 2;
+            ? torsoBounds.x - armWidth + 4  // More overlap
+            : torsoBounds.x + torsoBounds.width - 4;  // More overlap
         
         return {
             x: armX,
@@ -107,13 +107,13 @@ export class ProportionManager {
      */
     getLegBounds(centerX, centerY, side = 'left') {
         const legLength = this.proportions.limbs;
-        const legWidth = Math.floor(legLength * 0.55); // Legs are thicker
+        const legWidth = Math.floor(legLength * 0.8); // Legs need to be much thicker for pixel art
         const torsoBounds = this.getTorsoBounds(centerX, centerY);
-        const legTop = torsoBounds.y + torsoBounds.height - 3; // Overlap with torso bottom
+        const legTop = torsoBounds.y + torsoBounds.height - 5; // More overlap with torso bottom for seamless connection
         
         const legX = side === 'left'
-            ? centerX - legWidth + 1
-            : centerX - 1;
+            ? centerX - legWidth + 2  // Better alignment
+            : centerX - 2;  // Better alignment
             
         return {
             x: legX,

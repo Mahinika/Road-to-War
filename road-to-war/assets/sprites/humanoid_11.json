@@ -1,9 +1,8 @@
 {
-  "id": "humanoid_11",
-  "tier": 2,
-  "tierName": "Journeyman",
-  "size": 64,
-  "primaryColor": "#3c78aa",
-  "generator": "lpc-style",
-  "timestamp": "2026-01-07T10:14:40.439Z"
+  "seed": 12356,
+  "type": "humanoid",
+  "palette": "warm",
+  "equipment": {},
+  "generatedAt": "2026-01-08T12:15:57.339Z",
+  "version": "1.1.0"
 }

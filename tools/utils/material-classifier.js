@@ -3,6 +3,8 @@
  * Classifies colors by material type using HSV color space analysis
  */
 
+import { hexToRgbArray } from './color-utils.js';
+
 export class MaterialClassifier {
     /**
      * Convert RGB to HSV
@@ -87,11 +89,7 @@ export class MaterialClassifier {
      * @returns {Array<number>} [r, g, b]
      */
     hexToRgb(hex) {
-        return [
-            (hex >> 16) & 0xFF,
-            (hex >> 8) & 0xFF,
-            hex & 0xFF
-        ];
+        return hexToRgbArray(hex);
     }
     
     /**

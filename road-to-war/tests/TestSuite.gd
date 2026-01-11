@@ -35,6 +35,7 @@ func run_all_tests():
 	test_end_to_end_combat_flow()
 	test_end_to_end_level_progression()
 	test_end_to_end_equipment_system()
+	test_equipment_visual_pipeline()
 	
 	print("\n=== TEST SUITE COMPLETED ===\n")
 
@@ -182,23 +183,20 @@ func test_stats_audit():
 	
 	report["anomalies"] = anomalies
 	
-	# Write report to user:// for easy sharing
+	# Write report to user:// for easy sharing and AI inspection
+	# Note: Automation scripts (scripts/run-balance-audit.js) handle copying to .cursor/ if needed
 	var out_path := "user://stats_audit_report.json"
 	var f = FileAccess.open(out_path, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(report, "\t") + "\n")
 		f.close()
 		print("  - Stats audit report written to: %s" % out_path)
+		# Log via CursorLogManager if available
+		var log_manager = get_node_or_null("/root/CursorLogManager")
+		if log_manager:
+			log_manager.debug_log("Balance audit report saved to: %s" % out_path)
 	else:
 		print("  - Stats audit report could not be written (FileAccess failed).")
-
-	# Also write to the project's .cursor folder for quick AI inspection (development only).
-	var cursor_out_path := "c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\stats_audit_report.json"
-	var f2 = FileAccess.open(cursor_out_path, FileAccess.WRITE)
-	if f2:
-		f2.store_string(JSON.stringify(report, "\t") + "\n")
-		f2.close()
-		print("  - Stats audit report written to: %s" % cursor_out_path)
 	
 	# Print a concise summary in the console
 	print("  - Stats Audit: classes=%d anomalies=%d" % [int(classes.size()), int(anomalies.size())])
@@ -758,7 +756,7 @@ func test_end_to_end_equipment_system():
 	var initial_attack = hero.current_stats.get("attack", 0)
 	
 	# 2. Equip item
-	var equip_success = EquipmentManager.equip_item("equip_hero", "rusty_sword", "main_hand")
+	var equip_success = EquipmentManager.equip_item("equip_hero", "rusty_sword", "weapon")
 	assert(equip_success, "Equipment should succeed")
 	
 	# 3. Recalculate stats
@@ -771,7 +769,97 @@ func test_end_to_end_equipment_system():
 	assert(save_data.has("equipment"), "Save data should have equipment")
 	
 	# 5. Unequip
-	var unequip_success = EquipmentManager.unequip_item("equip_hero", "main_hand")
+	var unequip_success = EquipmentManager.unequip_item("equip_hero", "weapon")
 	assert(unequip_success, "Unequip should succeed")
 	
 	print("  - End-to-End Equipment System: PASS")
+
+func test_equipment_visual_pipeline():
+	print("[TEST] Equipment Visual Pipeline (All Classes/Items)...")
+	
+	var dm = get_node_or_null("/root/DataManager")
+	assert(dm != null, "DataManager required for equipment visual pipeline test")
+	
+	var items_data: Dictionary = dm.get_data("items")
+	var classes_data: Dictionary = dm.get_data("classes")
+	assert(items_data != null and items_data.size() > 0, "items.json must load")
+	assert(classes_data != null and classes_data.size() > 0, "classes.json must load")
+	
+	var hero_scene = load("res://scenes/HeroSprite.tscn")
+	assert(hero_scene != null, "HeroSprite scene must load")
+	
+	var failures: Array[String] = []
+	
+	for class_id in classes_data.keys():
+		var hero_id := "vis_%s" % str(class_id)
+		var hero_sprite = hero_scene.instantiate()
+		add_child(hero_sprite)
+		
+		hero_sprite.setup({"id": hero_id, "name": "VisTest", "class_id": str(class_id)})
+		
+		var marker_paths := [
+			"Visuals/WeaponAttachment",
+			"Visuals/OffhandAttachment",
+			"Visuals/ChestAttachment",
+			"Visuals/HeadAttachment",
+			"Visuals/LegsAttachment",
+			"Visuals/ShoulderAttachment",
+			"Visuals/NeckAttachment",
+			"Visuals/RingAttachment",
+			"Visuals/TrinketAttachment"
+		]
+		for marker_path in marker_paths:
+			var marker = hero_sprite.get_node_or_null(marker_path)
+			if marker and marker.position.y >= 0.0:
+				failures.append("%s marker not above origin for class %s (y=%f)" % [marker_path, class_id, marker.position.y])
+		
+		for category in ["weapons", "armor", "accessories"]:
+			var cat: Dictionary = items_data.get(category, {})
+			for item_id in cat.keys():
+				var item: Dictionary = cat[item_id]
+				
+				if item.has("class_restriction"):
+					var restrictions = item.get("class_restriction")
+					if restrictions is Array and restrictions.size() > 0 and not restrictions.has(str(class_id)):
+						continue
+					if restrictions is String and restrictions != "" and restrictions != str(class_id):
+						continue
+				
+				var slot := str(item.get("slot", ""))
+				if slot == "":
+					failures.append("%s missing slot field" % str(item_id))
+					continue
+				
+				hero_sprite._apply_item_visual(slot, item)
+				
+				var mapped_slot := slot
+				if mapped_slot.begins_with("ring"):
+					mapped_slot = "ring"
+				elif mapped_slot.begins_with("trinket"):
+					mapped_slot = "trinket"
+				elif mapped_slot == "amulet":
+					mapped_slot = "neck"
+				elif mapped_slot == "mainhand" or mapped_slot == "weapon":
+					mapped_slot = "weapon"
+				elif mapped_slot == "offhand" or mapped_slot == "shield":
+					mapped_slot = "offhand"
+				
+				var layer = hero_sprite.layer_nodes.get(mapped_slot, null)
+				if layer == null:
+					failures.append("No layer for slot %s (mapped %s) item %s class %s" % [slot, mapped_slot, item_id, class_id])
+					continue
+				
+				if layer.texture == null:
+					failures.append("No texture applied for item %s slot %s class %s" % [item_id, slot, class_id])
+					continue
+				
+				var expected_path := str(item.get("texture", ""))
+				if expected_path != "" and ResourceLoader.exists(expected_path):
+					var loaded_path := str(layer.texture.resource_path)
+					if loaded_path == "" or not loaded_path.ends_with(expected_path.get_file()):
+						failures.append("Texture mismatch for item %s class %s (expected %s, got %s)" % [item_id, class_id, expected_path, loaded_path])
+		
+		hero_sprite.queue_free()
+	
+	assert(failures.is_empty(), "Equipment visual pipeline failures:\n  - " + "\n  - ".join(failures))
+	print("  - Equipment Visual Pipeline: PASS")

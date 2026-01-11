@@ -1,7 +1,7 @@
 extends Node
 
 # EventBus.gd - Centralized event system
-# Migrated from src/utils/event-bus.js
+# Godot 4.x event communication system
 # In Godot, we use signals, but this provides a centralized event bus pattern
 
 signal event_emitted(event_name, data)

@@ -4,6 +4,7 @@ extends Node
 
 signal quest_progress_updated(quest_id, current, target)
 signal quest_completed(quest_id)
+signal quests_loaded()  # Emitted when quests are initially loaded (used by QuestTracker.gd)
 
 # Map<quest_id, {current_count: int, completed: bool}>
 var player_quests: Dictionary = {}
@@ -33,9 +34,15 @@ func _load_quests():
 	var data = dm.get_data("quests") if dm else null
 	if not data: return
 	
+	var quests_loaded_count = 0
 	for q_id in data.get("active_quests", {}):
 		if not player_quests.has(q_id):
 			player_quests[q_id] = {"current": 0, "completed": false}
+			quests_loaded_count += 1
+	
+	# Emit signal when quests are loaded (for UI updates)
+	if quests_loaded_count > 0:
+		quests_loaded.emit()  # Direct emit, no need for deferred call
 
 func update_progress(quest_id: String, amount: int = 1):
 	if not player_quests.has(quest_id) or player_quests[quest_id].completed: return

@@ -191,6 +191,28 @@ func setup_animations() -> void:
 
 **Tip**: Build an EditorTool script to auto-generate combo previews and flag issues.
 
+## Troubleshooting: Equipment Displays Incorrectly
+
+### Symptoms
+- Equipment appears too low (near feet/hips), detached from the hero body, or inconsistent between slots.
+- Equipment appears at the right slot but at the wrong scale (too small compared to the hero body).
+- Glow/shader state “sticks” after swapping items.
+
+### Root Cause
+- Attachment marker positions were calculated as if the hero body pivot was centered, but the sprite rig uses a bottom-aligned pivot. This offset caused all marker-based attachments to be placed at incorrect world positions.
+- Equipment scaling was being computed during texture load, then overwritten during attachment, causing equipment to render at the wrong size relative to the body.
+
+### Solution
+- Compute attachment marker positions relative to the body’s true coordinate origin (feet), using the body’s scaled dimensions.
+- Preserve the equipment layer’s computed scale when attaching it to a marker (do not overwrite it during reparenting).
+- Reset per-layer shader parameters (notably glow intensity) when clearing equipment layers, so render state cannot leak between items.
+
+### Debugging
+- Toggle equipment debug overlay in-game with F9 to visualize attachment markers and loaded/placeholder states:
+  - Green marker: item texture loaded from disk
+  - Yellow marker: placeholder texture in use
+  - Red marker: no visible layer/texture
+
 ## 7️⃣ Visual Flow Diagram
 
 ```

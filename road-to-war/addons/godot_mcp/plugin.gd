@@ -15,20 +15,25 @@ func _enter_tree():
 	command_handler = preload("res://addons/godot_mcp/command_handler.gd").new()
 	command_handler.set_editor_plugin(self)
 	
+	# Add UI first (before server startup)
+	var panel_instance = preload("res://addons/godot_mcp/ui/mcp_panel.tscn").instantiate()
+	add_control_to_bottom_panel(panel_instance, "MCP")
+	
 	# Start the TCP server
 	server = TCPServer.new()
 	var error = server.listen(SERVER_PORT)
 	if error != OK:
-		push_error("Failed to start Godot MCP Server on port %d: %s" % [SERVER_PORT, error])
+		push_error("Failed to start Godot MCP Server on port %d: %s (Port may already be in use)" % [SERVER_PORT, error])
+		# Still allow plugin to load, just without the server
+		if panel_instance.has_method("update_status"):
+			panel_instance.update_status("Failed to start - port in use", true)
+		if panel_instance.has_method("add_log_message"):
+			panel_instance.add_log_message("ERROR: Port %d is already in use. Please free the port or change SERVER_PORT in plugin.gd" % SERVER_PORT)
 		return
 	
 	print("Godot MCP Server listening on port %d" % SERVER_PORT)
-	
-	# Add UI
-	add_control_to_bottom_panel(
-		preload("res://addons/godot_mcp/ui/mcp_panel.tscn").instantiate(),
-		"MCP"
-	)
+	if panel_instance.has_method("update_status"):
+		panel_instance.update_status("Running on port %d" % SERVER_PORT)
 
 func _exit_tree():
 	# Clean up the plugin when disabled
@@ -42,8 +47,11 @@ func _exit_tree():
 	
 	active_connections.clear()
 	
-	# Remove UI
-	remove_control_from_bottom_panel(get_editor_interface().get_base_control().get_node("MCPPanel"))
+	# Remove UI (safely check if it exists)
+	var base_control = get_editor_interface().get_base_control()
+	var mcp_panel_node = base_control.get_node_or_null("MCPPanel")
+	if mcp_panel_node:
+		remove_control_from_bottom_panel(mcp_panel_node)
 	print("Godot MCP Plugin deactivated")
 
 func _process(delta):

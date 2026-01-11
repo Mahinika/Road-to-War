@@ -132,7 +132,8 @@ func _rebuild_tabs() -> void:
 		return
 
 	for c in _tabs_container.get_children():
-		c.queue_free()
+		if is_instance_valid(c):
+			c.queue_free()
 
 	for hero in _party_manager.heroes:
 		var label = hero.name
@@ -156,7 +157,8 @@ func _rebuild_list() -> void:
 	if not _list_container:
 		return
 	for c in _list_container.get_children():
-		c.queue_free()
+		if is_instance_valid(c):
+			c.queue_free()
 
 	var hero = _party_manager.get_hero_by_id(_selected_hero_id)
 	if not hero:
@@ -206,6 +208,22 @@ func _rebuild_list() -> void:
 		var min_level: int = int(e["min_level"])
 		var unlocked: bool = hero.level >= min_level
 		var just_unlocked: bool = (min_level > old_level and min_level <= hero.level)
+
+		# Ability icon
+		var icon_path = "res://assets/icons/spells/%s.png" % e["id"]
+		var icon_texture: Texture2D = null
+		if ResourceLoader.exists(icon_path):
+			icon_texture = load(icon_path)
+		
+		if icon_texture:
+			var icon_rect = TextureRect.new()
+			icon_rect.texture = icon_texture
+			icon_rect.custom_minimum_size = Vector2(32, 32)
+			icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+			icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			if not unlocked:
+				icon_rect.modulate = Color(0.5, 0.5, 0.5, 0.7)
+			row.add_child(icon_rect)
 
 		var left = Label.new()
 		left.size_flags_horizontal = Control.SIZE_EXPAND_FILL

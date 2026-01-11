@@ -19,7 +19,6 @@ var road_generator: Node = null
 var town_generator: Node = null
 var city_generator: Node = null
 var npc_generator: Node = null
-var pixel_art_renderer: Node = null
 var current_road: Dictionary = {}
 var current_buildings: Array = []
 var current_npcs: Array = []
@@ -77,7 +76,6 @@ func _ready():
 	town_generator = get_node_or_null("/root/TownBiomeGenerator")
 	city_generator = get_node_or_null("/root/CityBiomeGenerator")
 	npc_generator = get_node_or_null("/root/NPCGenerator")
-	pixel_art_renderer = get_node_or_null("/root/PixelArtRenderer")
 	_log_info("EnvironmentBackgroundGenerator", "Initialized")
 
 # Generate environment background for a biome

@@ -49,6 +49,11 @@ ChallengeModeManager="*res://scripts/ChallengeModeManager.gd"
 ResourceManager="*res://scripts/ResourceManager.gd"
 MovementManager="*res://scripts/MovementManager.gd"
 SaveManager="*res://scripts/SaveManager.gd"
+ThreatSystem="*res://scripts/ThreatSystem.gd"
+ComboPointSystem="*res://scripts/ComboPointSystem.gd"
+PartyBuffSystem="*res://scripts/PartyBuffSystem.gd"
+FormSystem="*res://scripts/FormSystem.gd"
+DoTManager="*res://scripts/DoTManager.gd"
 DamageCalculator="*res://scripts/DamageCalculator.gd"
 RoadGenerator="*res://scripts/RoadGenerator.gd"
 ProceduralItemGenerator="*res://scripts/ProceduralItemGenerator.gd"
@@ -69,4 +74,4 @@ window/stretch/mode="canvas_items"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg", "res://addons/gut/plugin.cfg")
+enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")

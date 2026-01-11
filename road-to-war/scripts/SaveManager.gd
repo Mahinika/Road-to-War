@@ -42,6 +42,10 @@ func _ready():
 	_log_info("SaveManager", "Initialized")
 	load_save_slots()
 
+# @CRITICAL: Game save operation - collects data from all managers and persists to disk
+# Used by: Options.gd (save button), auto-save system
+# Changing this requires: Update collect_save_data() if new managers added, maintain save format compatibility
+# Performance: File I/O operation, may take 50-200ms, not called during gameplay
 func save_game(slot: int = -1) -> bool:
 	if slot == -1:
 		slot = current_save_slot
@@ -65,6 +69,10 @@ func save_game(slot: int = -1) -> bool:
 		_log_error("SaveManager", "Failed to save game to slot %d" % slot)
 		return false
 
+# @CRITICAL: Game load operation - loads save data and applies to all managers via apply_save_data()
+# Used by: SaveLoad.gd, MainMenu.gd (continue game)
+# Changing this requires: Update apply_save_data() if save format changes, handle migration for old saves
+# Performance: File I/O operation, may take 50-200ms, called during scene transitions
 func load_game(slot: int = -1) -> Dictionary:
 	if slot == -1:
 		slot = current_save_slot

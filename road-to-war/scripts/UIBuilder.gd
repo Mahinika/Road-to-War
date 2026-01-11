@@ -310,29 +310,16 @@ func create_cooldown_overlay(parent: Control, size: Vector2, position: Vector2 =
 
 # Create a WoW-style label
 func create_label(parent: Control, text: String, position: Vector2 = Vector2.ZERO, config: Dictionary = {}) -> Label:
-	# Simple print for immediate visibility
-	print("[UIBuilder] create_label called with text='", text, "', bold=", config.get("bold", false))
-	
-	# #region agent log
-	var log_file_entry = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
-	if log_file_entry:
-		log_file_entry.seek_end()
-		log_file_entry.store_line(JSON.stringify({
-			"location": "UIBuilder.gd:create_label:entry",
-			"message": "create_label called",
-			"data": {
-				"text": text,
-				"bold_requested": config.get("bold", false),
-				"config_keys": config.keys()
-			},
-			"timestamp": Time.get_ticks_msec(),
-			"sessionId": "debug-session",
-			"hypothesisId": "A"
-		}))
-		log_file_entry.close()
-	else:
-		print("[UIBuilder] ERROR: Could not open log file!")
-	# #endregion
+	# Structured logging via CursorLogManager
+	var log_manager = get_node_or_null("/root/CursorLogManager")
+	if log_manager:
+		log_manager.log_structured(
+			"UIBuilder.gd:create_label:entry",
+			"create_label called",
+			{"text": text, "bold_requested": config.get("bold", false), "config_keys": config.keys()},
+			"debug-session",
+			"A"
+		)
 	
 	var label = Label.new()
 	label.text = text
@@ -345,97 +332,59 @@ func create_label(parent: Control, text: String, position: Vector2 = Vector2.ZER
 	var text_color = config.get("text_color", Color.WHITE)
 	label.add_theme_color_override("font_color", text_color)
 	
-	# #region agent log
-	var log_file = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
-	if log_file:
-		log_file.seek_end()
-		log_file.store_line(JSON.stringify({
-			"location": "UIBuilder.gd:create_label:before_bold_check",
-			"message": "Checking bold font request",
-			"data": {
-				"bold_requested": config.get("bold", false),
-				"config": config
-			},
-			"timestamp": Time.get_ticks_msec(),
-			"sessionId": "debug-session",
-			"hypothesisId": "A"
-		}))
-		log_file.close()
-	# #endregion
+	# Structured logging via CursorLogManager
+	if log_manager:
+		log_manager.log_structured(
+			"UIBuilder.gd:create_label:before_bold_check",
+			"Checking bold font request",
+			{"bold_requested": config.get("bold", false), "config": config},
+			"debug-session",
+			"A"
+		)
 	
 	if config.get("bold", false):
 		var bold_font = _get_bold_font()
-		# #region agent log
-		var log_file2 = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
-		if log_file2:
-			log_file2.seek_end()
-			log_file2.store_line(JSON.stringify({
-				"location": "UIBuilder.gd:342",
-				"message": "Bold font retrieved",
-				"data": {
-					"bold_font_is_null": bold_font == null,
-					"bold_font_type": typeof(bold_font)
-				},
-				"timestamp": Time.get_ticks_msec(),
-				"sessionId": "debug-session",
-				"hypothesisId": "A"
-			}))
-			log_file2.close()
-		# #endregion
+		# Structured logging via CursorLogManager
+		if log_manager:
+			log_manager.log_structured(
+				"UIBuilder.gd:342",
+				"Bold font retrieved",
+				{"bold_font_is_null": bold_font == null, "bold_font_type": typeof(bold_font)},
+				"debug-session",
+				"A"
+			)
 		if bold_font != null:
-			# #region agent log
-			var log_file_valid = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
-			if log_file_valid:
-				log_file_valid.seek_end()
-				log_file_valid.store_line(JSON.stringify({
-					"location": "UIBuilder.gd:create_label:font_override",
-					"message": "Applying bold font override",
-					"data": {
-						"bold_font_valid": true
-					},
-					"timestamp": Time.get_ticks_msec(),
-					"sessionId": "debug-session",
-					"hypothesisId": "A"
-				}))
-				log_file_valid.close()
-			# #endregion
+			# Structured logging via CursorLogManager
+			if log_manager:
+				log_manager.log_structured(
+					"UIBuilder.gd:create_label:font_override",
+					"Applying bold font override",
+					{"bold_font_valid": true},
+					"debug-session",
+					"A"
+				)
 			label.add_theme_font_override("font", bold_font)
 		else:
-			# #region agent log
-			var log_file3 = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
-			if log_file3:
-				log_file3.seek_end()
-				log_file3.store_line(JSON.stringify({
-					"location": "UIBuilder.gd:create_label:skip_null_font",
-					"message": "Skipping null font override - using default font",
-					"data": {
-						"reason": "bold_font is null, label will use default font",
-						"fix_applied": true
-					},
-					"timestamp": Time.get_ticks_msec(),
-					"sessionId": "debug-session",
-					"hypothesisId": "A"
-				}))
-				log_file3.close()
-			# #endregion
+			# Structured logging via CursorLogManager
+			if log_manager:
+				log_manager.log_structured(
+					"UIBuilder.gd:create_label:skip_null_font",
+					"Skipping null font override - using default font",
+					{"reason": "bold_font is null, label will use default font", "fix_applied": true},
+					"debug-session",
+					"A"
+				)
 	
-	# #region agent log
-	var log_file_exit = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
-	if log_file_exit:
-		log_file_exit.seek_end()
-		log_file_exit.store_line(JSON.stringify({
-			"location": "UIBuilder.gd:create_label:exit",
-			"message": "create_label completed",
-			"data": {
-				"label_created": true
-			},
-			"timestamp": Time.get_ticks_msec(),
-			"sessionId": "debug-session",
-			"hypothesisId": "A"
-		}))
-		log_file_exit.close()
-	# #endregion
-	
+	# Structured logging via CursorLogManager
+	if log_manager:
+		log_manager.log_structured(
+			"UIBuilder.gd:create_label:exit",
+			"create_label completed",
+			{"label_created": true},
+			"debug-session",
+			"A"
+		)
+
 	return label
 
 # Create title label (large, bold)
@@ -647,30 +596,28 @@ func _release_floating_text(label: Label):
 # ============================================================================
 
 func _get_ability_icon(ability_id: String) -> Texture2D:
-	# Load ability icon from assets
-	var icon_path = "res://assets/icons/abilities/%s.png" % ability_id
+	# Load ability icon from assets (updated to use new spell icons location)
+	var icon_path = "res://assets/icons/spells/%s.png" % ability_id
 	if ResourceLoader.exists(icon_path):
 		return load(icon_path)
+	# Fallback to old path if new one doesn't exist
+	var old_path = "res://assets/icons/abilities/%s.png" % ability_id
+	if ResourceLoader.exists(old_path):
+		return load(old_path)
 	return null
 
 func _get_bold_font() -> Font:
 	# Return bold font if available
-	# #region agent log
-	var log_file = FileAccess.open("c:\\Users\\Ropbe\\Desktop\\Road of war\\.cursor\\debug.log", FileAccess.WRITE_READ)
-	if log_file:
-		log_file.seek_end()
-		log_file.store_line(JSON.stringify({
-			"location": "UIBuilder.gd:_get_bold_font",
-			"message": "_get_bold_font called",
-			"data": {
-				"returning_null": true
-			},
-			"timestamp": Time.get_ticks_msec(),
-			"sessionId": "debug-session",
-			"hypothesisId": "A"
-		}))
-		log_file.close()
-	# #endregion
+	# Structured logging via CursorLogManager
+	var log_manager = get_node_or_null("/root/CursorLogManager")
+	if log_manager:
+		log_manager.log_structured(
+			"UIBuilder.gd:_get_bold_font",
+			"_get_bold_font called",
+			{"returning_null": true},
+			"debug-session",
+			"A"
+		)
 	return null  # Can be extended with custom font
 
 func _get_rarity_color(rarity: String) -> Color:

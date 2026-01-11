@@ -140,3 +140,70 @@ func reduce_threat(enemy_id: String, hero_id: String, amount: int = 0, is_percen
 func clear_all_threats():
 	threat_table.clear()
 
+# Taunt: Forces enemy to target the taunting hero by setting threat to highest + buffer
+func taunt(enemy_id: String, hero_id: String, threat_bonus: int = 1000, aoe: bool = false, aoe_radius: float = 0.0):
+	"""
+	Taunt an enemy (or multiple enemies if AoE) to force them to target the taunting hero.
+	
+	Args:
+		enemy_id: The enemy to taunt (or first enemy if AoE)
+		hero_id: The hero performing the taunt
+		threat_bonus: Amount of threat to add (default 1000, should be higher than current max)
+		aoe: If true, taunt all enemies within aoe_radius
+		aoe_radius: Radius for AoE taunt (in pixels)
+	"""
+	if aoe and aoe_radius > 0.0:
+		# AoE taunt: Find all enemies within radius
+		var world = get_node_or_null("/root/World")
+		if not world:
+			_log_debug("ThreatSystem", "Cannot perform AoE taunt: World not found")
+			return
+		
+		var hero_node = world._find_unit_node(hero_id)
+		if not hero_node:
+			_log_debug("ThreatSystem", "Cannot perform AoE taunt: Hero node not found")
+			return
+		
+		# Get all enemies from current combat
+		var cm = get_node_or_null("/root/CombatManager")
+		if not cm or not cm.has("current_combat"):
+			_log_debug("ThreatSystem", "Cannot perform AoE taunt: Not in combat")
+			return
+		
+		var enemies = cm.current_combat.get("enemies", [])
+		for enemy in enemies:
+			if enemy.get("current_health", 0) <= 0:
+				continue
+			
+			var enemy_instance_id = enemy.get("instance_id", enemy.get("id", ""))
+			var enemy_node = world._find_unit_node(enemy_instance_id)
+			if not enemy_node:
+				continue
+			
+			var distance = hero_node.global_position.distance_to(enemy_node.global_position)
+			if distance <= aoe_radius:
+				_apply_taunt(enemy_instance_id, hero_id, threat_bonus)
+	else:
+		# Single-target taunt
+		_apply_taunt(enemy_id, hero_id, threat_bonus)
+
+func _apply_taunt(enemy_id: String, hero_id: String, threat_bonus: int):
+	"""
+	Internal helper to apply taunt threat to a single enemy.
+	Sets the hero's threat to highest threat + threat_bonus.
+	"""
+	if not threat_table.has(enemy_id):
+		threat_table[enemy_id] = {}
+	
+	# Find current highest threat
+	var max_threat = 0
+	for other_hero_id in threat_table[enemy_id].keys():
+		var threat = threat_table[enemy_id][other_hero_id]
+		if threat > max_threat:
+			max_threat = threat
+	
+	# Set taunting hero's threat to highest + bonus
+	var new_threat = max_threat + threat_bonus
+	set_threat(enemy_id, hero_id, new_threat)
+	
+	_log_info("ThreatSystem", "Taunt applied: %s taunted %s (threat set to %d)" % [hero_id, enemy_id, new_threat])

@@ -51,9 +51,27 @@ func _ready():
 	load_prestige_config()
 
 func load_prestige_config():
-	prestige_config = DataManager.get_data("prestige-config")
+	var dm = get_node_or_null("/root/DataManager")
+	if dm:
+		prestige_config = dm.get_data("prestige-config") if dm.has_method("get_data") else {}
+	
 	if prestige_config.is_empty():
 		prestige_config = get_default_config()
+	else:
+		# Normalize upgrades to Dictionary format (config may have array)
+		_normalize_upgrades_format()
+
+func _normalize_upgrades_format():
+	# Convert upgrades array to Dictionary format if needed
+	var upgrades = prestige_config.get("upgrades", [])
+	if upgrades is Array:
+		var upgrades_dict = {}
+		for upgrade in upgrades:
+			var upgrade_id = upgrade.get("id", "")
+			if upgrade_id != "":
+				upgrades_dict[upgrade_id] = upgrade
+		prestige_config["upgrades"] = upgrades_dict
+		_log_info("PrestigeManager", "Normalized upgrades format: Array → Dictionary (%d upgrades)" % upgrades_dict.size())
 
 func get_default_config() -> Dictionary:
 	return {
@@ -61,16 +79,20 @@ func get_default_config() -> Dictionary:
 		"prestigeMultiplier": 1.5,
 		"upgrades": {
 			"goldMultiplier": {
+				"id": "goldMultiplier",
 				"name": "Gold Multiplier",
 				"description": "Increase gold earned by 10%",
 				"cost": 1,
-				"effect": {"type": "multiplier", "stat": "gold", "value": 1.1}
+				"type": "gold_multiplier",
+				"value": 0.1
 			},
 			"experienceMultiplier": {
+				"id": "experienceMultiplier",
 				"name": "Experience Multiplier",
 				"description": "Increase experience earned by 10%",
 				"cost": 1,
-				"effect": {"type": "multiplier", "stat": "experience", "value": 1.1}
+				"type": "xp_multiplier",
+				"value": 0.1
 			}
 		}
 	}
@@ -235,15 +257,65 @@ func calculate_prestige_points() -> int:
 	# Ethereal Essence bonus (from extended content)
 	var essence_bonus = int(ethereal_essence / 10.0)
 	
+	# Mile bonus: Additional points for mile progression
+	var mile_bonus = 0
+	var wm = get_node_or_null("/root/WorldManager")
+	if wm and wm.has_method("get_current_mile"):
+		var current_mile = wm.get_current_mile()
+		mile_bonus = int(current_mile / 10.0)  # 1 point per 10 miles
+	
 	# Prestige Level Multiplier (for subsequent prestiges)
 	var prestige_multiplier = 1.0 + (prestige_level * 0.5)
 	
-	var total = base + level_bonus + equipment_bonus + achievement_bonus + essence_bonus
+	var total = base + level_bonus + equipment_bonus + achievement_bonus + essence_bonus + mile_bonus
 	var final_points = int(total * prestige_multiplier)
 	
-	_log_info("PrestigeManager", "Calculating prestige points: Base=%d, Levels=%d, Equipment=%d, Achievements=%d, Essence=%d, Multiplier=%.2f, Total=%d" % [base, level_bonus, equipment_bonus, achievement_bonus, essence_bonus, prestige_multiplier, final_points])
+	_log_info("PrestigeManager", "Calculating prestige points: Base=%d, Levels=%d, Equipment=%d, Achievements=%d, Essence=%d, Miles=%d, Multiplier=%.2f, Total=%d" % [base, level_bonus, equipment_bonus, achievement_bonus, essence_bonus, mile_bonus, prestige_multiplier, final_points])
 	
 	return final_points
+
+func get_pending_prestige_points_breakdown() -> Dictionary:
+	# Returns breakdown of pending prestige points (for UI display)
+	var base = 20
+	var level_bonus = 0
+	var equipment_bonus = 0
+	var achievement_bonus = 0
+	var essence_bonus = int(ethereal_essence / 10.0)
+	var mile_bonus = 0
+	
+	var pm = get_node_or_null("/root/PartyManager")
+	if pm:
+		for hero in pm.heroes:
+			level_bonus += int(hero.level / 10.0)
+	
+	var epic_count = _count_epic_items()
+	var legendary_count = _count_legendary_items()
+	equipment_bonus = (epic_count * 2) + (legendary_count * 5)
+	
+	var am = get_node_or_null("/root/AchievementManager")
+	if am and am.has_method("get_unlocked_count"):
+		achievement_bonus = am.get_unlocked_count()
+	
+	var wm = get_node_or_null("/root/WorldManager")
+	if wm and wm.has_method("get_current_mile"):
+		var current_mile = wm.get_current_mile()
+		mile_bonus = int(current_mile / 10.0)
+	
+	var prestige_multiplier = 1.0 + (prestige_level * 0.5)
+	var subtotal = base + level_bonus + equipment_bonus + achievement_bonus + essence_bonus + mile_bonus
+	var total = int(subtotal * prestige_multiplier)
+	
+	return {
+		"base": base,
+		"level_bonus": level_bonus,
+		"equipment_bonus": equipment_bonus,
+		"achievement_bonus": achievement_bonus,
+		"essence_bonus": essence_bonus,
+		"mile_bonus": mile_bonus,
+		"subtotal": subtotal,
+		"multiplier": prestige_multiplier,
+		"total": total
+	}
 
 func _count_epic_items() -> int:
 	var count = 0
@@ -319,9 +391,21 @@ func purchase_upgrade(upgrade_id: String) -> bool:
 	_log_info("PrestigeManager", "Purchased upgrade: %s" % upgrade_id)
 	return true
 
+func get_upgrade_data(upgrade_id: String) -> Dictionary:
+	# Returns full upgrade data from config
+	return prestige_config.get("upgrades", {}).get(upgrade_id, {})
+
 func get_upgrade_effect(upgrade_id: String) -> Dictionary:
-	var upgrade_data = prestige_config.get("upgrades", {}).get(upgrade_id, {})
-	return upgrade_data.get("effect", {})
+	# Returns upgrade effect (for backward compatibility)
+	var upgrade_data = get_upgrade_data(upgrade_id)
+	if upgrade_data.has("effect"):
+		return upgrade_data.get("effect", {})
+	# If no effect field, construct from type/value fields
+	var effect_type = upgrade_data.get("type", "")
+	var effect_value = upgrade_data.get("value", 0)
+	if effect_type != "":
+		return {"type": effect_type, "value": effect_value}
+	return {}
 
 func get_prestige_level() -> int:
 	return prestige_level
@@ -338,9 +422,25 @@ func get_available_upgrades() -> Array:
 	
 	for upgrade_id in upgrades:
 		if not purchased_upgrades.has(upgrade_id):
-			available.append(upgrades[upgrade_id])
+			var upgrade_data = upgrades[upgrade_id].duplicate()
+			upgrade_data["id"] = upgrade_id  # Ensure ID is present
+			available.append(upgrade_data)
 	
 	return available
+
+func get_all_upgrades() -> Array:
+	# Returns all upgrades (purchased and available) with their status
+	var all_upgrades = []
+	var upgrades = prestige_config.get("upgrades", {})
+	
+	for upgrade_id in upgrades:
+		var upgrade_data = upgrades[upgrade_id].duplicate()
+		upgrade_data["id"] = upgrade_id
+		upgrade_data["purchased"] = purchased_upgrades.has(upgrade_id)
+		upgrade_data["can_afford"] = prestige_points >= upgrade_data.get("cost", 0)
+		all_upgrades.append(upgrade_data)
+	
+	return all_upgrades
 
 func get_save_data() -> Dictionary:
 	return {
@@ -357,3 +457,190 @@ func load_save_data(save_data: Dictionary):
 	prestige_points_earned = save_data.get("prestige_points_earned", 0)
 	ethereal_essence = save_data.get("ethereal_essence", 0)
 	purchased_upgrades = save_data.get("purchased_upgrades", [])
+
+# Prestige Bonus Calculation Methods
+# These methods calculate bonuses from purchased upgrades that can be used by other systems
+
+func get_stat_multiplier(stat_name: String) -> float:
+	"""Returns multiplier bonus for a specific stat from purchased upgrades"""
+	var multiplier = 1.0
+	var upgrades = prestige_config.get("upgrades", {})
+	
+	for upgrade_id in purchased_upgrades:
+		var upgrade_data = upgrades.get(upgrade_id, {})
+		if upgrade_data.is_empty():
+			continue
+		
+		var upgrade_type = upgrade_data.get("type", "")
+		var upgrade_stat = upgrade_data.get("stat", "")
+		var upgrade_value = upgrade_data.get("value", 0.0)
+		
+		if upgrade_type == "stat_multiplier" and upgrade_stat == stat_name:
+			multiplier += upgrade_value  # Stack additively
+	
+	return multiplier
+
+func get_gold_multiplier() -> float:
+	"""Returns gold gain multiplier from purchased upgrades"""
+	var multiplier = 1.0
+	var upgrades = prestige_config.get("upgrades", {})
+	
+	for upgrade_id in purchased_upgrades:
+		var upgrade_data = upgrades.get(upgrade_id, {})
+		if upgrade_data.is_empty():
+			continue
+		
+		var upgrade_type = upgrade_data.get("type", "")
+		var upgrade_value = upgrade_data.get("value", 0.0)
+		
+		if upgrade_type == "gold_multiplier":
+			multiplier += upgrade_value  # Stack additively
+	
+	return multiplier
+
+func get_xp_multiplier() -> float:
+	"""Returns experience gain multiplier from purchased upgrades"""
+	var multiplier = 1.0
+	var upgrades = prestige_config.get("upgrades", {})
+	
+	for upgrade_id in purchased_upgrades:
+		var upgrade_data = upgrades.get(upgrade_id, {})
+		if upgrade_data.is_empty():
+			continue
+		
+		var upgrade_type = upgrade_data.get("type", "")
+		var upgrade_value = upgrade_data.get("value", 0.0)
+		
+		if upgrade_type == "xp_multiplier":
+			multiplier += upgrade_value  # Stack additively
+	
+	return multiplier
+
+func get_loot_multiplier() -> float:
+	"""Returns loot drop chance multiplier from purchased upgrades"""
+	var multiplier = 1.0
+	var upgrades = prestige_config.get("upgrades", {})
+	
+	for upgrade_id in purchased_upgrades:
+		var upgrade_data = upgrades.get(upgrade_id, {})
+		if upgrade_data.is_empty():
+			continue
+		
+		var upgrade_type = upgrade_data.get("type", "")
+		var upgrade_value = upgrade_data.get("value", 0.0)
+		
+		if upgrade_type == "loot_multiplier":
+			multiplier += upgrade_value  # Stack additively
+	
+	return multiplier
+
+func get_item_quality_bonus() -> float:
+	"""Returns item quality chance bonus (scales with prestige level)"""
+	var bonus = 0.0
+	var upgrades = prestige_config.get("upgrades", {})
+	
+	for upgrade_id in purchased_upgrades:
+		var upgrade_data = upgrades.get(upgrade_id, {})
+		if upgrade_data.is_empty():
+			continue
+		
+		var upgrade_type = upgrade_data.get("type", "")
+		var upgrade_value = upgrade_data.get("value", 0.0)
+		
+		if upgrade_type == "item_quality_bonus":
+			# Scale with prestige level
+			bonus += upgrade_value * prestige_level
+	
+	return bonus
+
+func get_item_level_boost() -> int:
+	"""Returns item level boost (scales with prestige level)"""
+	var boost = 0
+	var upgrades = prestige_config.get("upgrades", {})
+	
+	for upgrade_id in purchased_upgrades:
+		var upgrade_data = upgrades.get(upgrade_id, {})
+		if upgrade_data.is_empty():
+			continue
+		
+		var upgrade_type = upgrade_data.get("type", "")
+		var upgrade_value = upgrade_data.get("value", 0)
+		
+		if upgrade_type == "item_level_boost":
+			# Scale with prestige level
+			boost += int(upgrade_value * prestige_level)
+	
+	return boost
+
+func get_gear_effectiveness_multiplier() -> float:
+	"""Returns gear stat effectiveness multiplier from purchased upgrades"""
+	var multiplier = 1.0
+	var upgrades = prestige_config.get("upgrades", {})
+	
+	for upgrade_id in purchased_upgrades:
+		var upgrade_data = upgrades.get(upgrade_id, {})
+		if upgrade_data.is_empty():
+			continue
+		
+		var upgrade_type = upgrade_data.get("type", "")
+		var upgrade_value = upgrade_data.get("value", 0.0)
+		
+		if upgrade_type == "gear_effectiveness":
+			multiplier += upgrade_value  # Stack additively
+	
+	return multiplier
+
+func get_combat_bonus() -> float:
+	"""Returns damage/healing bonus from purchased upgrades"""
+	var bonus = 0.0
+	var upgrades = prestige_config.get("upgrades", {})
+	
+	for upgrade_id in purchased_upgrades:
+		var upgrade_data = upgrades.get(upgrade_id, {})
+		if upgrade_data.is_empty():
+			continue
+		
+		var upgrade_type = upgrade_data.get("type", "")
+		var upgrade_value = upgrade_data.get("value", 0.0)
+		
+		if upgrade_type == "combat_bonus":
+			bonus += upgrade_value  # Stack additively
+	
+	return bonus
+
+func get_prestige_talent_points() -> int:
+	"""Returns additional talent points from prestige upgrades"""
+	var points = 0
+	var upgrades = prestige_config.get("upgrades", {})
+	
+	for upgrade_id in purchased_upgrades:
+		var upgrade_data = upgrades.get(upgrade_id, {})
+		if upgrade_data.is_empty():
+			continue
+		
+		var upgrade_type = upgrade_data.get("type", "")
+		var upgrade_value = upgrade_data.get("value", 0)
+		
+		if upgrade_type == "prestige_talent_points":
+			# Scale with prestige level
+			points += int(upgrade_value * prestige_level)
+	
+	return points
+
+func get_talent_cost_reduction() -> float:
+	"""Returns talent point cost reduction multiplier (0.9 = 10% reduction)"""
+	var reduction = 0.0
+	var upgrades = prestige_config.get("upgrades", {})
+	
+	for upgrade_id in purchased_upgrades:
+		var upgrade_data = upgrades.get(upgrade_id, {})
+		if upgrade_data.is_empty():
+			continue
+		
+		var upgrade_type = upgrade_data.get("type", "")
+		var upgrade_value = upgrade_data.get("value", 0.0)
+		
+		if upgrade_type == "talent_cost_reduction":
+			reduction += upgrade_value  # Stack additively
+	
+	return max(0.1, 1.0 - reduction)  # Minimum 10% cost, maximum 90% reduction

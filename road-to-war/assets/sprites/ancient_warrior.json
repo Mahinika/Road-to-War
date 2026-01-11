@@ -1,8 +1,7 @@
 {
-  "id": "ancient_warrior",
-  "description": "Armored warrior with sword",
-  "size": 64,
-  "primaryColor": "#8B4513",
-  "generator": "lpc-style",
-  "timestamp": "2026-01-07T10:14:40.392Z"
+  "seed": 13345,
+  "type": "bloodline_hero",
+  "bloodline": "ancient_warrior",
+  "generatedAt": "2026-01-10T22:46:41.248Z",
+  "version": "1.1.0"
 }

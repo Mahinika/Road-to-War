@@ -32,7 +32,7 @@ func _log_debug(source: String, message: String):
 		print("[%s] [DEBUG] %s" % [source, message])
 
 # AnimationManager.gd - Handles sprite animation logic and queuing
-# Adapted from Phaser 3 version to Godot 4.x
+# Godot 4.x animation management system
 
 signal animation_started(hero_id, anim_name)
 signal animation_finished(hero_id, anim_name)
@@ -44,15 +44,44 @@ func _ready():
 	_log_info("AnimationManager", "Initialized")
 
 func play_animation(hero_sprite: Node2D, anim_name: String, _loop: bool = true):
-	if not hero_sprite: return
+	# CRITICAL: Null check to prevent errors
+	if not hero_sprite:
+		_log_warn("AnimationManager", "play_animation called with null hero_sprite")
+		return
 	
-	var hero_id = hero_sprite.get("hero_data").id if "hero_data" in hero_sprite else "unknown"
+	# CRITICAL: Check if hero_sprite is a valid instance
+	if not is_instance_valid(hero_sprite):
+		_log_warn("AnimationManager", "hero_sprite is not a valid instance")
+		return
+	
+	# CRITICAL: Check if hero_sprite is in the scene tree (ready) before calling methods
+	# Note: World.gd already defers the call, so if we reach here and it's not in tree, just return
+	if not hero_sprite.is_inside_tree():
+		_log_warn("AnimationManager", "hero_sprite not in scene tree - skipping animation (should be deferred by caller)")
+		return
+	
+	# CRITICAL: Validate that hero_sprite has the required method
+	if not hero_sprite.has_method("play_animation"):
+		_log_warn("AnimationManager", "hero_sprite does not have play_animation method")
+		return
+	
+	var hero_id = "unknown"
+	if "hero_data" in hero_sprite:
+		var hero_data = hero_sprite.get("hero_data")
+		if hero_data:
+			# Handle both Dictionary and Resource (Hero.gd) types
+			if hero_data is Dictionary:
+				hero_id = hero_data.get("id", "unknown")
+			else:
+				# Hero is a Resource (Hero.gd)
+				hero_id = hero_data.id if "id" in hero_data else "unknown"
 	
 	active_animations[hero_id] = anim_name
 	animation_started.emit(hero_id, anim_name)
 	
-	if hero_sprite.has_method("play_animation"):
-		hero_sprite.play_animation(anim_name)
+	# Call play_animation method on hero_sprite
+	# Note: HeroSprite.play_animation() should handle null body_layer internally
+	hero_sprite.play_animation(anim_name)
 	
 	_log_debug("AnimationManager", "Playing %s for %s" % [anim_name, hero_id])
 

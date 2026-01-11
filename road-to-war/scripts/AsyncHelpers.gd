@@ -1,7 +1,7 @@
 extends Node
 
 # AsyncHelpers.gd - Async operation utilities
-# Migrated from src/utils/async-helpers.js
+# Godot 4.x async operation utilities
 # In Godot, we use coroutines instead of Promises
 
 func _get_logger():

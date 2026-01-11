@@ -1,0 +1,11 @@
+{
+  "asset_type": "projectile_magic",
+  "profile": "projectile_magic",
+  "base_size": [
+    32,
+    32
+  ],
+  "glow_color": "#6600aa",
+  "pulse_strength": 0.2,
+  "outline": false
+}
