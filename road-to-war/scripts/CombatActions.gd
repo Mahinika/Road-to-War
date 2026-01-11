@@ -296,7 +296,30 @@ func _execute_hero_ability_logic(hero, ability_name: String, enemy: Dictionary):
 		
 		AbilityManager.set_cooldown(hero.id, ability_name)
 		return
-	
+
+	# Handle beacon abilities (Beacon of Light)
+	if ability_type == "beacon":
+		var beacon_manager = get_node_or_null("/root/BeaconManager")
+		if beacon_manager:
+			# For now, beacon the tank (first hero in party)
+			var party_manager = get_node_or_null("/root/PartyManager")
+			if party_manager and party_manager.heroes.size() > 0:
+				var tank_hero = party_manager.heroes[0]  # Assume first hero is tank
+				var success = beacon_manager.apply_beacon(hero.id, tank_hero.id, ability_def.get("redirectPercent", 1.0), ability_def.get("duration", 300.0))
+
+				if success:
+					# Show visual feedback
+					var pm = get_node_or_null("/root/ParticleManager")
+					if pm:
+						var world = get_node_or_null("/root/World")
+						if world:
+							var hero_node = world._find_unit_node(hero.id)
+							if hero_node:
+								pm.create_floating_text(hero_node.global_position + Vector2(0, -20), "Beacon of Light!", Color.YELLOW)
+
+		AbilityManager.set_cooldown(hero.id, ability_name)
+		return
+
 	var result = DamageCalculator.calculate_damage(hero.current_stats, enemy.get("stats", {}), hero, enemy)
 	
 	# Structured logging via CursorLogManager (reuse log_manager from above)

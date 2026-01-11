@@ -363,7 +363,14 @@ func _get_party_health_metrics(party_state: Array) -> Dictionary:
 	var avg_hp_pct := 0.0
 	var count_critical := 0
 	var count_wounded := 0
-	
+	var tank_hp_pct := 1.0  # Assume first party member is tank
+
+	if party_state.size() > 0:
+		var tank = party_state[0]  # First member is assumed to be tank
+		var tank_max_hp := float(tank.get("max_health", 100))
+		var tank_hp := float(tank.get("current_health", 0))
+		tank_hp_pct = tank_hp / max(1.0, tank_max_hp)
+
 	for member in party_state:
 		var max_hp := float(member.get("max_health", 100))
 		var hp := float(member.get("current_health", 0))
@@ -376,18 +383,19 @@ func _get_party_health_metrics(party_state: Array) -> Dictionary:
 		# Healer-first tuning: treat anyone below 90% as "wounded" so healing starts sooner.
 		if pct < 0.90:
 			count_wounded += 1
-	
+
 	avg_hp_pct /= float(party_size)
 	# Healer-first tuning: only DPS when everyone is basically topped off.
 	var safe_to_dps := (lowest_hp_pct >= 0.95 and count_wounded == 0)
-	
+
 	return {
 		"party_size": party_size,
 		"lowest_hp_pct": lowest_hp_pct,
 		"avg_hp_pct": avg_hp_pct,
 		"count_critical": count_critical,
 		"count_wounded": count_wounded,
-		"safe_to_dps": safe_to_dps
+		"safe_to_dps": safe_to_dps,
+		"tank_hp_pct": tank_hp_pct
 	}
 
 func _get_resource_ratio(hero_id: String, resource_type: String, rm) -> float:
@@ -438,6 +446,7 @@ func _score_healer_candidate(hero, ability_name: String, def: Dictionary, metric
 	var is_interrupt := (ability_name in ["kick", "counterspell", "earth_shock"]) or ability_type == "interrupt"
 	var is_emergency := ability_name in ["divine_shield", "ice_block", "evasion", "lay_on_hands"]
 	var is_shield_like := ("shield" in name_lc) or ability_type == "shield"
+	var is_beacon := ability_type == "beacon"
 	
 	var score := 0.0
 	
@@ -478,6 +487,26 @@ func _score_healer_candidate(hero, ability_name: String, def: Dictionary, metric
 		# Prefer shields even when safe (preventive mitigation)
 		if safe_to_dps:
 			score += W_HEALING_PREFERENCE * 0.5
+	elif is_beacon:
+		# Beacon of Light scoring
+		var beacon_manager = get_node_or_null("/root/BeaconManager")
+		var has_beacon = false
+		if beacon_manager:
+			has_beacon = beacon_manager.has_beacon(hero.id)
+
+		if not has_beacon:
+			# Prioritize beacon when tank is wounded
+			var tank_hp_pct = 1.0
+			if party_size > 0:
+				# Assume first party member is tank
+				tank_hp_pct = float(metrics.get("tank_hp_pct", 1.0))
+
+			var tank_wounded = 1.0 - tank_hp_pct
+			score += 50.0 * tank_wounded  # Higher priority when tank is hurt
+			score += 15.0  # Base priority for beacon setup
+		else:
+			# Lower priority if beacon already active
+			score += 5.0
 	
 	# Damage preference (when safe).
 	var is_healing_or_mitigation := (ability_type in ["heal", "aoe_heal", "heal_attack"]) or is_shield_like

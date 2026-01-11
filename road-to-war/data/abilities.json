@@ -178,6 +178,16 @@
             "type": "taunt",
             "threatBonus": 1000,
             "range": 800
+        },
+        "beacon_of_light": {
+            "name": "Beacon of Light",
+            "cost": 0,
+            "resourceType": "mana",
+            "cooldown": 0,
+            "type": "beacon",
+            "duration": 300,
+            "range": 800,
+            "redirectPercent": 1.0
         }
     },
     "warrior": {

@@ -191,12 +191,56 @@ func deal_damage(attacker, target, damage: float, is_crit: bool):
 		StatisticsManager.increment_stat("combat", "totalDamageTaken", damage)
 
 func deal_healing(healer, target, amount: float):
+	# Apply healing to original target
 	if target is Dictionary:
 		var max_hp = target.get("max_health", 100)
 		target["current_health"] = min(max_hp, target.get("current_health", 0) + amount)
 	elif target is Object and "current_stats" in target:
 		var max_hp = target.current_stats.get("maxHealth", 100)
 		target.current_stats["health"] = min(max_hp, target.current_stats.get("health", 0) + amount)
-		
+
+	# Check for Beacon of Light redirection
+	var beacon_manager = get_node_or_null("/root/BeaconManager")
+	if beacon_manager:
+		var target_id = ""
+		if target is Dictionary and target.has("instance_id"):
+			target_id = target["instance_id"]
+		elif target is Object and target.has("id"):
+			target_id = target.id
+
+		if target_id != "":
+			var redirect_data = beacon_manager.redirect_healing(target_id, amount)
+			if redirect_data.redirected_amount > 0:
+				# Apply redirected healing to beacon target
+				var beacon_target_id = redirect_data.beacon_target
+				var beacon_target = null
+
+				# Find the beacon target
+				if target is Object and target.has("id"):
+					# We're in party combat, find beacon target in party
+					var party_manager = get_node_or_null("/root/PartyManager")
+					if party_manager:
+						beacon_target = party_manager.get_hero_by_id(beacon_target_id)
+				else:
+					# We're in enemy combat, beacon target would be another enemy (not implemented yet)
+					pass
+
+				if beacon_target:
+					# Apply redirected healing
+					var beacon_max_hp = beacon_target.current_stats.get("maxHealth", 100)
+					beacon_target.current_stats["health"] = min(beacon_max_hp, beacon_target.current_stats.get("health", 0) + redirect_data.redirected_amount)
+
+					# Emit healing applied for beacon target
+					healing_applied.emit(healer, beacon_target, redirect_data.redirected_amount)
+
+					# Show visual feedback for beacon healing
+					var particle_manager = get_node_or_null("/root/ParticleManager")
+					if particle_manager:
+						var world = get_node_or_null("/root/World")
+						if world:
+							var beacon_node = world._find_unit_node(beacon_target_id)
+							if beacon_node:
+								particle_manager.create_floating_text(beacon_node.global_position + Vector2(0, -20), "+%.0f (Beacon)" % redirect_data.redirected_amount, Color.CYAN)
+
 	healing_applied.emit(healer, target, amount)
 

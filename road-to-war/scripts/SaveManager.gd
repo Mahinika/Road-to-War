@@ -174,7 +174,10 @@ func collect_save_data() -> Dictionary:
 	
 	var sm = get_node_or_null("/root/ShopManager")
 	if sm: save_data["shop"] = sm.get_save_data()
-	
+
+	var beacon_m = get_node_or_null("/root/BeaconManager")
+	if beacon_m: save_data["beacons"] = beacon_m.get_save_data()
+
 	return save_data
 
 func load_save_slots():
@@ -292,7 +295,11 @@ func apply_save_data(save_data: Dictionary):
 	var sm = get_node_or_null("/root/ShopManager")
 	if save_data.has("shop") and sm:
 		sm.load_save_data(save_data.shop)
-	
+
+	var beacon_m = get_node_or_null("/root/BeaconManager")
+	if save_data.has("beacons") and beacon_m:
+		beacon_m.load_save_data(save_data.beacons)
+
 	# Recalculate all hero stats after loading equipment and talents
 	var sc = get_node_or_null("/root/StatCalculator")
 	if pm and sc:
